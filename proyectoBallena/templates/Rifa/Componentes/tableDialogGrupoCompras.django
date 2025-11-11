@@ -1,0 +1,191 @@
+{% load Filter %}
+{% load static %}
+
+<div class="flex flex-col items-start text-left w-full h-full">
+	<div class="flex flex-col items-start text-left gap-7 py-6 px-4 lg:px-6 w-full grow">
+		<div class="flex flex-row justify-start gap-8 items-start w-full">
+			<h3 class="title-large-medium text-color-primary grow text-left">Resultados</h3>
+			<div onclick="closeDialog()" class="flex justify-center  cursor-pointer">
+				<i class="fa fa-times text-xl p-1 text-[var(--color-icon-primary)]"></i>
+			</div>
+		</div>
+		<div
+			class="relative radius-rounded border border-color-primary text-sm text-left bg-transparent text-color-secondary w-full overflow-hidden">
+			<div class="grid grid-cols-[repeat(10,minmax(120px,200px))] bg-transparent w-full overflow-x-scroll">
+				<div class="grid grid-cols-subgrid col-span-10 border-b border-color-primary">
+					<div class="p-4">
+						Rifa
+					</div>
+					<div class="p-4">
+						Nombre y CI
+					</div>
+					<div class="p-4">
+						Fecha
+					</div>
+					<div class="p-4">
+						Referencia
+					</div>
+					<div class="p-4">
+						Estatus
+					</div>
+					<div class="p-4">
+						Tipo de pago
+					</div>
+					<div class="p-4">
+						Boletos
+					</div>
+					<div class="p-4">
+						Usuario
+					</div>
+					<div class="p-4">
+						Monto
+					</div>
+					<div
+						class="flex justify-center absolute right-0 w-24 lg:w-auto bg-[var(--color-container-neutral-bright)] lg:bg-transparent lg:relative border-l lg:border-l-0 border-color-primary">
+						<div
+							class="lg:bg-transparent bg-[var(--color-container-neutral-bright)] w-full h-full p-4 flex justify-center items-center">
+							Acciones
+						</div>
+					</div>
+				</div>
+				<div
+					class="grid grid-cols-subgrid col-span-10 label-medium-medium text-color-primary border-color-primary max-h-[440px] overflow-y-scroll">
+					{% for c in compras_paginadas %}
+					<div
+						class="grid grid-cols-subgrid col-span-10 border-b hover:bg-[var(--color-surface-primary-focused)] label-medium-medium border-color-primary h-max">
+						<div class="p-4 h-16 lg:h-24 overflow-hidden">
+							{{c.idRifa.Nombre}}
+						</div>
+						<div class="p-4 h-16 lg:h-24 overflow-hidden">
+							<span class="block">{{c.idComprador.Nombre|wordcap:10}}</span>
+							<span class="block text-color-secondary">{{c.idComprador.Cedula}}</span>
+						</div>
+						<div class="p-4 h-16 lg:h-24 overflow-hidden">
+							{{c.FechaCompra|date:'d-m-Y h:i A'}}
+						</div>
+						<div class="p-4 h-16 lg:h-24 overflow-hidden">
+							{{c.Referencia}}
+						</div>
+						<div class="p-4 h-16 lg:h-24 overflow-hidden">
+							{{c.Estado|reversoEstado}}
+						</div>
+						<div class="p-4 h-24 overflow-hidden">
+							{{c.MetodoPago|reversoMetodoPago}}
+						</div>
+						<div class="p-4 h-16 lg:h-24 overflow-hidden">
+							{{c.NumeroBoletos}}
+						</div>
+						{% if c.author != None %}
+						<div class="p-4 h-24 overflow-hidden">
+							{{c.author.username}}
+						</div>
+						{% else %}
+						<div class="p-4 h-24 overflow-hidden">
+							Cliente de rifas
+						</div>
+						{% endif %}
+						{% if c.MetodoPago == 3 %}
+						<div class="p-4 h-24 overflow-hidden">
+							Bs. {{c.TotalPagado|format_price}}
+						</div>
+						{% else %}
+						<div class="p-4 h-24 overflow-hidden">
+							$ {{c.TotalPagadoAlt|format_price}}
+						</div>
+						{% endif %}
+
+						<div id="btVoucher"
+							class="h-16 lg:h-24 overflow-hidden cursor-pointer flex justify-center absolute right-0 w-24 lg:w-auto bg-[var(--color-container-neutral-bright)] lg:bg-transparent lg:relative border-l lg:border-l-0 border-color-primary"
+							title="Acciones sobre la compra" onclick="modalConfirmar('{{c.Id}}')">
+							<div
+								class="lg:bg-transparent bg-[var(--color-container-neutral-bright)] w-full h-full p-4 flex justify-center items-center">
+								<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path
+										d="M0.833336 9.99998C0.833336 9.99998 4.16667 3.33331 10 3.33331C15.8333 3.33331 19.1667 9.99998 19.1667 9.99998C19.1667 9.99998 15.8333 16.6666 10 16.6666C4.16667 16.6666 0.833336 9.99998 0.833336 9.99998Z"
+										stroke="var(--color-icon-primary)" stroke-opacity="0.74" stroke-width="1.25" stroke-linecap="round"
+										stroke-linejoin="round" />
+									<path
+										d="M10 12.5C11.3807 12.5 12.5 11.3807 12.5 10C12.5 8.61929 11.3807 7.5 10 7.5C8.61929 7.5 7.5 8.61929 7.5 10C7.5 11.3807 8.61929 12.5 10 12.5Z"
+										stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.25" stroke-linecap="round"
+										stroke-linejoin="round" />
+								</svg>
+							</div>
+						</div>
+					</div>
+					{% endfor %}
+				</div>
+			</div>
+			<div
+				class="relative grid col-span-7 label-medium-medium text-color-primary border-color-primary py-4 px-5 w-full h-[72px]">
+				<input type="hidden" name="" id="paginacionTableGrupoComprasMaxValue"
+					value="{{compras_paginadas.paginator.num_pages}}">
+				<input type="hidden" name="" id="paginacionTableGrupoComprasActualPage" value="{{compras_paginadas.number}}">
+				<section class="flex justify-center gap-5 items-center lg:w-full">
+					{% if compras_paginadas.has_previous %}
+					<span class="flex bg-transparent radius-rounded p-2 gap-1 cursor-pointer"
+						onclick="fecthModal('{{grupo}}','{{valor}}',{{ compras_paginadas.previous_page_number }})">
+						<svg width="24" height="24" class="m-auto" viewBox="0 0 20 20" fill="none"
+							xmlns="http://www.w3.org/2000/svg">
+							<path fill-rule="evenodd" clip-rule="evenodd"
+								d="M11.7803 5.21967C12.0732 5.51256 12.0732 5.98744 11.7803 6.28033L8.06066 10L11.7803 13.7197C12.0732 14.0126 12.0732 14.4874 11.7803 14.7803C11.4874 15.0732 11.0126 15.0732 10.7197 14.7803L6.46967 10.5303C6.17678 10.2374 6.17678 9.76256 6.46967 9.46967L10.7197 5.21967C11.0126 4.92678 11.4874 4.92678 11.7803 5.21967Z"
+								fill="#D1D5DB" />
+						</svg>
+						<span class="hidden lg:flex">Anterior</span>
+					</span>
+					{% else %}
+					<span class="flex bg-transparent radius-rounded p-2 gap-1 cursor-pointer">
+						<svg width="24" height="24" class="m-auto" viewBox="0 0 20 20" fill="none"
+							xmlns="http://www.w3.org/2000/svg">
+							<path fill-rule="evenodd" clip-rule="evenodd"
+								d="M11.7803 5.21967C12.0732 5.51256 12.0732 5.98744 11.7803 6.28033L8.06066 10L11.7803 13.7197C12.0732 14.0126 12.0732 14.4874 11.7803 14.7803C11.4874 15.0732 11.0126 15.0732 10.7197 14.7803L6.46967 10.5303C6.17678 10.2374 6.17678 9.76256 6.46967 9.46967L10.7197 5.21967C11.0126 4.92678 11.4874 4.92678 11.7803 5.21967Z"
+								fill="#D1D5DB" />
+						</svg>
+						<span class="hidden lg:flex">Anterior</span>
+					</span>
+					{% endif %}
+
+					<div class="contenedorPaginacionTableGrupoCompras" style="display: flex; flex-direction:row;">
+
+					</div>
+
+					{% if compras_paginadas.has_next %}
+					<span class="flex bg-transparent radius-rounded p-2 gap-1 cursor-pointer"
+						onclick="fecthModal('{{grupo}}','{{valor}}',{{ compras_paginadas.next_page_number }})">
+						<span class="hidden lg:flex">Siguiente</span>
+						<svg width="24" height="24" class="m-auto" viewBox="0 0 20 20" fill="none"
+							xmlns="http://www.w3.org/2000/svg">
+							<path fill-rule="evenodd" clip-rule="evenodd"
+								d="M8.21967 5.21967C8.51256 4.92678 8.98744 4.92678 9.28033 5.21967L13.5303 9.46967C13.8232 9.76256 13.8232 10.2374 13.5303 10.5303L9.28033 14.7803C8.98744 15.0732 8.51256 15.0732 8.21967 14.7803C7.92678 14.4874 7.92678 14.0126 8.21967 13.7197L11.9393 10L8.21967 6.28033C7.92678 5.98744 7.92678 5.51256 8.21967 5.21967Z"
+								fill="#D1D5DB" />
+						</svg>
+					</span>
+					{% else %}
+					<span class="flex bg-transparent radius-rounded p-2 gap-1 cursor-pointer">
+						<span class="hidden lg:flex">Siguiente</span>
+						<svg width="24" height="24" class="m-auto" viewBox="0 0 20 20" fill="none"
+							xmlns="http://www.w3.org/2000/svg">
+							<path fill-rule="evenodd" clip-rule="evenodd"
+								d="M8.21967 5.21967C8.51256 4.92678 8.98744 4.92678 9.28033 5.21967L13.5303 9.46967C13.8232 9.76256 13.8232 10.2374 13.5303 10.5303L9.28033 14.7803C8.98744 15.0732 8.51256 15.0732 8.21967 14.7803C7.92678 14.4874 7.92678 14.0126 8.21967 13.7197L11.9393 10L8.21967 6.28033C7.92678 5.98744 7.92678 5.51256 8.21967 5.21967Z"
+								fill="#D1D5DB" />
+						</svg>
+					</span>
+					{% endif %}
+				</section>
+
+			</div>
+		</div>
+	</div>
+	<div
+		class="flex flex-col lg:flex-row justify-between items-center justify-self-end p-6 w-full border-t border-color-primary">
+		<div class="flex flex-col lg:flex-row gap-4 w-full justify-start">
+			<button id="buttonPDF" class="button button-outline button-small w-full lg:w-auto" title="Exportar a PDF"
+				type="button" onclick="fecthPDF(2,'{{grupo}}', `{{valor}}`)">
+				<span>Exportar PDF</span>
+			</button>
+			<button id="buttonExcel" class="button button-outline button-small w-full lg:w-auto" title="Exportar a Excel"
+				type="button" onclick="fecthEXCEL(2,'{{grupo}}', `{{valor}}`)">
+				<span>Exportar Excel</span>
+			</button>
+		</div>
+	</div>
+</div>

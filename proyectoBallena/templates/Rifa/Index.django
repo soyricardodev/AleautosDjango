@@ -1,0 +1,292 @@
+<!-- templates/index.html -->
+{% extends "_base.html" %}
+{% load static %}
+{% load Filter %}
+{% load l10n %}
+
+{% block meta %}
+  <meta name="description" content="Listado de rifas recientes" />
+  <meta property="og:title" content="Aleautos1" />
+  <meta property="og:url" content="https://aleautos1.com/" />
+  <meta property="og:description" content="Listado de rifas recientes" />
+  <meta property="og:image" content="https://aleautos1.com{{ Rifa.Banner.url  }}" />
+{% endblock meta %}
+{% block content %}
+  <div>
+    {% if Rifa != None %}
+    <div style="width: 100vw; background: linear-gradient(259.08deg, #C42450 0%, #4E46AD 100%);">
+      <section class="max-w-[100vw] lg:max-w-[1128px] mx-auto lg:pt-16">
+        <div class="flex flex-col lg:flex-row lg:mb-0 lg:pb-20 px-0 lg:gap-[72px]">
+          <div class="relative pt-5 px-5 pb-5 lg:pt-5 w-full flex flex-col gap-6">
+            <div class="relative overflow-hidden shadow-none lg:shadow-lg radius-rounded bg-gray-200">
+              <div class="absolute lg:hidden top-0 left-0 right-0 bottom-0 bg-gradient-to-t from-[transparent]">
+
+              </div>
+              <img src="{{ Rifa.Banner.url  }}" class="w-full lg:rounded-lg max-h-[250px] lg:max-h-[400px] object-cover object-center" alt="Foto de rifa" />
+            </div>
+          </div>
+          <div class="relative flex flex-col w-full lg:w-[500px] lg:min-w-[500px] lg:top-0">
+            {% include "Rifa/Componentes/Compra.django" with RifaC=Rifa numDisp=numDisp tasa=tasa detalle=Rifa.NombreEnlace percent_config=percent_config whatsapp_config=whatsapp_config verifica=Rifa.NombreEnlace %}
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="w-[100vw] bg-[var(--color-container-brand-earth)]">
+      <section class="max-w-[100vw] lg:max-w-[1128px] mx-auto relative lg:border-t lg:border-color-primary py-8 lg:py-16 flex flex-col gap-6 px-5 lg:px-0">
+        <div class="flex flex-col lg:flex-row-reverse justify-center items-center gap-6 lg:gap-[56px]">
+          <img src=" {% static 'img/avatar.png' %}" alt="avatar" class="w-[192px] h-[192px] lg:w-[224px] lg:h-[224px] rounded-full object-cover object-center" />
+    {% if Rifa != None %}
+          
+          {% if time_remaining is None %}
+          <div class="flex flex-col gap-6">
+            <div class="flex flex-col gap-2">
+              {% comment %} <h4 class="label-overline-medium text-[var(--color-fixed-black-primary)]">Ganador de la rifa</h4>
+              <div>
+                <h3 class="heading-large-bold text-[var(--color-fixed-black-primary)]">Gerardo Gómez</h3>
+                <h5 class="heading-small-medium text-[var(--color-fixed-black-primary)]">¡He ganado gracias a Aleautos!</h5>
+              </div> {% endcomment %}
+
+            </div>
+            <div class="flex flex-row gap-5">
+              <div class="flex flex-row gap-4">
+                <a href="https://www.instagram.com/aleautos1/" target="_blank">
+                  <img src=" {% static 'img/simple_icon_ig.svg' %}" alt="instagram" class="w-[24px] h-[24px]" />
+                </a>
+                <a href="https://t.me/+iE1mDrOhlW81ZmRh" target="_blank">
+                  <img src=" {% static 'img/simple_icon_tg.svg' %}" alt="telegram" class="w-[24px] h-[24px]" />
+                </a>
+                <a {% if whatsapp_config != None and whatsapp_config.valor != None %}
+                href="https://wa.me/{{whatsapp_config.valor}}" {% else %} href="#" {%endif%} target="_blank">
+                  <img src=" {% static 'img/simple_icon_ws.svg' %}" alt="whatsapp" class="w-[24px] h-[24px]" />
+                </a>
+              </div>
+              <span class="body-medium-regular text-[var(--color-fixed-black-primary)]">@aleautos1</span>
+            </div>
+          </div>
+          {% else %}
+          <div class="flex flex-col gap-6">
+            <div class="flex flex-col gap-2">
+              <h4 class="heading-small-bold text-[var(--color-fixed-black-primary)]">Aún tienes oportunidad de ganar</h4>
+              <div class="flex flex-row gap-5">
+                <img src=" {% static 'img/despega.gif' %}" alt="cohete" class="w-[36px] h-[36px] lg:w-[48px] lg:h-[48px]" />
+                <span id="regresive-count" class="heading-large-bold text-[var(--color-fixed-black-primary)]"></span>
+              </div>
+
+            </div>
+            <div class="flex flex-row gap-5">
+              <a href="#" class="button button-outline button-large">
+                <span class="label-large-medium text-[var(--color-fixed-black-primary)]">Compra ahora</span>
+              </a>
+            </div>
+          </div>
+          {% endif %}
+          {% endif %}
+
+        </div>
+      </section>
+    </div>
+      <section class="max-w-[100vw] lg:max-w-[1128px] mx-auto relative lg:border-t lg:border-color-primary pt-2 lg:pt-16 flex flex-col gap-6 px-5 lg:px-0">
+        <!-- Listado de Rifas Anteriores -->
+        <section class="grid grid-cols-2 lg:grid-cols-3 gap-6 z-[2]">
+          <div class="text-left col-span-full">
+            <label class="heading-small-bold text-color-primary">Últimos premios sorteados</label>
+          </div>
+          {% for rif in Rifas %}
+          <div>
+            <a href="{% url 'Detalles' rif.NombreEnlace  %}">
+              <div class="grid w-full bg-[var(--color-container-neutral-bright)] rounded-[12px] pb-4 gap-4 shadow-xs">
+                <div class="relative w-full lg:max-w-[360px] h-[120px] lg:h-[268px]">
+                  {% if rif.Banner != None   %}
+                    <img src="{{ rif.Banner.url }}" class="w-full lg:ma-w-[360px] h-[120px] lg:h-[268px] rounded-t-[12px] object-cover z-0" alt="Banner de rifa">
+                  {% else %}
+                    <img src="{% static '/img/placeholder.png' %}" class="w-auto h-[268px] rounded-t-[12px] object-cover" alt="Banner de rifa" >
+                  {% endif %} 
+                </div>
+                <div class="grid items-end px-4 gap-4">
+                  <div>
+                    <p class="body-small-medium h-[40px] lg:h-[50px] line-clamp-2 mb-2 lg:mb-0">{{rif.Nombre|limit_str:50}}</p>
+                    {% if rif.FechaSorteo != None %}
+                      {% with activa=rif.FechaSorteo|RifaActiva %}
+                        {% if activa %}
+                          <label class="label-small-regular text-color-secondary">Finaliza el {{rif.FechaSorteo|date:'d M Y'}}</label>       
+                        {% else %}
+                          <label class="label-small-regular text-color-secondary">SOLD OUT · {{rif.FechaSorteo|date:'d M Y'}}</label>
+                        {% endif %}
+                      {% endwith %}
+                      {% else %}
+                      <label class="label-medium-medium text-color-secondary"> Por anunciar </label> 
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+          {% endfor %}
+        </section>
+        <!-- Paginacion -->
+        <section class="flex justify-center px-4 gap-10 items-center mb-8">
+          {% if Rifas.has_previous %}
+              <a class="flex bg-[var(--color-container-neutral-bright)] rounded-lg p-2 h-9 gap-2 cursor-pointer items-center" href="?page={{ Rifas.previous_page_number }}">
+                <svg width="24" height="24" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M11.7803 5.21967C12.0732 5.51256 12.0732 5.98744 11.7803 6.28033L8.06066 10L11.7803 13.7197C12.0732 14.0126 12.0732 14.4874 11.7803 14.7803C11.4874 15.0732 11.0126 15.0732 10.7197 14.7803L6.46967 10.5303C6.17678 10.2374 6.17678 9.76256 6.46967 9.46967L10.7197 5.21967C11.0126 4.92678 11.4874 4.92678 11.7803 5.21967Z" fill="#D1D5DB"/>
+                </svg>   
+              </a>
+            {% else %}
+              <span class="flex bg-[var(--color-container-neutral-bright)] rounded-lg p-2 h-9 gap-2 cursor-pointer items-center">
+                <svg width="24" height="24" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M11.7803 5.21967C12.0732 5.51256 12.0732 5.98744 11.7803 6.28033L8.06066 10L11.7803 13.7197C12.0732 14.0126 12.0732 14.4874 11.7803 14.7803C11.4874 15.0732 11.0126 15.0732 10.7197 14.7803L6.46967 10.5303C6.17678 10.2374 6.17678 9.76256 6.46967 9.46967L10.7197 5.21967C11.0126 4.92678 11.4874 4.92678 11.7803 5.21967Z" fill="#D1D5DB"/>
+                </svg>                       
+              </span>
+           {% endif %}
+           <div class="contenedorPaginacion" style="display: flex; flex-direction:row; gap:12px">
+           </div>
+           {% if Rifas.has_next %}
+              <a class="flex bg-[var(--color-container-neutral-bright)] rounded-lg p-2 h-9 gap-2 cursor-pointer items-center" href="?page={{ Rifas.next_page_number }}">
+                <svg width="24" height="24" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M8.21967 5.21967C8.51256 4.92678 8.98744 4.92678 9.28033 5.21967L13.5303 9.46967C13.8232 9.76256 13.8232 10.2374 13.5303 10.5303L9.28033 14.7803C8.98744 15.0732 8.51256 15.0732 8.21967 14.7803C7.92678 14.4874 7.92678 14.0126 8.21967 13.7197L11.9393 10L8.21967 6.28033C7.92678 5.98744 7.92678 5.51256 8.21967 5.21967Z" fill="#D1D5DB"/>
+                </svg>       
+             </a>
+           {% else %}
+              <span class="flex bg-[var(--color-container-neutral-bright)] rounded-lg p-2 h-9 gap-2 cursor-pointer items-center">              
+                <svg width="24" height="24" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M8.21967 5.21967C8.51256 4.92678 8.98744 4.92678 9.28033 5.21967L13.5303 9.46967C13.8232 9.76256 13.8232 10.2374 13.5303 10.5303L9.28033 14.7803C8.98744 15.0732 8.51256 15.0732 8.21967 14.7803C7.92678 14.4874 7.92678 14.0126 8.21967 13.7197L11.9393 10L8.21967 6.28033C7.92678 5.98744 7.92678 5.51256 8.21967 5.21967Z" fill="#D1D5DB"/>
+                </svg>
+             </span>
+           {% endif %}
+        </section>
+      </section>
+    {% endif %}
+    {% if Rifa == None %}
+      <h1 style="text-align: center; font-size: xxx-large;">A espera del primer sorteo...</h1>
+    {% endif %}
+  </div>
+  {% block javascript %}
+<script>
+  {% if Rifa != None %}
+
+  const porc='{{Rifa.TotalNumeros|totalPorcentaje:Rifa.TotalComprados|unlocalize}}';
+
+
+  const moveContainerElement = document.querySelectorAll('[data-container]')
+
+  if(porc<90){
+    moveContainerElement.forEach(element => {
+      
+      element.style.transform = 'translateX(-45px)'
+      
+    });
+
+  }
+
+  if(porc <1){
+    moveContainerElement.forEach(element => {
+      
+      element.style.transform = 'translateX(-40px)'
+      
+    });
+
+  }
+  
+  {% endif %}
+
+  const maxValue = parseInt('{{Rifas.paginator.num_pages}}')
+  const actualPage = parseInt('{{Rifas.number}}')
+  const moveTextElement = document.getElementById('moveText')
+  const statusBarContainerElement = document.getElementById('statusBarContainer')
+  const statusBarElement = document.getElementById('statusBar')
+
+  // Countdown Timer
+  const countdownElement = document.getElementById('regresive-count');
+  let countdownTime = 0
+  {% if Rifa != None %}
+  {% if time_remaining is None %}
+  countdownTime = 27 * 60 * 60 + 44 * 60; // Convert 27:44:00 to seconds
+  {% else %}
+  countdownTime = {{time_remaining}}; // Use the time_remaining variable
+  {% endif %}
+  {% endif %}
+
+
+  const updateCountdown = () => {
+    const hours = Math.floor(countdownTime / 3600);
+    const minutes = Math.floor((countdownTime % 3600) / 60);
+    const seconds = countdownTime % 60;
+
+    countdownElement.textContent = `${hours.toString().padStart(2, '0')} : ${minutes
+      .toString()
+      .padStart(2, '0')} : ${seconds.toString().padStart(2, '0')}`;
+
+    if (countdownTime > 0) {
+      countdownTime--;
+    } else {
+      clearInterval(countdownInterval);
+    }
+  };
+
+  const countdownInterval = setInterval(updateCountdown, 1000);
+  updateCountdown();
+  
+  //move text to not offset
+  const calculatePagination = ()=>{
+    const areaPaginacion = document.querySelectorAll('.contenedorPaginacion')
+    for(const area of areaPaginacion){
+      area.innerHTML = ''
+      if(maxValue <= 5){
+        for(let i = 1; i <= maxValue; i++){
+          const paginateNumber = document.createElement(i === actualPage ? 'span' : 'a')
+          if(i === actualPage){
+            paginateNumber.setAttribute('class',"bg-[var(--color-container-neutral-bright)] rounded-lg gap-2 h-9 w-9 flex justify-center items-center relative overflow-hidden cursor-pointer")
+            paginateNumber.innerHTML = `<div class="bg-[var(--color-container-bright] rounded-lg h-9 w-9 flex justify-center items-center" style="width:100%; height:100%;"><span>${i < 10 ? `0${i}` : i}</span></div>`
+          }else{
+            paginateNumber.href = `${window.location.pathname}?page=${i}#contenedorPaginacion`
+            paginateNumber.setAttribute('class',"bg-[var(--color-container-neutral-bright)] rounded-lg gap-2 h-9 w-9 flex justify-center items-center")
+            paginateNumber.innerHTML = i < 10 ? `0${i}` : i
+          }
+          area.appendChild(paginateNumber)
+        }
+      }else{
+        const segundo_lugar = actualPage <= 2 ? 2 : null
+        const cuarto_lugar = actualPage >= maxValue - 1 ? maxValue - 1 : null
+        const tercer_lugar = segundo_lugar === null && cuarto_lugar === null ? actualPage : segundo_lugar === null && cuarto_lugar !== null ? cuarto_lugar - 1 : segundo_lugar + 1
+        const pagination = [1, segundo_lugar,tercer_lugar, cuarto_lugar, maxValue]
+        pagination.forEach(el => {
+          const paginateNumber = document.createElement(el === actualPage || el === null ? 'span' : 'a')
+          if(el === null){
+            paginateNumber.setAttribute('class',"bg-[var(--color-container-neutral-bright)] rounded-lg gap-2 h-9 w-9 flex justify-center items-center")
+            paginateNumber.innerHTML = '...'
+          }else if(el === actualPage){
+            paginateNumber.setAttribute('class',"bg-[var(--color-container-neutral-bright)] rounded-lg gap-2 h-9 w-9 flex justify-center items-center relative overflow-hidden")
+            paginateNumber.innerHTML = `<div class="bg-[var(--color-container-bright)] rounded-lg gap-2 h-9 w-9 flex justify-center items-center" style="width:100%; height:100%;"><span>${el === null? '...' : el < 10 ? `0${el}` : el}</span></div>`
+          }else{
+            paginateNumber.href = `${window.location.pathname}?page=${el}#contenedorPaginacion`
+            paginateNumber.setAttribute('class',"bg-[var(--color-container-neutral-bright)] cursor-pointer rounded-lg gap-2 h-9 w-9 flex justify-center items-center")
+            paginateNumber.innerHTML = el < 10 ? `0${el}` : el
+    
+          }
+          area.appendChild(paginateNumber)
+        })
+      }
+    }
+  }
+  calculatePagination()
+  //validate only numbers
+  function goTo(event){
+    event?.preventDefault()
+    console.log('se ejecuta el metodo submit')
+    const inputPaginator = document.getElementById('paginatorInput')
+    const inputValue = parseInt(inputPaginator.value)
+    if(inputValue <= maxValue && inputValue >= 1){
+      console.log('se ejecuta el cambio de ruta')
+      window.location.href=`?page=${inputValue}`
+    }
+  }
+</script>
+{% endblock javascript %}
+
+  <style>
+    .contenedor{
+      width: 50%;
+      margin: auto;   
+    }  
+  </style>
+{% endblock content %}

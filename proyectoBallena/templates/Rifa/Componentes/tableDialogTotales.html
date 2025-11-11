@@ -1,0 +1,59 @@
+{% load Filter %}
+{% load static %}
+
+<div class="relative overflow-x-auto shadow-md sm:rounded-lg text-white">
+	<table class="w-full text-sm text-left">
+		<thead class="text-xs uppercase bg-colorSecundario">
+			<tr>
+				<th scope="col" class="px-6 py-3">
+					Grupo
+				</th>
+				<th scope="col" class="px-6 py-3">
+					Total Números
+				</th>
+				<th scope="col" class="px-6 py-3">
+					Total Pagado
+				</th>
+				<th scope="col" class="px-6 py-3">
+					Total Registros
+				</th>
+				<th scope="col" class="px-6 py-3">
+				</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for c in Compras %}
+			<tr class="bg-colorSecundario border-y">
+				<td class="px-6 py-4">
+					{% if grupo == '1'%}
+					{{c.idComprador__Correo}}
+					{%endif%}
+					{% if grupo == '2'%}
+					{{c.idComprador__Cedula}}
+					{%endif%}
+					{% if grupo == '3'%}
+					{{c.idComprador__Nombre}}
+					{%endif%}
+				</td>
+				<td class="px-6 py-4">
+					{{c.totalNumeros}}
+				</td>
+				<td class="px-6 py-4">
+					{{c.totalPagadoS}}$
+				</td>
+				<td class="px-6 py-4">
+					{{c.head_count}}
+				</td>
+				<td class="px-6 py-4">
+					<a class="cursor-pointer" title="Ver listado"
+						onclick="closeDialogTotal(); fecthModal('{{grupo}}', 
+                `{%if grupo == '1'%}{{c.idComprador__Correo}}{%endif%}{%if grupo == '2'%}{{c.idComprador__Cedula}}{%endif%}{%if grupo == '3'%}{{c.idComprador__Nombre}}{%endif%}`)">
+						<i class="fa-solid fa-magnifying-glass"></i>
+					</a>
+				</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+	<button type="button" onclick="closeDialogTotal()" class="btStyle btRed px-3 mt-2">Cerrar</button>
+</div>

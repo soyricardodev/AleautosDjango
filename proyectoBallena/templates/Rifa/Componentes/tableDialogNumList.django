@@ -1,0 +1,209 @@
+{% load Filter %}
+{% load static %}
+
+<div class="flex flex-1 lg:max-h-[700px] flex-col items-start text-left w-full h-[100dvh] max-h-[100dvh]">
+  <div
+    class="flex flex-1 lg:max-h-[700px] flex-col items-start text-left gap-7 pt-6 px-4 lg:px-6 w-full h-[100dvh] max-h-[100dvh]">
+    <div class="flex flex-row justify-start gap-8 items-start w-full">
+      <div class="flex flex-col gap-2 items-start grow">
+        <h3 class="title-large-medium text-color-primary grow text-left">Datos del comprador</h3>
+        <span class="body-medium-regular text-color-secondary">{{Compra.idRifa.Nombre}}</span>
+      </div>
+      <div onclick="closeDialog2()" class="flex justify-center  cursor-pointer">
+        <i class="fa fa-times text-xl p-1 text-[var(--color-icon-primary)]"></i>
+      </div>
+    </div>
+    <div class="w-full flex">
+      <ul class="flex border-b border-color-primary overflow-x-scroll hidden-scroll gap-4 w-full">
+        <li class="detalle-tab-button cursor-pointer px-4 py-2.5 text-color-brand border-b-2 border-color-brand"
+          tab="#detalle-content-tab-general">
+          <span class="label-medium-medium"> Datos de compra</span>
+        </li>
+        <li class="detalle-tab-button cursor-pointer px-4 py-2.5 text-color-secondary"
+          tab="#detalle-content-tab-boletos">
+          <span class="label-medium-medium">Boletos comprados</span>
+        </li>
+      </ul>
+    </div>
+    <div class="w-full flex flex-col flex-1 lg:flex-none justify-start overflow-scroll lg:h-[436px] pb-6">
+      <div id="detalle-content-tab-general" class="detalle-content-tab flex flex-col gap-7 shrink">
+        <div class="flex flex-col gap-5 pb-6 border-b border-color-primary">
+          <div class="flex flex-row justify-start items-center grow">
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <span class="body-large-medium text-color-secondary">Nombre</span>
+            </div>
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <span class="body-large-regular text-color-primary">{{Compra.idComprador.Nombre}}</span>
+            </div>
+          </div>
+          <div class="flex flex-row justify-start items-center grow">
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <span class="body-large-medium text-color-secondary">Cédula</span>
+            </div>
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <span class="body-large-regular text-color-primary">{{Compra.idComprador.Cedula}}</span>
+            </div>
+          </div>
+          <div class="flex flex-row justify-start items-center grow">
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <span class="body-large-medium text-color-secondary">Teléfono</span>
+            </div>
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <span class="body-large-regular text-color-primary">{{Compra.idComprador.NumeroTlf}}</span>
+            </div>
+          </div>
+          <div class="flex flex-row justify-start items-center grow">
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <span class="body-large-medium text-color-secondary">Correo electrónico</span>
+            </div>
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <span class="body-large-regular text-color-primary">{{Compra.idComprador.Correo}}</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-col gap-5">
+          <div class="flex flex-row justify-start items-center grow">
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <span class="body-large-medium text-color-secondary">Fecha</span>
+            </div>
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <span class="body-large-regular text-color-primary">{{Compra.FechaCompra | date:'Y-m-d'}}</span>
+            </div>
+          </div>
+          <div class="flex flex-row justify-start items-center grow">
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <span class="body-large-medium text-color-secondary">Tipo de pago</span>
+            </div>
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <span class="body-large-regular text-color-primary">{{Compra.MetodoPago|reversoMetodoPago}}</span>
+            </div>
+          </div>
+          <div class="flex flex-row justify-start items-center grow">
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <span class="body-large-medium text-color-secondary">Referencia</span>
+            </div>
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <span class="body-large-regular text-color-primary">{{Compra.Referencia}}</span>
+            </div>
+          </div>
+          <div class="flex flex-row justify-start items-center grow">
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <span class="body-large-medium text-color-secondary">Monto recibido</span>
+            </div>
+            <div class="flex flex-row justify-start items-center w-1/2">
+              {% if Compra.MetodoPago == 3 %}
+              <span class="body-large-regular text-color-primary">Bs. {{Compra.TotalPagado}}</span>
+              {% else %}
+              <span class="body-large-regular text-color-primary">$ {{Compra.TotalPagadoAlt}}</span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="flex flex-row justify-start items-center grow">
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <span class="body-large-medium text-color-secondary">Estatus</span>
+            </div>
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <span class="body-large-regular text-color-primary">{{Compra.Estado|reversoEstado}}</span>
+            </div>
+          </div>
+          {% if Compra.Estado == 3 %}
+          <div class="flex flex-row justify-start items-start grow">
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <span class="body-large-medium text-color-secondary">Ver comprobante</span>
+            </div>
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <a class="flex flex-row items-center justify-start gap-8 body-large-regular text-color-primary"
+                href="{% url 'Comprobante' Compra.hash %}" target="_blank">
+                <span>Enlace del comprobante</span>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    d="M15 10.8333V15.8333C15 16.2754 14.8244 16.6993 14.5118 17.0118C14.1993 17.3244 13.7754 17.5 13.3333 17.5H4.16667C3.72464 17.5 3.30072 17.3244 2.98816 17.0118C2.67559 16.6993 2.5 16.2754 2.5 15.8333V6.66667C2.5 6.22464 2.67559 5.80072 2.98816 5.48816C3.30072 5.17559 3.72464 5 4.16667 5H9.16667"
+                    stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.25" stroke-linecap="round"
+                    stroke-linejoin="round" />
+                  <path d="M12.5 2.5H17.5V7.5" stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.25"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M8.33337 11.6667L17.5 2.5" stroke="var(--color-icon-primary)" stroke-opacity="1"
+                    stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </a>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      <div id="detalle-content-tab-boletos" class="detalle-content-tab hidden flex-col gap-7 w-full h-full">
+        <div class="tickets-grid w-full pb-6">
+          {% for c in Numeros %}
+          <span class="ticket">
+            {{c.Numero}}
+          </span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% if perms.Rifa.change_compra %}
+  <div
+    class="flex flex-col lg:flex-row-reverse gap-4 justify-between items-center justify-self-end p-6 w-full border-t border-color-primary">
+    {% if Compra.Estado|reversoEstado == 'Pendiente' %}
+    <div class="flex flex-row gap-4 w-full lg:w-auto">
+      <button class="button button-outline button-small grow" type="button" onclick="rechazar('{{Compra.Id}}')">
+        <span>Rechazar</span>
+      </button>
+      {% if numsCount > 0 %}
+      <button class="button button-active button-small grow" type="button" onclick="aprobar('{{Compra.Id}}')">
+        <span>Aprobar</span>
+      </button>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% if Compra.Estado|reversoEstado == 'Pagado' %}
+    <button class="button button-active button-small w-full lg:w-auto" type="button"
+      onclick="ReenviarComprobante('{{Compra.Id}}')">
+      <span>Reenviar comprobante</span>
+    </button>
+    <a class="button button-outline button-small w-full lg:w-auto" href="{{Compra.Comprobante.url}}"
+      download="{{Compra.Comprobante.name}}">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M6.66675 14.1667L10.0001 17.5001L13.3334 14.1667" stroke="var(--color-icon-primary)" stroke-opacity="1"
+          stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M10 10V17.5" stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.5"
+          stroke-linecap="round" stroke-linejoin="round" />
+        <path
+          d="M17.4001 15.0749C18.1246 14.5655 18.6679 13.8384 18.9511 12.9992C19.2344 12.1601 19.2429 11.2525 18.9754 10.4081C18.7079 9.5638 18.1783 8.82669 17.4635 8.30375C16.7486 7.7808 15.8858 7.49925 15.0001 7.49994H13.9501C13.6994 6.52317 13.2305 5.61598 12.5785 4.84668C11.9265 4.07737 11.1085 3.46599 10.1861 3.05857C9.26363 2.65115 8.26077 2.4583 7.25301 2.49454C6.24524 2.53078 5.25883 2.79517 4.36803 3.2678C3.47723 3.74043 2.70525 4.40898 2.11022 5.22314C1.51519 6.03729 1.11261 6.97582 0.932784 7.96807C0.752958 8.96032 0.800575 9.98044 1.07205 10.9516C1.34352 11.9228 1.83178 12.8198 2.50007 13.5749"
+          stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round"
+          stroke-linejoin="round" />
+      </svg>
+      <span>Comprobante</span>
+    </a>
+    {% endif %}
+    {% if Compra.Estado|reversoEstado != 'Pagado' and Compra.Estado|reversoEstado != 'Pendiente' %}
+    <button class="button button-outline button-small w-full lg:w-auto" type="button" onclick="closeDialog2()">
+      <span>Cerrar</span>
+    </button>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+<div class="relative overflow-x-auto shadow-md sm:rounded-lg text-white">
+  Listado de numeros adquiridos por la persona {{Compra.idComprador.Nombre}} para la rifa {{Compra.idRifa.Nombre}}
+  <table class="w-full text-sm text-left">
+    <thead class="text-xs uppercase bg-colorSecundario">
+      <tr>
+        <th scope="col" class="px-6 py-3">
+          Número
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in Numeros %}
+      <tr class="bg-colorSecundario border-y">
+        <td class="px-6 py-4">
+          {{c.Numero}}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <button type="button" onclick="closeDialogNumeroList()" class="btStyle btRed px-3 mt-2">Cerrar</button>
+</div>

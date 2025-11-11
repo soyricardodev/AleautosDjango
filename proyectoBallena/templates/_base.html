@@ -1,0 +1,388 @@
+{% load compress %}
+{% load static %}
+{% load Filter %}
+
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <link rel="manifest" href="/manifest.json" /> -->
+    <meta name="keywords" content="rifa, ganar, dinero, sorteo, premios" />
+    <meta name="googlebot" content="notranslate" />
+    <meta property="og:site_name" content="Aleautos1" />
+    <meta property="og:locale" content="es_VE" />
+    <meta property="og:type" content="website" />
+    <meta name="facebook-domain-verification" content="" />
+    {% block meta %}
+    {% endblock meta %}
+    <link rel="shortcut icon" href="{% static 'img/avatar_little.png' %}" type="image/x-icon">
+    <title>Aleautos1</title>
+    {% compress css %}
+
+    <link rel="stylesheet" href="{% static 'src/output.css' %}">
+    <link rel="stylesheet" href="{% static 'src/Styles.css' %}">
+    <link href="{% static 'fontawesomefree/css/all.min.css' %}" rel="stylesheet" type="text/css">
+    <style>
+      button.swal2-confirm.swal2-styled {
+        background-color: #7066e0
+      }
+
+    </style>
+    {% endcompress %}
+    <script>
+      function initTheme() {
+        if (
+          localStorage.theme === 'dark' ||
+          (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        ) {
+          document.documentElement.classList.add('dark');
+          document?.getElementById('sunIcon')?.classList?.remove('hidden')
+          document?.getElementById('moonIcon')?.classList?.add('hidden')
+        } else {
+          document.documentElement.classList.remove('dark');
+          document?.getElementById('sunIcon')?.classList?.add('hidden')
+          document?.getElementById('moonIcon')?.classList?.remove('hidden')
+        }
+      }
+      initTheme()
+    </script>
+    <script src="{% static 'fontawesomefree/js/all.min.js' %}" defer></script>
+  </head>
+
+  <body>
+    <div
+      class="antialiased flex flex-col min-h-screen bg-[var(--color-surface-brand)] overflow-hidden pt-0">
+      <header
+        class="relative top-0 z-50 w-full" style="background: linear-gradient(259.08deg, #C42450 0%, #4E46AD 100%);">
+        <nav class="px-5 py-3 lg:max-w-[1128px] lg:mx-auto flex flex-row justify-between items-center">
+          <div class="flex flex-row items-center justify-center" id="navBar">
+            <a href="{% url 'index'  %}" class="flex items-center p-4 gap-4">
+              <img src=" {% static 'img/avatar_little.png' %}" alt="Logo"
+                class="lg:w-[32px] w-[32px] lg:h-[32px] h-[32px]" />
+              <span class="label-logo text-[var(--color-fixed-white-primary)]">Aleautos1</span>
+            </a>
+
+          </div>
+          <div class="flex gap-2 items-center">
+            <div id="changeThemeButton" class="cursor-pointer p-2">
+              <svg id="sunIcon" class="hidden" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                xmlns="http://www.w3.org/2000/svg">
+                <g clip-path="url(#clip0_8959_2447)">
+                  <path
+                    d="M12 17C14.7614 17 17 14.7614 17 12C17 9.23858 14.7614 7 12 7C9.23858 7 7 9.23858 7 12C7 14.7614 9.23858 17 12 17Z"
+                    stroke="var(--color-fixed-white-secondary)" stroke-opacity="1" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M12 1V3" stroke="var(--color-fixed-white-secondary)" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" />
+                  <path d="M12 21V23" stroke="var(--color-fixed-white-secondary)" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M4.22021 4.22L5.64021 5.64" stroke="var(--color-fixed-white-secondary)" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M18.3599 18.36L19.7799 19.78" stroke="var(--color-fixed-white-secondary)" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M1 12H3" stroke="var(--color-fixed-white-secondary)" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" />
+                  <path d="M21 12H23" stroke="var(--color-fixed-white-secondary)" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M4.22021 19.78L5.64021 18.36" stroke="var(--color-fixed-white-secondary)" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M18.3599 5.64L19.7799 4.22" stroke="var(--color-fixed-white-secondary)" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                </g>
+                <defs>
+                  <clipPath id="clip0_8959_2447">
+                    <rect width="24" height="24" fill="var(--color-fixed-white-secondary)" />
+                  </clipPath>
+                </defs>
+              </svg>
+              <svg id="moonIcon" class="" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M20.9999 12.79C20.8426 14.4922 20.2038 16.1144 19.1581 17.4668C18.1125 18.8192 16.7034 19.8458 15.0956 20.4265C13.4878 21.0073 11.7479 21.1181 10.0794 20.7461C8.41092 20.3741 6.8829 19.5345 5.67413 18.3258C4.46536 17.117 3.62584 15.589 3.25381 13.9205C2.88178 12.252 2.99262 10.5121 3.57336 8.9043C4.15411 7.29651 5.18073 5.88737 6.53311 4.84175C7.8855 3.79614 9.5077 3.15731 11.2099 3C10.2133 4.34827 9.73375 6.00945 9.85843 7.68141C9.98312 9.35338 10.7038 10.9251 11.8893 12.1106C13.0748 13.2961 14.6465 14.0168 16.3185 14.1415C17.9905 14.2662 19.6516 13.7866 20.9999 12.79Z"
+                  stroke="var(--color-fixed-white-secondary)" stroke-opacity="1" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+
+            </div>
+            <div class="w-1 h-8 border-l-2 border-[var(--color-fixed-white-border)]"></div>
+            <div class="flex gap-2 items-center bg-[#FFFFFF] rounded-full px-3 py-2">
+              <a href="https://www.instagram.com/aleautos1/" target="_blank">
+                <img src=" {% static 'img/social_icon_ig.svg' %}" alt="instagram" class="w-[24px] h-[24px]" />
+              </a>
+              <a href="https://t.me/+iE1mDrOhlW81ZmRh" target="_blank">
+                <img src=" {% static 'img/social_icon_tg.svg' %}" alt="telegram" class="w-[24px] h-[24px]" />
+              </a>
+              <a {% if whatsapp_config != None and whatsapp_config.valor != None %}
+              href="https://wa.me/{{whatsapp_config.valor}}" {% else %} href="#" {%endif%}>
+                <img src=" {% static 'img/social_icon_ws.svg' %}" alt="whatsapp" class="w-[24px] h-[24px]" />
+              </a>
+            </div>
+          </div>
+        </nav>
+      </header>
+      <div class="" id="LoaderHusky">
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+      <main class="relative pb-8">
+        <div class=" my-0">
+          {% block content %}
+          {% endblock content %}
+        </div>
+      </main>
+      <footer class="text-center bg-[var(--color-container-neutral-bright)] border-t border-color-primary" style="background: radial-gradient(78.88% 182.36% at 83.73% 6.73%, #C42450 0%, #4E46AD 100%)">
+        <section
+          class="flex flex-col py-12 px-4 lg:px-0 lg:py-16 gap-8 lg:gap-16 max-w-[100vw] lg:max-w-[1128px] lg:mx-auto">
+          <section class="flex flex-col justify-center items-center gap-8">
+            <div class="flex flex-col justify-center items-center gap-2">
+              <p class="label-overline-small text-[var(--color-fixed-white-primary)]">
+                Participa y gana
+              </p>
+              <h5 class="text-[var(--color-fixed-white-primary)] heading-large-extrabold">Tu oportunidad es ahora</h5>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-3 lg:gap-4 justify-center items-center w-full lg:w-auto">
+              {% if Rifa %}
+              <a class="button button-happy-primary button-medium w-full lg:w-auto"
+                href="{% url 'Detalles' Rifa.NombreEnlace %}">Compra rápida 🚀</a>
+              {% endif %}
+              <a class="button button-secondary button-medium w-full lg:w-auto text-[var(--color-fixed-white-primary)]" href="#">Volver arriba</a>
+            </div>
+          </section>
+          <section class="border-t border-[var(--color-fixed-white-border)] flex flex-col lg:flex-row justify-between w-full">
+            <div class="pt-5">
+              <span class="label-medium-regular text-[var(--color-fixed-white-primary)]">© 2025 Desarrollado por <a
+                  href="https://huskydevs.com"
+                  class="label-medium-special-underline text-[var(--color-fixed-white-primary)]">Husky Devs.</a></span>
+            </div>
+            <div class="pt-5 flex flex-row justify-center items-center gap-6">
+              <a href="https://www.instagram.com/aleautos1/" target="_blank">
+                <img src=" {% static 'img/footer_icon_ig.svg' %}" alt="instagram" class="w-[24px] h-[24px]"/>
+              </a>
+              <a href="https://t.me/+iE1mDrOhlW81ZmRh" target="_blank">
+                <img src=" {% static 'img/footer_icon_tg.svg' %}" alt="telegram" class="w-[24px] h-[24px]"/>
+              </a>
+              <a {% if whatsapp_config != None and whatsapp_config.valor != None %}
+              href="https://wa.me/{{whatsapp_config.valor}}" {% else %} href="#" {%endif%}>
+                <img src=" {% static 'img/footer_icon_ws.svg' %}" alt="whatsapp" class="w-[24px] h-[24px]"/>
+              </a>
+            </div>
+          </section>
+        </section>
+      </footer>
+      {% if user.is_authenticated %}
+      <div class="fixed right-6 bottom-4 group text-4xl z-99">
+        <ul class="flex flex-col gap-4">
+          <li>
+            <a href="{% url 'Dashboard' %}" class="button button-blanked button-small" aria-current="page">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round"
+                stroke-linejoin="round" class="feather feather-pie-chart">
+                <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+              </svg>
+            </a>
+          </li>
+          <li>
+            <a href="{% url 'Logout' %}" class="button button-blanked button-small" aria-current="page">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M7.5 17.5H4.16667C3.72464 17.5 3.30072 17.3244 2.98816 17.0118C2.67559 16.6993 2.5 16.2754 2.5 15.8333V4.16667C2.5 3.72464 2.67559 3.30072 2.98816 2.98816C3.30072 2.67559 3.72464 2.5 4.16667 2.5H7.5"
+                  stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <path d="M13.3335 14.1668L17.5002 10.0002L13.3335 5.8335" stroke="var(--color-icon-primary)"
+                  stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M17.5 10H7.5" stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.5"
+                  stroke-linecap="round" stroke-linejoin="round" />
+              </svg> </a>
+          </li>
+        </ul>
+
+      </div>
+      {% else %}
+      <div class="fixed right-6 bottom-4 group text-4xl z-99">
+        <a target="_blank" {% if whatsapp_config != None and whatsapp_config.valor != None %}
+          href="https://wa.me/{{whatsapp_config.valor}}" {% else %} href="#" {%endif%}
+          data-dial-toggle="speed-dial-menu-default" aria-controls="speed-dial-menu-default" aria-expanded="false"
+          class="flex items-center justify-center bg-[#1FAF38] rounded-full w-14 h-14">
+          <i class="fa-brands fa-whatsapp"></i>
+          <span class="sr-only">¡Escribenos a nuestro whatsApp!</span>
+        </a>
+      </div>
+
+      {% endif %}
+      <dialog id="terminos"
+        class="max-w-4xl min-w-[355px] p-5 mx-4 md:mx-auto bg-[var(--color-surface-brand)] text-color-primary rounded-2xl">
+        <section class="flex">
+          <div class="flex flex-col">
+            <h2 class="font-semibold text-xl">Términos y condiciones</h2>
+            <hr>
+            <article id="contenedorTextoCondiciones" class="my-4">
+              <ul class="grid gap-2 md:gap-1">
+                <li class="m-1"><span class="text-sm">1)</span> ⁠La compra mínima para poder participar son 2 números y
+                  el monto se fija en bs y no varía dentro del lapso de tiempo que se vendan los tickets.</li>
+                <li class="m-1"><span class="text-sm">2)</span> ⁠La Lotería se llama Super Gana avalada por la Lotería
+                  del Tachira 4 dígitos 10.000 números</li>
+                <li class="m-1"><span class="text-sm">3)</span> ⁠Participa cualquier personal natural mayor de edad
+                  venezolano o extranjero que resida o no en el país siempre y cuando tenga un familiar o allegado que
+                  pueda hacer presencia dentro de un lapso máximo de 60 dias.</li>
+                <li class="m-1"><span class="text-sm">4)</span> Los ganadores deberán aceptar que se difunda fotos y
+                  videos de ellos y del premio en nuestras redes sociales para corroborar la fidelidad de la misma.</li>
+              </ul>
+              <span id="finalTexto"></span>
+            </article>
+            <hr>
+            <div class="flex justify-between pt-4">
+              <button type="button" id="rechazoCondiciones"
+                class="button-blanked button-small !text-color-primary">Rechazar</button>
+              <button type="button" id="aceptoCondiciones"
+                class="button-blanked button-small !text-color-primary">Aceptar <i
+                  class="fa-solid fa-arrow-right ml-2"></i></button>
+              <button type="button" id="cerrarModal" class="button-blanked button-small"
+                onclick="closeModal()">Cerrar</button>
+            </div>
+          </div>
+        </section>
+      </dialog>
+    </div>
+
+    <script src="{% static '\JS\flowbite.min.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+    <script src="{% static '\JS\jquery-3.7.0.min.js' %}"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@24.5.1/build/css/intlTelInput.css">
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@24.5.1/build/js/intlTelInput.min.js"></script>
+    <script defer>
+      //Logica para el cambio de temas
+      const changeThemeButton = document.getElementById("changeThemeButton")
+
+      function toggleTheme() {
+        const luna = document?.getElementById('moonIcon')
+        const sol = document?.getElementById('sunIcon')
+        if (
+          localStorage.theme === 'dark' ||
+          (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        ) {
+          localStorage.setItem('theme', 'light');
+        } else {
+          localStorage.setItem('theme', 'dark');
+        }
+        document.documentElement.classList.toggle('dark')
+        luna?.classList?.toggle('hidden')
+        sol?.classList?.toggle('hidden')
+      }
+      changeThemeButton.addEventListener('click', toggleTheme)
+
+      function setLoading() {
+        let element = document.getElementById("LoaderHusky");
+        element.classList.add("lds-ring");
+
+      }
+      function stopLoading() {
+        let element = document.getElementById("LoaderHusky");
+        element.classList.remove("lds-ring");
+      }
+      function getCookie(name) {
+
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';');
+          for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+            }
+          }
+        }
+        return cookieValue;
+      }
+      //logica para los términos y condiciones
+      const modalTerminos = document.getElementById("terminos")
+      const botonAceptarTerminos = document.getElementById("aceptoCondiciones")
+      const botonRechazarTerminos = document.getElementById("rechazoCondiciones")
+      const enlaceTerminos = document.getElementById('enlaceTerminos')
+
+      const openModal = () => {
+        if (!localStorage.getItem('aceptoTerminos')) {
+          modalTerminos.showModal()
+          $("#terminos").fadeIn("fast")
+          $("#rechazoCondiciones").removeClass("hidden")
+          $("#aceptoCondiciones").removeClass("hidden")
+          $("#cerrarModal").addClass("hidden")
+        }
+      }
+
+      const openModalFooter = () => {
+        modalTerminos.showModal()
+        $("#terminos").fadeIn("fast")
+        $("#rechazoCondiciones").addClass("hidden")
+        $("#aceptoCondiciones").addClass("hidden")
+        $("#cerrarModal").removeClass("hidden")
+      }
+
+      const closeModal = () => {
+        $("#terminos").fadeOut("fast", function () {
+          modalTerminos.close()
+        });
+      }
+
+      const alAceptarCondiciones = () => {
+        localStorage.setItem('aceptoTerminos', '1')
+        closeModal()
+      }
+
+      botonAceptarTerminos.addEventListener('click', alAceptarCondiciones)
+      botonRechazarTerminos.addEventListener('click', (e) => {
+        closeModal()
+        window.location.reload()
+      })
+      enlaceTerminos?.addEventListener('click', () => {
+        openModal()
+      })
+      window.addEventListener('DOMContentLoaded', () => {
+
+        openModal()
+      })
+      //logica del observador
+      const finalTextoCondiciones = document.getElementById('finalTexto')
+      let opciones = {
+        root: document.querySelector("#contenedorTextoCondiciones"),
+        rootMargin: "0px",
+        threshold: 1.0,
+      };
+      const liberaBoton = () => {
+        //   botonAceptarTerminos.removeAttribute('disabled')
+        //Luis aca si puede poner algunas clases para que el boton se vea deshabilitado seria brutal
+      }
+      const bloqueaBoton = () => {
+        //   botonAceptarTerminos.setAttribute('disabled', true)
+        //Luis aca seria para el boton habilitado
+      }
+      const alObservar = (entradas, observador) => {
+        entradas.forEach(elemento => {
+          if (elemento.target.id === 'finalTexto' && elemento.isIntersecting) {
+            liberaBoton()
+          } else {
+            bloqueaBoton()
+          }
+
+        });
+      }
+      let observador = new IntersectionObserver(alObservar, opciones);
+      observador.observe(finalTextoCondiciones)
+
+      function focusOnCompra() {
+        let element = document.getElementById("btCompra");
+        element.focus()
+      }
+    </script>
+    {% block scripts %}
+    {% endblock scripts %}
+  </body>
+
+</html>

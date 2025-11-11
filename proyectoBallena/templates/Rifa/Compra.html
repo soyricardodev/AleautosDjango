@@ -1,0 +1,1874 @@
+{% extends "_base.html" %}
+{% load static %}
+{% load Filter %}
+{% load l10n %}
+
+
+{% block meta %}
+<meta name="description" content="{{ RifaC.Resumen }}" />
+<meta property="og:title" content="{{ RifaC.Nombre }}" />
+<meta property="og:url" content="https://aleautos1.com/Detalles/{{ RifaC.NombreEnlace }}/" />
+<meta property="og:description" content="{{ RifaC.Resumen }}" />
+<meta property="og:image" content="https://aleautos1.com{{ RifaC.Banner.url  }}" />
+{% endblock meta %}
+
+{% block content %}
+{% csrf_token %}
+
+<div class="grid xl:px-32 2xl:px-56 ">
+
+  <!-- INICIO PARTE DE CHEMITO -->
+  <!-- Piscina -->
+  <section class="mx-auto max-w-xl px-4 hidden">
+    <div class="Contenedor px-4 py-4 gap-4 w-full">
+      <div id="Botones">
+        <div id="barraBotones" class="text-center">
+          <span class="text-sm font-medium mb-2 block">Ingrese una cantidad de boletos</span>
+
+          <!-- <input id="numBoletosAdd" class="inputStyle w-1/2 text-center" placeholder="Agregar # boletos..."> -->
+          <button id="SetNumero" type="submit" class="btStyleMin btGreen ml-2">
+            <i class="fa-solid fa-cart-plus"></i>
+          </button>
+        </div>
+      </div>
+      <div class="text-center">
+
+        <input id="search_text" type="text" class="inputStyle w-1/2" placeholder="Buscar boleto...">
+        <button id="search_button" type="submit" class="btBuscar btBlue ml-2">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <span class="sr-only">Escriba el boleto que desea buscar</span>
+        </button>
+      </div>
+
+      <hr>
+      <div class="px-2 py-2 border-slate-900 border-4 border-solid bg-white/[.05] rounded-lg">
+        <div id="data_pool" class="grid grid-cols-5 sm:grid-cols-8 mx-4 lg:mx-2 gap-4">
+
+        </div>
+      </div>
+      <hr>
+      <div id="pagination">
+        <div class="flex flex-col items-center">
+          <span class="text-sm">
+            Mostrando <span class="font-semibold" id="entryInicial">1</span> to <span class="font-semibold"
+              id="entryFinal">10</span> de <span class="font-semibold" id="entryTotal">100</span>&nbsp; de Tickets
+          </span>
+          <div class="inline-flex mt-2 xs:mt-0">
+            <button id="pagination_back_btn"
+              class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gray-800 rounded-l hover:bg-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+              id="pagination_back_btn">
+              <svg aria-hidden="true" class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd"
+                  d="M7.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l2.293 2.293a1 1 0 010 1.414z"
+                  clip-rule="evenodd"></path>
+              </svg>
+              Anterior
+            </button>
+
+            <div id="paginationContainer">
+
+
+            </div>
+
+            <button id="pagination_next_btn"
+              class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gray-800 border-0 border-l border-gray-700 rounded-r hover:bg-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+              Proximo
+              <svg aria-hidden="true" class="w-5 h-5 ml-2" fill="currentColor" viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd"
+                  d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z"
+                  clip-rule="evenodd"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!--
+        <button >Atras</button>
+        <div id="pagination_numbers">
+    
+        </div>
+        <button >Siguiente</button>
+      </div>
+      <div id="pagination_legend">
+    
+      </div>
+    </div>
+  -->
+  </section>
+  <!-- FIN PARTE DE CHEMITO -->
+
+  <!-- Listado de boletos -->
+  <section class="mx-auto max-w-xl px-4">
+    <div class="Contenedor px-4 py-4 gap-4 w-full lg:min-w-[500px]">
+      <h2 class="text-center text-3xl font-bold">{{RifaC.Nombre}} </h2>
+      <div class="">
+        <div class="flex justify-start mb-1">
+          {% comment %}
+
+          <span class="text-base font-medium m-auto">{{RifaC.TotalNumeros|TotalNumeros:RifaC.TotalComprados}} de
+            {{RifaC.TotalNumeros}} boletos disponibles</span>
+            {% endcomment %}
+        </div>
+        <div class="w-full bg-gray-400 rounded-full h-5 mb-2 relative">
+          <div
+            class="bg-gradient-to-r from-green-500 via-green-600 to-green-800 h-5 rounded-full text-center text-sm font-semibold p-0.5 leading-none "
+            style="width:{{RifaC.TotalNumeros|totalPorcentaje:RifaC.TotalComprados|unlocalize}}%;" min="0" max="100">
+            <div class="absolute left-0 right-0 m-auto">
+              {{RifaC.TotalNumeros|totalPorcentaje:RifaC.TotalComprados|unlocalize}}%
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="barraBotones" class="text-center">
+        <span class="text-sm font-medium mb-2 block">Ingrese la cantidad de boletos a comprar</span>
+        <button id="RemoverNumero" class="btStyleMin btRed mr-2">
+          <i class="fa-solid fa-minus"></i>
+        </button>
+        <input id="numBoletosAdd" class="inputStyle w-1/2 text-center" placeholder="Ej: 1, 10, 100">
+        <button id="AggNumero" type="button" class="btStyleMin btGreen ml-2">
+          <i class="fa-solid fa-plus"></i>
+        </button>
+      </div>
+      <span class="text-white m-auto">
+        <span>Cantidad mínima permitida: <span class="btBlue px-2 rounded-lg" id="NumeroBoletos">0</span>
+        </span>
+      </span>
+
+      <!-- Remover -->
+      <div id="barraBotonesList" class="text-center hidden">
+        <button id="RemoverNumero" class="btStyleMin btRed mr-2">
+          <i class="fa-solid fa-minus"></i>
+        </button>
+        <button id="btRandom" class="btStyle btBlue mx-auto hidden">
+          Aleatorio
+        </button>
+        <!-- <button id="AggNumero" type="button" class="btStyleMin btGreen ml-2">
+          <i class="fa-solid fa-plus"></i>
+        </button> -->
+      </div>
+
+      <div id="Numeros" class="grid grid-cols-1 gap-4 max-h-[600px] overflow-auto text-center hidden">
+      </div>
+      <!-- Fin Remover -->
+
+      <button id="btCompra" class="btStyle btGreen mx-auto mt-0">
+        Comprar <i class="fa-solid fa-cart-shopping ml-1"></i>
+      </button>
+    </div>
+  </section>
+
+</div>
+<!--Modal Compra-->
+<dialog id="Compra" class=" max-w-4xl min-w-[355px] px-4 bg-colorSecundario text-neutral-100 mx-4 md:mx-auto">
+
+  <section id="paginaFacturacion" class="flex">
+    <form>
+
+      <div class="flex flex-col">
+        <div class="grid grid-cols-6 mb-2">
+
+          <div class="col-span-5 text-center py-1 px-4">
+            <h3 class="text-lg font-semibold">{{RifaC.Nombre}}</h3>
+            <h3 class="text-sm font-thin text-neutral-300">Fecha del Sorteo: {% if RifaC.FechaSorteo == None %} Por anunciar {% else %} {{RifaC.FechaSorteo|date:'d M Y'}} {% endif %}</h3>
+          </div>
+
+          <div class="grid items-center">
+            <img src="{% static 'img/Recurso 51.svg' %}" class="h-16" alt="Logo" />
+          </div>
+        </div>
+
+        <hr>
+        <hr>
+
+        <div class="grid gap-4 py-8 px-4 text-neutral-300">
+          <span class="text-sm font-medium"> Precio unitario por boleto: {{RifaC.Precio}} Bs. </span>
+          <span class="text-sm font-medium"> Total de boletos a comprar: <span id="ticketsSeleccionados"> </span></span>
+          <span class="text-sm font-medium hidden"> Tasa de cambio BCV del {{tasa.date |date:'Y-m-d'}}: <span id="tasaTotal">
+              {{tasa.tasa}} Bs.</span></span>
+
+
+        </div>
+
+        <hr>
+        <div class="text-end py-2">
+          <span class="mt-auto font-medium text-sm"> Total a pagar: <span id="totalPagar"></span>Bs. </span>
+        </div>
+
+        <hr>
+
+      </div>
+      <div class="text-center">
+        <span class="font-light text-neutral-500 text-xs">Al presionar continuar indicas que aceptas nuestros 
+          <a 
+            class="text-blue-500 hover:underline cursor-pointer" 
+            onclick="openModalFooter()"
+          >
+            Términos y Condiciones
+          </a>
+        </span>
+      </div>
+
+      <div class="flex flex-row ">
+
+        <button type="button" onclick="closeDialog()" class="btStyle btRed px-3 mt-2">Cancelar</button>
+
+        <button type="button" id="paginaFacturacionSiguiente" class="btStyle btBlue right-0 ml-auto px-3 mt-2"
+          type="button">
+          Continuar <i class="fa-solid fa-arrow-right ml-2"></i>
+        </button>
+      </div>
+
+    </form>
+
+  </section>
+  <section id="ComprarContent" class="hidden">
+
+
+
+    <form id="formUser">
+      <div class="flex flex-col">
+        <div class="grid grid-cols-6">
+
+          <div class="col-span-5 text-start py-1">
+            <h3 class="text-lg font-semibold">{{RifaC.Nombre}}</h3>
+            <h3 class="text-sm font-semibold text-neutral-200">Fecha del Sorteo:  {% if RifaC.FechaSorteo == None %} Por anunciar {% else %} {{RifaC.FechaSorteo|date:'d M Y'}} {% endif %}</h3>
+          </div>
+
+          <div class="text-end pb-1">
+            <img src="{% static 'img/Recurso 51.svg' %}" class="h-16" alt="Logo" />
+          </div>
+        </div>
+
+        <hr>
+        <hr>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 py-6">
+          <div class="flex flex-col">
+            <label class="inputStyleLabel">Nombre Completo</label>
+            <input type="text" id="nombreUser" required class="inputStyle w-1/2 md:w-full" placeholder="">
+          </div>
+          <div class="flex flex-col">
+            <label class="inputStyleLabel">Cedula de Identidad</label>
+            <input type="text" id="ciUser" required class="inputStyle w-1/2 md:w-full" placeholder="">
+          </div>
+          <div class="flex flex-col">
+            <label class="inputStyleLabel">Número de contacto</label>
+            <input type="tel" id="tlfUser" required class="inputStyle w-1/2 md:w-full" placeholder="">
+
+          </div>
+          <div class="flex flex-col">
+            <label class="inputStyleLabel">Correo electrónico</label>
+            <input type="email" id="correoUser" pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+.[a-zA-Z]{2,}$" required
+              class="inputStyle w-1/2  md:w-full" placeholder="">
+
+          </div>
+          <div class="flex flex-col">
+            <label class="inputStyleLabel">Dirección</label>
+            <textarea id="direccionUser" required class="inputStyle w-4/5 md:w-full" placeholder="" rows="3"></textarea>
+
+          </div>
+        </div>
+
+        <hr>
+        <hr>
+        <div class="text-center text-xs text-light mt-2 text-neutral-500">
+          <span>Todos tus datos se mantendran privados y seguros </span>
+        </div>
+        <div class="flex flex-row justify-between mt-1">
+
+          <button type="button" onclick="closeDialog()" class="btStyle btRed px-3">Cancelar</button>
+
+          <div class="flex flex-row">
+            <button type="button" id="paginaClienteRegresar" class="btStyle btBlue px-3 mr-2" type="button">
+              <i class="fa-solid fa-arrow-left mr-2"></i>
+              Regresar
+            </button>
+
+            <button type="button" id="paginaClienteSiguiente" class="btStyle btBlue px-3" type="button">
+              Continuar
+              <i class="fa-solid fa-arrow-right ml-2"></i>
+            </button>
+          </div>
+        </div>
+
+    </form>
+
+
+  </section>
+  <section id="metodoPago" class="hidden">
+
+    <div class="flex flex-col justify-center align-middle min-h-[300px]">
+      <h3 class="text-xl">Seleccione un método de pago</h3>
+      <button id="ekiipagoBt" class=" m-auto">
+        Pago Móvil
+        <img class="w-28 h-28 rounded-lg" src="{%static 'img/pagoMovil.png' %}">
+      </button>
+    </div>
+    <hr>
+    <hr>
+    <div class="flex flex-row justify-between mt-auto">
+      <button type="button" onclick="closeDialog()" class="btStyle btRed px-3">Cancelar</button>
+      <div class="flex flex-row">
+        <button type="button" id="paginaMetodosRegresar" class="btStyle btBlue px-3 mr-2" type="button">
+          <i class="fa-solid fa-arrow-left mr-2"></i>
+          Regresar
+        </button>
+      </div>
+    </div>
+  </section>
+  <section id="temporizadorContent" class="hidden">
+    <!-- Modal Header -->
+    <div class="grid grid-cols-6">
+      <div class="col-span-5 text-center py-1 px-4">
+        <h3 class="text-lg font-semibold">{{RifaC.Nombre}}</h3>
+        <h3 class="text-sm font-thin text-neutral-300">Fecha del Sorteo:  {% if RifaC.FechaSorteo == None %} Por anunciar {% else %} {{RifaC.FechaSorteo|date:'d M Y'}} {% endif %}</h3>
+      </div>
+      <div class="grid items-center mb-2">
+        <img src="{% static 'img/Recurso 51.svg' %}" class="h-16" alt="Logo" />
+      </div>
+    </div>
+    <!-- Fin Modal Header -->
+    <hr>
+    <h3 class="text-xl text-center p-5">Realizar pago</h3>
+    
+
+    <hr>
+    <h4 class="text-lg text-center">Tendrá 10 minutos para realizar el pago, de lo contrario la operación se cancelará.
+    </h4>
+    <p class="text-center">
+      Debe realizar el pago desde el banco de su preferencia en los siguientes 
+      <br>
+      <span class="count-digit font-bold">1</span>
+      <span class="count-digit font-bold">0</span>
+      <span class="separator font-bold">:</span>
+      <span class="count-digit font-bold">0</span>
+      <span class="count-digit font-bold">0</span> <i class="fa-regular fa-clock ml-2"></i>
+    </p>  
+    <hr>
+
+    <!-- Modal Body -->
+    <div class="text-center text-sm font-medium px-4 py-4 text-gray-300">
+      <p>Por favor, realice el pago móvil con los datos suministrados a continuación y luego llene los datos solicitados
+        para procesar su compra.</p>
+      <br>
+      <div class="flex flex-col gap-2 md:grid md:grid-cols-3">
+        <div class="flex flex-col md:col-span-3">
+          <h2 class="text-lg font-bold text-green-400">
+            Datos del Beneficiario
+            </label>
+        </div>
+        <div class="flex flex-col">
+          <label class="text-lg font-bold">
+            Móvil Beneficiario:
+          </label>
+          <span class="text-gray-300 font-thin">0412-133 05 48</span>
+        </div>
+        <div class="flex flex-col">
+          <label class="text-lg font-bold">
+            C.I. Beneficiario:
+          </label>
+          <span class="text-gray-300 font-thin">V-19.525.872</span>
+        </div>
+        <div class="flex flex-col">
+          <label class="text-lg font-bold">
+            Banco de Destino:
+          </label>
+          <span class="text-gray-300 font-thin"> Banco Nacional de Crédito (0191)</span>
+        </div>
+        <div class="flex flex-col md:col-span-3 hidden">
+          <label class="text-lg font-bold">
+            Tasa de cambio BCV:
+          </label>
+          <span id="tasaBCV" class="text-gray-300 font-thin">{{tasa.tasa}} BS. </span>
+        </div>
+        <div class="flex flex-col md:col-span-3">
+          <label class="text-lg font-bold">
+            Monto a pagar:
+          </label>
+          <span id="montoPagarPagoMovil" class="text-gray-300 font-bold text-xl">Bs.69,69</span>
+          <br>
+          <span>(TRANSFIERA EL <strong class="text-red-700">MONTO EXACTO</strong> CON SUS CÉNTIMOS)</span>
+        </div>
+      </div>
+
+      <!-- Remover -->
+      <p class="hidden">
+        ¡Paga fácilmente en Bs. con tu <strong class="text-neutral-100">PAGO MÓVIL</strong> interbancario de manera
+        rápida y sencilla!
+        <br>
+        <br>
+        Ingresa tu número de teléfono y cedula asociados a la cuenta bancaria que realizará el Pago Móvil.
+        <br>
+        <br>
+        Presiona <strong>CONTINUAR</strong> para vizualizar la información exacta del Pago Móvil.
+        <br>
+        <br>
+        (Es muy importante transferir el <strong class="text-red-700">MONTO EXACTO <span id="MontoEki" hidden></span>
+        </strong>
+        con sus céntimos para procesar la información).
+        <br>
+        <br>
+        Tendrá 15 minutos para realizar el pago, de lo contrario la operación se cancelará.
+      </p>
+      <!-- Fin Remover -->
+
+    </div>
+
+    <form id="temporizadorForm" method="post" enctype="multipart/form-data">
+
+      <div class="flex flex-col max-w-[450px] mx-auto py-4">
+        <div class="grid md:grid-cols-2 gap-2 md:gap-4">
+      
+          <div class="flex flex-col mx-auto w-full max-w-[217px]">
+            <label class="inputStyleLabel">Número de Referencia</label>
+            <input type="number"  onkeypress="onlyNumberKey(event)" name="referencia" id="nroReferencia" required class="inputStyle w-full" placeholder="">
+          </div>
+          <style>
+                  input[type="number"] {
+        -moz-appearance: textfield;
+      }
+      input[type="number"]::-webkit-inner-spin-button, 
+      input[type="number"]::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        margin: 0; 
+      }
+          </style>
+          <div class="flex flex-col mx-auto w-full max-w-[217px]">
+            <label class="inputStyleLabel">Fecha de Pago</label>
+            <input type="date" name="fechaPago" id="fechaCompra" required class="inputStyle w-full" placeholder="">
+          </div>
+          <div class="flex flex-col mx-auto w-full md:col-span-2">
+            <label class="inputStyleLabel">Cargar Comprobante de Pago</label>
+            <div class="md:flex md:flex-row">
+              <input id="voucher" required name="file" accept=".jpg, .png, .jpeg, .pdf"  class=" block w-full text-sm text-gray-900 border border-gray-300 
+                  rounded-lg cursor-pointer bg-gray-50 focus:outline-none" type="file">
+            </div>
+          </div>
+        </div>
+        <button type="button" id="btfinalizarCompra" class="btStyle btGreen px-3 mx-auto max-w-[200px]" type="button">
+          Finalizar Compra <i class="fa-solid fa-money-bills ml-2"></i>
+        </button>
+      </div>
+    </form>
+
+ 
+
+    <!-- Fin Modal Body -->
+    <hr>
+    <hr>
+    <div class="flex flex-row justify-between mt-1">
+      <button type="button" onclick="closeDialog()" class="btStyle btRed px-3 ml-2">Cancelar</button>
+      <div class="flex flex-row">
+   
+      </div>
+    </div>
+  </section>
+  
+
+  <section id="ekiiPagoModal" class="hidden">
+    <!-- Modal Header -->
+    <div class="grid grid-cols-6">
+      <div class="col-span-5 text-center py-1 px-4">
+        <h3 class="text-lg font-semibold">{{RifaC.Nombre}}</h3>
+        <h3 class="text-sm font-thin text-neutral-300">Fecha del Sorteo:  {% if RifaC.FechaSorteo == None %} Por anunciar {% else %} {{RifaC.FechaSorteo|date:'d M Y'}} {% endif %}</h3>
+      </div>
+      <div class="grid items-center mb-2">
+        <img src="{% static 'img/Recurso 51.svg' %}" class="h-16" alt="Logo" />
+      </div>
+    </div>
+    <!-- Fin Modal Header -->
+    <hr>
+    <hr>
+    <!-- Modal Body -->
+      <h3 class="text-xl text-center p-5">Datos del comprador</h3>
+ 
+    <form id="datosCompradorForm" method="post" enctype="multipart/form-data">
+
+      <div class="flex flex-col max-w-[450px] mx-auto py-4">
+        <div class="grid md:grid-cols-2 gap-2 md:gap-4">
+          <div class="flex flex-col mx-auto w-full max-w-[217px]">
+            <label class="inputStyleLabel">Nombre Completo Comprador</label>
+            <input type="text" name="nombre" id="nombreComprador" required class="inputStyle w-full " placeholder="">
+          </div>
+          <div class="flex flex-col mx-auto w-full max-w-[217px]">
+            <label class="inputStyleLabel">Correo Comprador</label>
+            <input type="email" name="correo" id="correoComprador" required class="inputStyle w-full " placeholder="">
+          </div>
+          <div class="flex flex-col mx-auto max-w-[217px]">
+            <label class="inputStyleLabel">Cedula de Identidad</label>
+            <input type="number" onkeypress="onlyNumberKey(event)" pattern="[0-9]*" name="cedula" id="ciComprador" required class="inputStyle w-full" placeholder="">
+          </div>
+          <div class="flex flex-col mx-auto w-full max-w-[217px]">
+            <label class="inputStyleLabel">Número de Teléfono</label>
+            <input type="tel" name="numeroTlf" id="tlfComprador" required class="inputStyle w-full" placeholder="">
+          </div>
+    
+          <style>
+                  input[type="number"] {
+        -moz-appearance: textfield;
+      }
+      input[type="number"]::-webkit-inner-spin-button, 
+      input[type="number"]::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        margin: 0; 
+      }
+          </style>
+        <label style="grid-column: span 2"><i class="fa-solid fa-circle-info"></i> Nota: Si te encuentras fuera de Venezuela, agrega el código de tu pais al número de teléfono  </label>
+      
+        </div>
+        <button type="button" id="btContinuarCompra" class="btStyle btGreen px-3 mx-auto max-w-[200px]" type="button">
+          Proceder con pago <i class="fa-solid fa-money-bills ml-2"></i>
+        </button>
+      </div>
+    </form>
+
+   
+
+    <!-- Fin Modal Body -->
+    <hr>
+    <hr>
+    <div class="flex flex-row justify-between mt-1">
+      <button type="button" onclick="closeDialog()" class="btStyle btRed px-3 ml-2">Cancelar</button>
+      <div class="flex flex-row">
+        <button type="button" id="paginaEkiiRegresar" class="btStyle btBlue px-3 mr-2" type="button">
+          <i class="fa-solid fa-arrow-left mr-2"></i>
+          Regresar
+        </button>
+      </div>
+    </div>
+  </section>
+
+
+
+
+  
+
+
+</dialog>
+<!-- Fin Modal -->
+
+<dialog id="ConsultaDialog">
+  <div id="ConsultaContent">
+    <form>
+      <input type="text" />
+      <button formmethod="dialog" type="submit">Cancel</button>
+    </form>
+
+  </div>
+</dialog>
+
+{% block javascripts %}
+
+<script>
+  //validate only numbers
+  function onlyNumberKey(evt) {
+    var theEvent = evt || window.event;
+
+// Handle paste
+if (theEvent.type === 'paste') {
+    key = event.clipboardData.getData('text/plain');
+} else {
+// Handle key press
+    var key = theEvent.keyCode || theEvent.which;
+    key = String.fromCharCode(key);
+}
+var regex = /^\d+$/;
+if( !regex.test(key) ) {
+  theEvent.returnValue = false;
+  if(theEvent.preventDefault) theEvent.preventDefault();
+}
+  }
+
+  function closeDialog() {
+    const dialog = document.getElementById("Compra")
+
+    dialog.close()
+
+  }
+  function resetModal() {
+    const sections = document.getElementById("Compra").getElementsByTagName("section")
+    const forms = document.getElementById("Compra").getElementsByTagName("form")
+    stopTimer()
+    resetTimer()
+    Orden = null
+    for (const iterator of sections) {
+      iterator.style.display = "none"
+
+    }
+
+    for (const iterator of forms) {
+      iterator.reset()
+    }
+
+    const section = document.getElementById("paginaFacturacion").style.display = "block"
+
+  }
+  async function checkEkiiDatosForm() {
+    const form = document.getElementById("ekiiDatosForm");
+
+
+    if (!form.checkValidity()) {
+      form.reportValidity()
+      return false;
+    }
+
+    let url = "{% url 'createOrder' %}"
+
+
+    let buyerF = {
+      "Banco": document.getElementById("bankEkii").value,
+      "Ci": document.getElementById("miniCiEkii").value + document.getElementById("ciEkii").value,
+      "Name": document.getElementById("nombreEkii").value,
+      "Tlf": document.getElementById("tlfEkii").value,
+      "Correo": document.getElementById("correoEkii").value,
+      "PagoUsd": ticketCount * RifaPrecio,
+      "Ref": '',
+      "PagoBs": 0
+    }
+    let userF = {
+      "Nombre": document.getElementById("nombreEkii").value,
+      "Correo": document.getElementById("correoEkii").value,
+      "Telefono": document.getElementById("tlfEkii").value,
+      "Direccion": document.getElementById("direccionUserEki").value,
+      "Ci": document.getElementById("miniCiEkii").value + document.getElementById("ciEkii").value,
+
+
+    }
+    data.User = userF
+    data.Buyer = buyerF
+    $("#Compra").fadeOut("fast", function () {
+
+    });
+    setLoading()
+    let tasaBs = await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json',
+        "X-CSRFToken": getCookie('csrftoken')
+      }
+    }).then(data => data.json()).then(response => {
+      stopLoading()
+      console.log(response.codigoHttp)
+
+      if (response.codigoHttp != 200) {
+
+        console.log("error2")
+        const dialog = document.getElementById("Compra")
+
+        dialog.close()
+
+        Swal.fire(
+          'Error',
+          response.clientMessage,
+          'error').then(function () {
+            dialog.showModal()
+            
+
+            $("#Compra").fadeIn("fast", function () {
+            })
+          })
+
+
+
+      } else {
+
+        data.Buyer.PagoBs = response.amount
+        Orden = response
+        data.Orden = response
+
+        document.getElementById("tlfCompradorEkii").innerText = buyerF.Tlf
+        document.getElementById("ciCompradorEkii").innerText = buyerF.Ci
+        let bankName = bankList.find(e => e[buyerF.Banco])
+        document.getElementById("bancoCompradorEkii").innerText = `(${buyerF.Banco}) ${bankName[buyerF.Banco]} `
+        document.getElementById("montoEkiiPago").innerText = `${response.amount} Bs`
+        //  document.getElementById("refEkii").innerText=response.orden
+
+
+        $("#Compra").fadeIn("fast", function () {
+          $("#ekiiPagoModal").fadeOut("slow", function () {
+            $("#ekiiDatos").fadeIn("fast", function () {
+
+              startTimer()
+            });
+          });
+        })
+
+
+      }
+
+
+
+
+    })
+      .catch(error => {
+        const dialog = document.getElementById("Compra")
+        dialog.close()
+        stopLoading()
+
+        console.log(error)
+        Swal.fire(
+          'Error',
+          error.message,
+          'error').then(function () {
+            dialog.showModal()
+
+            $("#Compra").fadeIn("fast", function () {
+            })
+          })
+
+      });
+  }
+
+  async function checkUserForm() {
+
+    const form = document.getElementById("formUser");
+
+
+    if (!form.checkValidity()) {
+      form.reportValidity()
+      return false;
+    }
+    let userF = {
+      "Nombre": document.getElementById("nombreUser").value,
+      "Correo": document.getElementById("correoUser").value,
+      "Telefono": document.getElementById("tlfUser").value,
+      "Direccion": document.getElementById("direccionUser").value,
+      "Ci": document.getElementById("ciUser").value,
+
+
+
+    }
+    data.User = userF
+    return true;
+  }
+  async function saveNumber() {
+    const form = document.getElementById("formUser");
+
+
+    if (!form.checkValidity()) {
+      form.reportValidity()
+      return;
+    }
+    let userF = {
+      "Nombre": document.getElementById("nombreUser").value,
+      "Correo": document.getElementById("correoUser").value,
+      "Telefono": document.getElementById("tlfUser").value,
+      "Direccion": document.getElementById("direccionUser").value,
+
+
+    }
+    data.User = userF
+
+    const url = `{% url 'CompraNumerosV2' %}`
+    $("#Compra").fadeOut("fast", function () {
+
+    });
+    setLoading()
+    await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json',
+        "X-CSRFToken": getCookie('csrftoken')
+      }
+    })
+      .then(data => {
+        stopLoading()
+        console.log(data)
+        document.getElementById("formUser").reset();
+        document.getElementById("Compra").close();
+        Swal.fire(
+          'Felicidades por tu compra',
+          `Puedes seguir comprando, para aumentar tus posibilidades,atento a tu correo para mas detalles, en las siguientes 24Hrs. tendran verificación de tu compra`,
+          'success').then(function () {
+            location.reload()
+          })
+
+        onFetch()
+        document.getElementById("Compra").close();
+
+
+
+
+      })
+      .catch(error => {
+        console.log(error)
+        stopLoading()
+
+        $("#Compra").fadeIn("fast", function () {
+        });
+
+      });
+
+  }
+  async function checkNumbers() {
+
+    const url = `{% url 'ConsultaListaV3' %}`
+    data.Numbers = ticketCount
+
+    console.log(data)
+    let returnValue = true
+    await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json',
+        "X-CSRFToken": getCookie('csrftoken')
+      }
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('data consulta listaV3', data)
+        if (data.result == false) {
+          stopLoading()
+
+          Swal.fire(
+            'Alerta',
+            data.data,
+            'warning')
+
+
+          returnValue = false
+        }
+
+      })
+      .catch(error => {
+        stopLoading()
+        console.log(error)
+        Swal.fire(
+          'Alerta',
+          "Ocurrio un error durante la consulta, intente nuevamente",
+          'error')
+        returnValue = false
+
+      });
+
+    return returnValue
+  }
+  const showDialog = async function () {
+
+    ticketCount = +inputNumbers.value
+    if (ticketCount > totalDispobiles) {
+      Swal.fire(
+        'Alerta',
+        `No hay suficientes tickets disponibles para tu compra, puedes comprar un máximo de ${totalDispobiles} tickets`,
+        'warning')
+      return
+    }
+    if (ticketCount < RifaMin) {
+      Swal.fire(
+        'Alerta',
+        `La cantidad mínima es de ${RifaMin} ticket(s)`,
+        'warning')
+      inputNumbers.classList.add("NumeroError")
+      return
+    }
+    if (ticketCount > RifaMax) {
+      Swal.fire(
+        'Alerta',
+        `La cantidad máxima es de ${RifaMax} ticket(s)`,
+        'warning')
+      inputNumbers.classList.add("NumeroError")
+      return
+    }
+    setLoading()
+    let valor = await checkNumbers()
+    stopLoading()
+
+    if (valor == false)
+      return
+    document.getElementById("ticketsSeleccionados").innerText = ticketCount
+    document.getElementById("totalPagar").innerText = ticketCount * RifaPrecio
+    document.getElementById("MontoEki").innerText = ` (${ticketCount * RifaPrecio}$)`
+
+
+    const dialog = document.getElementById("Compra")
+    resetModal()
+
+    dialog.showModal()
+  }
+
+  const showDialogConsulta = function (val) {
+    return async function () {
+      setLoading()
+      let ticket = document.getElementById(val).value
+
+      if (ticket == null || ticket == "") {
+        stopLoading()
+        return
+      }
+
+      if (Number(ticket) > RangoFinal || Number(ticket) < RangoInicial) {
+        stopLoading()
+        Swal.fire(
+          'Alerta',
+          "Ticket Fuera del Rango de la Rifa",
+          'warning'
+        )
+        return
+      }
+
+      disponible = await fetch(`{% url 'ConsultaV2'%}?rifa=${idRifa}&num=${ticket}`)
+      stopLoading()
+
+      if (disponible.status != 200) {
+        Swal.fire(
+          'Alerta',
+          "Ocurrio un error durante la consulta, intente nuevamente",
+          'error'
+        )
+      }
+
+      disponible = await disponible.json()
+
+      if (disponible.result == true) {
+        {
+          Swal.fire(
+            'Felicidades!',
+            "El Número se encuentra disponible",
+            'success'
+          )
+        }
+      } else {
+        Swal.fire(
+          'Lo sentimos!',
+          "Este Número no se encuentra disponible ",
+          'warning'
+        )
+        return
+
+
+      }
+
+      // const dialog = document.getElementById("ConsultaDialog")
+      //dialog.show()
+
+    }
+
+  }
+
+  const checkMinCompra = () => {
+    let btCompra = document.getElementById("btCompra")
+    if (inputNumbers.value < RifaMin) {
+      btCompra.classList.add("hidden")
+    }
+    if (inputNumbers.value >= RifaMin) {
+      btCompra.classList.remove("hidden")
+    }
+
+
+  }
+
+
+  function createRow(ticket = -1) {
+    return function () {
+
+
+      let num = document.getElementById("numBoletosAdd")
+      let val = num.value
+
+      if (val == null || val <= 0 || isNaN(val))
+        val = 1
+      if (val == ticketCount)
+        return
+      if (val < ticketCount) {
+        Swal.fire(
+          "Error",
+          "No puedo establecer un número de tickets menor a el número de tickets actuales ",
+          "warning"
+        )
+        return
+      }
+
+      let newAdd = val - ticketCount
+      if (val > totalRecords) {
+        Swal.fire(
+          "Error",
+          "No puedo establecer un número de tickets mayor el total de la rifa ",
+          "warning"
+        )
+        return
+      }
+
+      // for (let index = 0; index < newAdd; index++) {
+      //   ticketCount++;
+
+      //   let row = document.createElement("div");
+      //   row.id = "row" + ticketCount;
+      //   row.classList.add("row")
+
+      //   document.getElementById("Numeros").appendChild(row);
+
+      //   let button = document.createElement("button");
+      //   button.innerHTML = `<i class="fas fa-question-circle" style="color: #ffffff;"></i>`;
+      //   button.id = ticketCount;
+      //   button.classList.add("btConsulta")
+      //   button.title = "Haz click para consultar si el número esta disponible"
+
+      //   row.appendChild(button);
+      //   /*
+      //           button.addEventListener("click", function () {
+      //             alert("Button " + button.id + " was clicked");
+      //           });
+      //   */
+
+      //   let textBox = document.createElement("input");
+      //   textBox.type = "text";
+      //   textBox.maxLength = MaxLen
+      //   textBox.id = "tb" + ticketCount;
+      //   textBox.value = (ticket >= 0) ? ticket.toString() : ''
+      //   textBox.classList.add("tbConsulta")
+      //   textBox.title = "Escribe el número que deseas buscar"
+      //   button.addEventListener("click", showDialogConsulta(textBox.id))
+      //   textBox.addEventListener('blur', (e) => {
+      //     let numerosList = []
+      //     let num = e?.target?.value
+      //     let contenedoresNumeros = document.getElementById("Numeros").getElementsByTagName("input");
+      //     let repeated = 0
+      //     for (el of contenedoresNumeros) {
+      //       if (repeated > 1) {
+      //         break
+      //       }
+      //       if (el?.value?.trim() === num?.trim()) {
+      //         repeated++
+      //       }
+      //     }
+      //     if (availableNumbers.some(el => el?.Numero === num.toString().trim()) && repeated <= 1) {
+      //       textBox.classList.remove("NumeroError")
+      //     } else {
+      //       textBox.classList.add("NumeroError")
+      //     }
+
+      //   })
+      //   textBox.addEventListener('keypress', function (e) {
+      //     if (e.charCode < 48 || e.charCode > 57) {
+      //       e.preventDefault();
+      //       return
+      //     }
+      //     textBox.classList.remove("NumeroError")
+
+      //   })
+
+      //   row.appendChild(textBox);
+
+      //   let btEliminar = document.createElement("button");
+      //   btEliminar.innerHTML = "-";
+      //   btEliminar.id = "r" + ticketCount;
+      //   btEliminar.classList.add("btStyleMin", "btRed")
+      //   btEliminar.title = "Haz click para eliminar este ticket"
+      //   row.appendChild(btEliminar);
+
+      //   btEliminar.addEventListener("click", function () {
+      //     if (ticketCount > RifaMin) {
+      //       row.remove()
+      //       ticketCount--
+      //       // let spanCounter = document.getElementById("NumeroBoletos");
+      //       // spanCounter.innerText = ticketCount;
+      //       inputNumbers.value--
+      //     }
+      //     // if(ticketCount<=RifaMin){
+      //     //   let btRandom=document.getElementById("btRandom").classList.add("hidden")
+      //     //   let RemoverNumero=document.getElementById("RemoverNumero").classList.add("hidden")
+      //     // }
+      //     checkMinCompra()
+
+      //   });
+
+      // let spanCounter = document.getElementById("NumeroBoletos");
+      // spanCounter.innerText = ticketCount;
+      if (ticket > 0) {
+        inputNumbers.value = ticket
+
+      } else {
+
+        inputNumbers.value++
+      }
+
+
+      let btRandom = document.getElementById("btRandom").classList.remove("hidden")
+      let RemoverNumero = document.getElementById("RemoverNumero").classList.remove("hidden")
+      checkMinCompra()
+
+      // }
+
+
+
+    }
+  }
+
+  function removeLastRow() {
+    // let rows = document.getElementById("Numeros").getElementsByTagName("div");
+    if (inputNumbers.value > RifaMin) {
+      // let lastRow = rows[rows.length - 1];
+      // lastRow.parentNode.removeChild(lastRow);
+      // ticketCount--;
+      // let spanCounter = document.getElementById("NumeroBoletos");
+      // spanCounter.innerHTML = ticketCount;
+      inputNumbers.value--
+      if (inputNumbers.value >= RifaMin && inputNumbers.value <= RifaMax) {
+        inputNumbers.classList.remove('NumeroError')
+      }
+
+
+      // if(ticketCount<=RifaMin){
+      //   let btRandom=document.getElementById("btRandom").classList.add("hidden")
+      //     let RemoverNumero=document.getElementById("RemoverNumero").classList.add("hidden")
+      // }
+      checkMinCompra()
+    }
+
+  }
+
+  function generarNumeros() {
+
+    let contenedoresNumeros = document.getElementById("Numeros").getElementsByTagName("input");
+
+    let numerosList = []
+    for (el of contenedoresNumeros) {
+      let randomNum = getRandomInt(RangoInicial, RangoFinal).toString().padStart(zeroFill, '0')
+      while (numerosList?.some(el => el === randomNum) || !availableNumbers?.some(el => el.Numero === randomNum)) {
+        randomNum = getRandomInt(RangoInicial, RangoFinal).toString().padStart(zeroFill, '0')
+      }
+      numerosList.push(randomNum)
+    }
+
+
+    for (element of contenedoresNumeros) {
+      element.classList.remove("NumeroError")
+      element.value = numerosList.pop()
+    }
+  }
+
+  function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min) + min); // The maximum is exclusive and the minimum is inclusive
+  }
+  /***************************/
+  /* INICIO PARTE DE CHEMITO */
+  /***************************/
+  const fetchData = {
+    page: 1,
+    totalPages: 2,
+    totalRecords: 27,
+    recordsByPage: 15,
+    data: [
+      { num: 9999, taked: true },
+      { num: 9998, taked: false },
+      { num: 9997, taked: true },
+      { num: 9996, taked: false },
+      { num: 9995, taked: false },
+      { num: 9994, taked: false },
+      { num: 9993, taked: false },
+      { num: 9992, taked: false },
+      { num: 9991, taked: true },
+      { num: 9990, taked: true },
+      { num: 9989, taked: false },
+      { num: 9988, taked: false },
+      { num: 9987, taked: false },
+      { num: 9986, taked: false },
+      { num: 9985, taked: true },
+    ]
+  }
+  const searchBox = document.getElementById('search_text')
+  const searchButton = document.getElementById('search_button')
+  const pagBackButton = document.getElementById('pagination_back_btn')
+  const pagNextButton = document.getElementById('pagination_next_btn')
+  const pagNumberContainer = document.getElementById('pagination_numbers')
+  const pagLegend = document.getElementById('pagination_legend')
+  const poolContainer = document.getElementById('data_pool')
+  const inputNumbers = document.getElementById("numBoletosAdd")
+  var iti=null;
+  const inputTlF = document.getElementById("tlfComprador")
+
+  const spanMinTickets = document.getElementById("NumeroBoletos")
+  const formularioComprador = document.getElementById("datosCompradorForm")
+
+  //VARIABLES
+  let currentPage = 1
+  let tasa = parseFloat('{{tasa.tasa}}')
+  let totalDispobiles = parseInt('{{numDisp}}')
+  let totalPages = 0
+  let totalRecords = 0
+  let recordsByPage = 30
+  let idRifa = parseInt('{{RifaC.Id}}')
+  let RifaMax = parseInt('{{RifaC.MaxCompra}}')
+  let RifaMin = parseInt('{{RifaC.MinCompra}}')
+  let RifaPrecio = parseFloat('{{RifaC.Precio}}')
+  let RangoFinal = '{{RifaC.RangoFinal}}'
+  let RangoInicial = '{{RifaC.RangoInicial}}'
+  let MaxLen = RangoFinal.length
+  let ticketCount = 0;
+  let numberArray = []
+  let paginationHTML = ``
+  let legendHTML = ``
+  let numbersHTML = ``
+  let poolHTML = ``
+  let Orden = {}
+  let zeroFill = RangoFinal.toString().length
+  let availableNumbers = []
+  let bankList = [
+    {% for item in bancos %}
+  { "{{item.code}}": "{{item.name}}" },
+  {% endfor %}
+  ]
+  let data = {
+    "Rifa": idRifa,
+    "Numbers": [],
+    "User": {},
+    "Buyer": {},
+    "Orden": {}
+
+  }
+
+  document.getElementById("entryTotal").innerText = RangoFinal
+  document.getElementById("entryInicial").innerText = RangoInicial
+  document.getElementById("entryFinal").innerText = recordsByPage
+  spanMinTickets.innerText = RifaMin
+
+
+  //FUNCIONES   
+
+  const finalizar = (e) => {
+    e?.preventDefault()
+    let formTemp=document.getElementById("temporizadorForm")
+
+    if (!formTemp.checkValidity()) {
+      formTemp.reportValidity()
+      return false;
+    }
+
+    setLoading()
+    $("#Compra").fadeOut("fast", function () {
+
+});
+
+    let url = "{% url 'ComprarRifa' %}"
+    let formBody = new FormData()
+    formBody.append('csrfmiddlewaretoken', getCookie('csrftoken'))
+    formBody.append('idOrden', Orden.pk)
+    formBody.append('fechaPago', formTemp.querySelector('#fechaCompra').value)
+    formBody.append('referencia', formTemp.querySelector('#nroReferencia').value)
+    formBody.append('Cantidad', ticketCount)
+    
+    formBody.append('file', formTemp.querySelector('#voucher').files[0])
+    console.log('url', url)
+    //post form
+    let tasaBs = fetch(url, {
+      method: 'POST',
+      body: formBody,
+
+    })
+    .then(data => data.json())
+    .then(response => {
+      console.log('data', data)
+      console.log('response', response)
+      
+      if(response?.status !== 200){
+        throw new Error(response?.message || "Error de servidor")
+      }
+      // if timeout
+      if (response?.status == 502) {
+       let mensaje="El tiempo de espera se ha agotado, pero tu solicitud esta siendo procesada, atento a tu correo para mas detalles o contacta al soporte en caso de dudas."
+       Swal.fire(
+        'Ha ocurrido un problema!',
+        mensaje,
+        'error').then(function () {
+          location.reload()
+        })
+      }
+  
+      stopLoading()
+      $("#Compra").fadeIn("fast", function () {
+      })
+      console.log(data)
+      resetModal()
+      stopTimer()
+      document.getElementById("Compra").close();
+      Swal.fire(
+        'Felicidades por tu compra',
+        `Puedes seguir comprando, para aumentar tus posibilidades,atento a tu correo para mas detalles, en las siguientes 24Hrs. tendran verificación de tu compra`,
+        'success').then(function () {
+
+          location.reload()
+        })
+
+      document.getElementById("Compra").close();
+
+
+
+
+    }).catch(error => {
+        const dialog = document.getElementById("Compra")
+        dialog.close()
+        stopLoading()
+
+        console.log(error)
+        Swal.fire(
+          'Error',
+          error.message,
+          'error').then(function () {
+            dialog.showModal()
+
+            $("#Compra").fadeIn("fast", function () {
+            })
+          })
+
+      });
+
+
+
+
+
+
+
+
+
+  }
+  
+  const crearOrden = (e) => {
+    e?.preventDefault()
+    console.log(formularioComprador)
+    if (!formularioComprador.checkValidity()) {
+      formularioComprador.reportValidity()
+      return false;
+    }
+
+
+    setLoading()
+    $("#Compra").fadeOut("fast", function () {
+
+});
+
+    let url = "{% url 'createOrder' %}"
+    let formBody = new FormData()
+    formBody.append('idRifa', idRifa)
+    formBody.append('numeros', ticketCount)
+    formBody.append('csrfmiddlewaretoken', getCookie('csrftoken'))
+    formBody.append('nombre', formularioComprador.querySelector('#nombreComprador').value)
+    formBody.append('correo', formularioComprador.querySelector('#correoComprador').value)
+    formBody.append('cedula', formularioComprador.querySelector('#ciComprador').value)
+    formBody.append('numeroTlf', formularioComprador.querySelector('#tlfComprador').value)
+    console.log('url', url)
+    console.log('formData, name', formBody.get('nombre'))
+    console.log('formData, tickets', formBody.get('numeros'))
+    //post form
+    let tasaBs = fetch(url, {
+      method: 'POST',
+      body: formBody,
+
+    })
+    .then(data => data.json())
+    .then(response => {
+      console.log('data', data)
+      console.log('response', response)
+      
+      if(response?.status !== 200){
+        throw new Error(response?.message || "Error de servidor")
+      }
+      
+      stopLoading()
+      $("#Compra").fadeIn("fast", function () {
+      })
+      console.log(data)
+      Orden=JSON.parse(response?.orden)[0]
+      $("#ekiiPagoModal").fadeOut("slow", function () {
+        $("#temporizadorContent").fadeIn("fast", function () {
+          resetTimer()
+          startTimer()
+        });
+      });
+
+
+
+
+    }).catch(error => {
+        const dialog = document.getElementById("Compra")
+        dialog.close()
+        stopLoading()
+
+        console.log(error)
+        Swal.fire(
+          'Error',
+          error.message,
+          'error').then(function () {
+            dialog.showModal()
+
+            $("#Compra").fadeIn("fast", function () {
+            })
+          })
+
+      });
+  }
+  
+  const createNumber = (index, innerText, taked) => {
+    //innerText -> number
+    //index -> number
+    const numberEl = document.createElement('div')
+    numberEl.id = `number${index}`
+    if (taked) {
+      numberEl.classList.add('poolItemUsed') //Luis aca va la o las clases del boton que ya fue usado
+    }
+    else {
+      numberEl.classList.add('poolItem') //Luis aca va la o las clases del boton
+      numberEl.addEventListener('click', () => {
+        let numbersAdded = document.querySelectorAll('input.tbConsulta')
+        let alreadyExist = Object.values(numbersAdded).some(el => el.value === innerText.toString())
+
+        if (alreadyExist)
+          return
+        let contenedoresNumeros = document.getElementById("Numeros").getElementsByTagName("input");
+        for (const el of contenedoresNumeros) {
+          if (el.value.trim() == "" || el.value == null) {
+            el.value = innerText
+            el.classList.remove("NumeroError")
+
+            return
+          }
+        }
+
+        createRow(innerText)()
+      })
+    }
+    numberEl.innerText = innerText.toString()
+    poolContainer.appendChild(numberEl)
+  }
+  const renderPagination = () => {
+    let initialPag = currentPage - 5
+    let lastPag = currentPage + 5
+    while ((initialPag <= lastPag && initialPag <= totalPages)) {
+      if (initialPag >= 1) {
+        createPagItem(initialPag)
+      }
+      initialPag++
+    }
+  }
+  const onFetch = async (page = 1) => {
+    setLoading()
+    console.log('page', page)
+    let searchText = searchBox.value.trim()
+    console.log('searchText', searchText)
+    const availableNumbersAPI = await fetch(`{%url 'ConsultaTodosV2' %}?rifa=${idRifa}`).then(response => response.json());
+    availableNumbers = availableNumbersAPI?.result?.data
+
+    //aqui va esta consulta
+    const response = await fetch(`{%url 'RifaNumbersV2' %}?page=${page}&contain=${searchText}&idRifa=${idRifa}&recordsByPage=${recordsByPage}`).then(response => response.json());
+    //const response = fetchData
+    //read json response
+    currentPage = response.page
+    totalPages = response.total_pages
+
+
+    //v1
+    // numberArray = response.data
+
+    //v2
+    numberArray = response.data
+    recordsByPage = response.recordsByPage
+    totalRecords = response.cantidadRegistros
+
+    clearData()
+    numberArray.forEach((el, index) => {
+      createNumber(index, el.Numero, false)
+    })
+    //renderPagination()
+    pagNextButton.addEventListener('click', goToNext)
+    pagBackButton.addEventListener('click', goToBack)
+    // pagLegend.innerText = totalRecords ? `${recordsByPage} de ${totalRecords}` : ''
+    document.getElementById("entryTotal").innerText = totalRecords
+    document.getElementById("entryInicial").innerText = (recordsByPage * (currentPage - 1)) + 1
+    document.getElementById("entryFinal").innerText = (recordsByPage * currentPage)
+    if (currentPage == totalPages)
+      document.getElementById("entryFinal").innerText = totalRecords
+    stopLoading()
+  }
+
+
+  const createPagItem = (index) => {
+    const pagItem = document.createElement('span')
+    pagItem.id = `paginationItem${index}`
+    pagItem.innerText = index.toString()
+    pagItem.classList.add('paginationItem') //Luis aca va la o las clases que le vayas a meter a esto
+    pagItem.addEventListener('click', () => {
+      onFetch(index)
+    })
+    pagNumberContainer.appendChild(pagItem)
+  }
+  const clearData = () => {
+    while (poolContainer.childElementCount > 0) {
+      poolContainer.removeChild(poolContainer.lastChild)
+    }
+
+    /* while (pagNumberContainer.childElementCount > 0) {
+       pagNumberContainer.removeChild(pagNumberContainer.lastChild)
+     } */
+  }
+  const goToNext = async () => {
+
+    if ((currentPage + 1 > totalPages))
+      return
+    await onFetch(currentPage + 1)
+
+
+
+
+  }
+  const goToBack = async () => {
+
+    if ((currentPage - 1) < 1)
+      return
+    await onFetch(currentPage - 1)
+
+
+
+
+  }
+  inputNumbers.value = RifaMin
+  searchButton.addEventListener('click', () => { onFetch(1) })
+  inputNumbers.addEventListener('input', function () {
+    const replacedStr = (this.value.trim() === "") ? "" : parseInt(this.value.replace(/[^\d]/g, ""))
+    if (isNaN(replacedStr)) {
+      this.value = "";
+
+    } else {
+      this.value = replacedStr;
+    }
+    if (this.value >= RifaMin && this.value <= RifaMax) {
+      this.classList.remove('NumeroError')
+    } else {
+      this.classList.add('NumeroError')
+    }
+  })
+
+const validarArchivo=()=> {
+
+  const fileInput = document.getElementById("voucher")
+  if (fileInput.files[0].size > 2097152) {
+        //close modal
+        document.getElementById("Compra").close();
+
+        Swal.fire(
+          'Error',
+          "El archivo no puede ser mayor a 2MB",
+          'error').then(function () {
+            //open modal
+            document.getElementById("Compra").showModal();
+          })
+          fileInput.value = ""
+        return
+      }
+      // valida file types
+      let allowedExtensions = /(\.jpg|\.jpeg|\.png|\.pdf)$/i;
+      if (!allowedExtensions.exec(fileInput.value)) {
+        document.getElementById("Compra").close();
+
+        Swal.fire(
+          'Error',
+          "El archivo debe ser una imagen o pdf",
+          'error').then(function () {
+            //open modal
+            document.getElementById("Compra").showModal();
+          })
+          fileInput.value = ""
+        return
+
+      }
+    }
+  /****************************/
+  /****FIN PARTE DE CHEMITO****/
+  /****************************/
+
+
+  document.addEventListener("DOMContentLoaded", async function (event) {
+    
+
+
+
+    document.addEventListener("keydown", (function (objEvent) {
+      if (objEvent.keyCode == 9) {  //tab pressed
+        objEvent.preventDefault(); // stops its action
+      }
+    }))
+    //await onFetch()
+
+    const txttlfUser = document.getElementById("tlfComprador")
+    txttlfUser.addEventListener('keypress', function (e) {
+      if ((e.charCode < 48 || e.charCode > 57) && e.charCode!=43) {
+        e.preventDefault();
+        return
+      }
+    })
+
+    const btComp = document.getElementById("btCompra")
+    btComp.addEventListener("click", showDialog)
+
+    const btFinalizar = document.getElementById("btfinalizarCompra")
+    btFinalizar.addEventListener("click", finalizar)
+    formularioComprador.addEventListener("submit", finalizar)
+
+    const fileInput = document.getElementById("voucher")
+    fileInput.addEventListener("change", validarArchivo)
+
+    const btRemove = document.getElementById("RemoverNumero")
+    btRemove.addEventListener("click", removeLastRow)
+
+
+    const btAdd = document.getElementById("AggNumero")
+    btAdd.addEventListener("click", function () {
+
+      ticket = -1
+      ticketCount++;
+
+      inputNumbers.value++;
+      if (inputNumbers.value >= RifaMin && inputNumbers.value <= RifaMax) {
+        inputNumbers.classList.remove('NumeroError')
+      }
+
+
+      let btRandom = document.getElementById("btRandom").classList.remove("hidden")
+      let RemoverNumero = document.getElementById("RemoverNumero").classList.remove("hidden")
+      checkMinCompra()
+
+    })
+
+    // btAdd.onclick=createRow(   document.getElementById("numBoletosAdd").value )
+
+    document.getElementById("SetNumero").addEventListener("click", createRow())
+
+
+
+    const btRandom = document.getElementById("btRandom")
+    btRandom.addEventListener("click", generarNumeros)
+/*
+    document.getElementById("paginaFacturacionSiguiente").addEventListener("click", () => {
+      $("#paginaFacturacion").fadeOut("slow", function () {
+        $("#metodoPago").fadeIn("fast", function () {
+        });
+      });
+    })*/
+
+    document.getElementById("paginaClienteRegresar").addEventListener("click", () => {
+      $("#ComprarContent").fadeOut("slow", function () {
+        $("#paginaFacturacion").fadeIn("fast", function () {
+        });
+      });
+    })
+
+    //document.getElementById("paginaClienteSiguiente").addEventListener("click", saveNumber )
+
+    document.getElementById("paginaClienteSiguiente").addEventListener("click", async () => {
+
+      //tengo que revertir la condicion
+      let check = await checkUserForm()
+      if (check == false) {
+        return
+      }
+
+      $("#ComprarContent").fadeOut("slow", function () {
+        $("#metodoPago").fadeIn("fast", function () {
+        });
+      });
+    })
+
+    document.getElementById("paginaMetodosRegresar").addEventListener("click", () => {
+      $("#metodoPago").fadeOut("slow", function () {
+        $("#paginaFacturacion").fadeIn("fast", function () {
+        });
+      });
+    })
+    
+/*
+    document.getElementById("btContinuarCompra").addEventListener("click", () => {
+      $("#ekiiPagoModal").fadeOut("slow", function () {
+        $("#temporizadorContent").fadeIn("fast", function () {
+          resetTimer()
+          startTimer()
+        });
+      });
+    })
+*/
+    
+    document.getElementById("btContinuarCompra").addEventListener("click", crearOrden)
+
+
+    //document.getElementById("ekiipagoBt").addEventListener("click", async () => {
+    //
+    
+    document.getElementById("paginaFacturacionSiguiente").addEventListener("click", async () => {
+      document.getElementById("Compra").close();
+          setLoading()
+
+          disponible = await fetch(`{% url 'ConsultaV2'%}?rifa=${idRifa}&num=${ticketCount}`)
+
+          if (disponible.status != 200) {
+            stopLoading()
+
+            Swal.fire(
+              'Alerta',
+              "Ocurrio un error durante la consulta, intente nuevamente",
+              'error'
+            ).then(function () {
+              //open modal
+              document.getElementById("Compra").showModal();
+            })
+            return
+          }
+
+         disponible = await disponible.json()
+            if(disponible.result==false){
+              stopLoading()
+
+              Swal.fire(
+                'Alerta',
+                disponible.data,
+                'warning'
+              ).then(function () {
+                //open modal
+                document.getElementById("Compra").showModal();
+              })
+            return
+
+            }
+            stopLoading()
+            document.getElementById("Compra").showModal();
+
+
+      $("#paginaFacturacion").fadeOut("slow", function () {
+        $("#ekiiPagoModal").fadeIn("fast", function () {
+          //close modal 
+         
+
+          //clean form
+          document.getElementById("datosCompradorForm").reset()
+         // document.getElementById("montoPagarPagoMovil").innerText = `${(ticketCount * RifaPrecio * (tasa || 1)).toFixed(2)} Bs`
+          document.getElementById("montoPagarPagoMovil").innerText = `${(ticketCount * RifaPrecio)} Bs`
+
+        });
+      });
+    })
+    
+
+
+    document.getElementById("paginaEkiiRegresar").addEventListener("click", () => {
+      $("#ekiiPagoModal").fadeOut("slow", function () {
+        $("#paginaFacturacion").fadeIn("fast", function () {
+        });
+      });
+    })
+
+
+
+    const inicializar = createRow
+    // let num = document.getElementById("numBoletosAdd").value = RifaMin
+    inicializar(RifaMin)
+
+  });
+  const defaultValue = 10 * 60;
+
+  // variable to the time
+  var countDownTime = defaultValue;
+  // variable to store time interval
+  var timerID;
+
+  // Variable to track whether timer is running or not
+  var isStopped = true;
+
+  // Function calculate time string
+  const findTimeString = () => {
+    var minutes = String(Math.trunc(countDownTime / 60));
+    var seconds = String(countDownTime % 60);
+    if (minutes.length === 1) {
+      minutes = "0" + minutes;
+    }
+    if (seconds.length === 1) {
+      seconds = "0" + seconds;
+    }
+    return minutes + seconds;
+  };
+
+  // Select Every Count Container
+  const countContainer = document.querySelectorAll(".count-digit");
+
+  // Function to display coundown on screen
+  const renderTime = () => {
+    const time = findTimeString();
+    countContainer.forEach((count, index) => {
+      count.innerHTML = time.charAt(index);
+    });
+  };
+
+  const startTimer = () => {
+    if (isStopped) {
+      isStopped = false;
+      timerID = setInterval(runCountDown, 1000);
+    }
+  };
+
+  const runCountDown = () => {
+    // decrement time
+    countDownTime -= 1;
+    //Display updated time
+    renderTime();
+
+    // timeout on zero
+    if (countDownTime === 0) {
+      stopTimer();
+      countDownTime = defaultValue;
+      document.getElementById("formUser").reset();
+      document.getElementById("Compra").close();
+      Swal.fire(
+        'Su compra ha sido cancelada',
+        `Expiro el tiempo limite para completar la compra, intente nuevamente`,
+        'warning')
+      resetModal()
+      onFetch()
+      document.getElementById("Compra").close();
+    }
+  };
+
+  // Function to stop Countdown
+  const stopTimer = () => {
+    isStopped = true;
+    if (timerID) {
+      clearInterval(timerID);
+    }
+  };
+
+
+  const resetTimer = () => {
+    stopTimer();
+    countDownTime = defaultValue;
+    renderTime();
+  };
+</script>
+
+{% endblock javascripts %}
+
+{% block css %}
+<style>
+  dialog {
+    z-index: 10;
+    margin-top: 10px;
+    background: white;
+    border: none;
+    border-radius: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 15px;
+  }
+
+.iti{
+  color:black
+}
+  dialog::backdrop {
+    background-color: hsla(251, 10%, 43%, 0.526);
+  }
+
+</style>
+
+{% endblock css %}
+
+{% endblock content %}

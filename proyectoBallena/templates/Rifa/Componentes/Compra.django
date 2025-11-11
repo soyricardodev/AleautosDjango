@@ -1,0 +1,2326 @@
+{% load static %}
+{% load Filter %}
+{% load l10n %}
+
+{% csrf_token %}
+
+<div class="grid px-0 radius-rounded gap-y-5 max-w-[100vw] pb-6 lg:max-w-[500px]">
+  {% if percent_config == None %}
+  <div id="chartContainer" class="flex lg:hidden flex-col justify-center items-stretch px-5 mx-5 lg:mx-0 gap-3 lg:border-0 {% if detalle %} bg-[var(--color-button-tonal-fixed)] {% else %} bg-[var(--color-container-neutral-dim)] {% endif %} rounded-xl p-4">
+    <span class="label-medium-medium {% if detalle %} text-[var(--color-fixed-white-primary)] {% endif %}">
+      Boletos vendidos
+    </span>
+    <div class="{% if detalle %} bg-[var(--color-button-tonal-fixed)] {% else %} bg-[var(--color-container-neutral-contrast)] {% endif %} w-full h-7 rounded-full">
+      <div class="bg-[var(--color-container-brand-earth)] h-7 rounded-full flex justify-center items-center" style="min-width: 80px; width: {{RifaC.TotalNumeros|totalPorcentaje:RifaC.TotalComprados|unlocalize}}%">
+        <span class="body-small-medium text-[var(--color-fixed-black-primary)]">{{RifaC.TotalNumeros|totalPorcentaje:RifaC.TotalComprados|unlocalize}}%</span>
+      </div>
+    </div>
+  </div>
+  {% elif percent_config != None and percent_config.valor == None %}
+  <div id="chartContainer" class="flex lg:hidden flex-col justify-center items-stretch px-5 lg:px-0 gap-3 lg:border-0">
+    <span class="label-medium-medium {% if detalle %} text-[var(--color-fixed-white-primary)] {% endif %}">
+      Boletos vendidos
+    </span>
+    <div class="{% if detalle %} bg-[var(--color-button-tonal-fixed)] {% else %} bg-[var(--color-container-neutral-contrast)] {% endif %} w-full h-7 rounded-full">
+      <div class="bg-[var(--color-container-brand-earth)] h-7 rounded-full flex justify-center items-center" style="min-width: 80px; width: {{RifaC.TotalNumeros|totalPorcentaje:RifaC.TotalComprados|unlocalize}}%">
+        <span class="body-small-medium text-[var(--color-fixed-black-primary)]">{{RifaC.TotalNumeros|totalPorcentaje:RifaC.TotalComprados|unlocalize}}%</span>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  <div class="flex lg:hidden flex-col lg:flex-row gap-5 justify-stretch items-stretch w-full md:px-0 px-5 ">
+    <button id="btCompraAlt" class="button button-happy-primary {% if RifaC|isSoldOut and not perms.Rifa.add_compra %} button-disabled {% endif %} button-large w-full" {% if RifaC|isSoldOut and not perms.Rifa.add_compra %} disabled {% endif %}>
+      {% if RifaC|isSoldOut and not perms.Rifa.add_compra %}
+        <span>Numeros agotados</span>
+      {% else %}
+        <span>Compra rápida 🚀</span>
+      {% endif %}
+    </button>
+  </div>
+  <div class="flex flex-col items-start justify-center gap-4 px-5 lg:px-0">
+    {% if RifaC.FechaSorteo != None %}
+    <div class="flex flex-row justify-between items-center w-full">
+      <div class="flex overflow-hidden shadow-xs {% if detalle %} rounded-full bg-[var(--color-button-tonal-fixed)] text-[var(--color-fixed-white-primary)] {% else %} bg-[var(--color-elevations-01dp)] border border-[var(--color-border-brand)] radius-rounded {% endif %}">
+        <div class="flex flex-row gap-2 items-center justify-center bg-[var(--color-components-suggestion-cards-container)] px-3 py-1">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z" stroke="{% if detalle %} var(--color-fixed-white-secondary) {%else%} var(--color-icon-brand){%endif%}" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16 2V6" stroke="{% if detalle %} var(--color-fixed-white-secondary) {%else%} var(--color-icon-brand){%endif%}" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M8 2V6" stroke="{% if detalle %} var(--color-fixed-white-secondary) {%else%} var(--color-icon-brand){%endif%}" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M3 10H21" stroke="{% if detalle %} var(--color-fixed-white-secondary) {%else%} var(--color-icon-brand){%endif%}" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="body-small-regular">
+           
+            {% if RifaC.FechaSorteo == None %} Por anunciar {% else %} {{RifaC.FechaSorteo|date:"DATE_FORMAT"}} {% endif %}
+          </span>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    <h2 class="heading-large-extrabold {% if detalle %} text-[var(--color-fixed-white-primary)] {% endif %}">{{RifaC.Nombre}} </h2>
+  </div>
+  
+  <div id="compraBox" class="flex pb-6 md:px-0 px-5 flex-col justify-center items-center gap-6 radius-rounded">
+    <div class="hidden lg:flex flex-col lg:flex-row gap-5 justify-stretch items-stretch w-full">
+      <button id="btCompra" class="button button-happy-primary {% if RifaC|isSoldOut and not perms.Rifa.add_compra %} button-disabled {% endif %} button-large w-full" {% if RifaC|isSoldOut and not perms.Rifa.add_compra %} disabled {% endif %}>
+        {% if RifaC|isSoldOut and not perms.Rifa.add_compra %}
+          <span>Numeros agotados</span>
+        {% else %}
+          <span>Compra rápida 🚀</span>
+        {% endif %}
+      </button>
+    </div>
+    {% if not RifaC|isSoldOut or perms.Rifa.add_compra %}
+    {% if verifica and detalle %}
+    <button id="btCompraSelect" class="button button-happy-secondary button-large w-full">
+      <span>Ver mis boletos comprados</span>
+    </button>
+    {% endif %}
+    {% endif %}
+    {% if verifica and detalle %}
+    <div class="flex flex-row w-full gap-6">
+        {% if detalle %}
+        <a href="{% url 'Detalles' detalle %}" class="button button-text button-large w-full">
+          <span class="text-[var(--color-fixed-white-primary)]">Ver detalles de la rifa</span>
+        </a>
+      {% endif %}
+    </div>
+    {% endif %}
+    
+  </div>
+  {% if percent_config == None %}
+  <div id="chartContainer" class="hidden lg:flex flex-col justify-center items-stretch px-5 mx-5 lg:mx-0 gap-3 lg:border-0 {% if detalle %} bg-[var(--color-button-tonal-fixed)] {% else %} bg-[var(--color-container-neutral-dim)] {% endif %} rounded-xl p-4">
+    <span class="label-medium-medium {% if detalle %} text-[var(--color-fixed-white-primary)] {% endif %}">
+      Boletos vendidos
+    </span>
+    <div class="{% if detalle %} bg-[var(--color-button-tonal-fixed)] {% else %} bg-[var(--color-container-neutral-contrast)] {% endif %} w-full h-7 rounded-full">
+      <div class="bg-[var(--color-container-brand-earth)] h-7 rounded-full flex justify-center items-center" style="min-width: 80px; width: {{RifaC.TotalNumeros|totalPorcentaje:RifaC.TotalComprados|unlocalize}}%">
+        <span class="body-small-medium text-[var(--color-fixed-black-primary)]">{{RifaC.TotalNumeros|totalPorcentaje:RifaC.TotalComprados|unlocalize}}%</span>
+      </div>
+    </div>
+  </div>
+  {% elif percent_config != None and percent_config.valor == None %}
+  <div id="chartContainer" class="hidden lg:flex flex-col justify-center items-stretch px-5 lg:px-0 gap-3 lg:border-0">
+    <span class="label-medium-medium {% if detalle %} text-[var(--color-fixed-white-primary)] {% endif %}">
+      Boletos vendidos
+    </span>
+    <div class="{% if detalle %} bg-[var(--color-button-tonal-fixed)] {% else %} bg-[var(--color-container-neutral-contrast)] {% endif %} w-full h-7 rounded-full">
+      <div class="bg-[var(--color-container-brand-earth)] h-7 rounded-full flex justify-center items-center" style="min-width: 80px; width: {{RifaC.TotalNumeros|totalPorcentaje:RifaC.TotalComprados|unlocalize}}%">
+        <span class="body-small-medium text-[var(--color-fixed-black-primary)]">{{RifaC.TotalNumeros|totalPorcentaje:RifaC.TotalComprados|unlocalize}}%</span>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!--Modal Compra-->
+<dialog id="Compra" class="w-screen h-[100dvh] m-0 md:m-auto max-h-screen max-w-full md:max-w-[560px] md:h-auto md:max-h-[750px] bg-[var(--color-container-neutral-bright)] md:radius-rounded text-color-primary">
+  <section id="paginaSeleccionaBoletos" class="flex flex-col p-4 md:p-10 gap-6 md:gap-8 h-full">
+    <div class="border-b border-color-primary pb-6 gap-4 flex flex-row">
+      <img src="{{RifaC.Banner.url}}" alt="Rifa" class="w-[72px] h-[72px] rounded-xl object-cover">
+      <div class="flex flex-col gap-1">
+        <span class="label-medium-regular text-[var(--color-text-secondary)]">Participarás por</span>
+        <p class="body-medium-regular text-[var(--color-text-primary)]">{{RifaC.Nombre}}</p>
+      </div>
+    </div>
+    <div class="flex flex-row justify-start gap-8 items-center md:items-start">
+      <h3 class="heading-small-medium text-color-primary grow text-center">Selecciona los boletos</h3>
+    </div>
+    <div id="randomNumberBox" class="flex flex-col gap-6">
+      <p class="body-small-regular text-color-secondary">Selecciona la cantidad de boletos que deseas comprar. El mínimo es {{RifaC.MinCompra}}.</p>
+      <div class="flex flex-col gap-4 md:gap-6">
+        <input id="numBoletosAdd" class="input text-center w-full" placeholder="Ej: 1, 10,100">
+        <div id="barraBotones" class="flex flex-row justify-center items-center gap-4 w-full">
+          <button id="RemoverNumero" class="button-blanked button-large w-full">
+            <i class="fa-solid fa-minus text-lg p-0.5"></i>
+          </button>
+          <button id="AggNumero" type="button" class="button-blanked button-large w-full">
+            <i class="fa-solid fa-plus text-lg p-0.5"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="flex flex-col justify-end grow gap-6">
+      <div class="flex flex-row gap-5">
+        <button class="button-outline button-medium close-button">
+          <i class="fa-solid fa-arrow-left mr-2 text-[var(--color-icon-secondary)]"></i>
+          <span>Volver</span>
+        </button>
+        <button class="button-happy-primary button-medium w-full" id="paginaSeleccionaBoletosSiguiente">
+          <i class="fa-solid fa-credit-card mr-2 text-[var(--color-icon-secondary)]"></i>
+          <span>Ir a pagar</span>
+        </button>
+      </div>
+    </div>
+  </section>
+  <section id="paginaEligeBoletos" class="flex flex-col p-4 md:p-10 gap-6 md:gap-8 h-full">
+    <div class="flex flex-row justify-start gap-8 items-center md:items-start">
+      <h3 class="heading-small-medium text-color-primary grow text-center">Selecciona los boletos</h3>
+    </div>
+    <div class="flex flex-col">
+      <div class="flex flex-row justify-start items-start gap-2 pb-2">
+        <p class="body-small-medium text-[var(--color-text-secondary)]">Tus números de la suerte</p>
+      </div>
+      <div class="bg-[var(--color-components-suggestion-cards-container)] radius-rounded flex flex-row px-2 py-4 gap-2 justify-start">
+        <div class="w-6 h-6">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="var(--color-icon-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 16V12" stroke="var(--color-icon-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 8H12.01" stroke="var(--color-icon-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="body-small-regular text-color-primary">
+          Indica el número de {{RifaC.RangoFinal|number_len}} cifras que te gusta y dale click en Añadir. Así sabrás si aún está disponible. Recuerda que deben ser mínimo {{RifaC.MinCompra}} boletos.
+        </span>      
+      </div>
+      <div id="searchNumberBox" class="flex flex-col gap-8 pt-4">
+        <div class="flex flex-row items-center gap-4">
+          <div class="flex flex-col-reverse gap-2 w-full relative">
+            <input type="text" name="numeros" id="inputBuscadorNumeros" required class="input w-full" placeholder="Buscar un número" style="padding-left: 44px;">
+            <span id="iconInputBuscadorNumeros" class="absolute bottom-5 left-4">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9.16667 15.8333C12.8486 15.8333 15.8333 12.8486 15.8333 9.16667C15.8333 5.48477 12.8486 2.5 9.16667 2.5C5.48477 2.5 2.5 5.48477 2.5 9.16667C2.5 12.8486 5.48477 15.8333 9.16667 15.8333Z" stroke="var(--color-icon-secondary)" stroke-opacity="1" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M17.5 17.5L13.875 13.875" stroke="var(--color-icon-secondary)" stroke-opacity="1" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>                
+            </span>
+          </div>
+          <button id="buttonBuscadorNumeros" class="button-tonal button-medium">
+            <span>Añadir</span>
+          </button>
+        </div>
+        <div id="selectedNumbersContainer" class="grid grid-cols-3 gap-4">
+        </div>
+      </div>
+    </div>
+    <div class="flex flex-col justify-end grow gap-6">
+      <div class="flex flex-row gap-5">
+        <button class="button-tonal button-medium close-button">
+          <span>Cancelar</span>
+        </button>
+        <button class="button-primary-red button-medium w-full" id="paginaEligeBoletosSiguiente">
+          <span>Ir a pagar</span>
+        </button>
+      </div>
+    </div>
+  </section>
+  <section id="paginaFacturacion" class="hidden flex-col p-4 md:p-10 gap-6 md:gap-8 h-full" style="background: linear-gradient(259.08deg, #C42450 0%, #4E46AD 100%);">
+    <div class="flex flex-row justify-center gap-2 items-center md:items-start w-full">
+      <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+      <div class="bg-[var(--color-container-neutral-contrast)] w-2 h-2 rounded-full"></div>
+      <div class="bg-[var(--color-container-neutral-contrast)] w-2 h-2 rounded-full"></div>
+      <div class="bg-[var(--color-container-neutral-contrast)] w-2 h-2 rounded-full"></div>
+    </div>
+    <div class="flex flex-row justify-start gap-8 items-center md:items-start">
+      <h3 class="heading-small-medium text-[var(--color-fixed-white-primary)] grow text-center">Elige el método de pago para continuar</h3>
+    </div>
+    <div class="flex flex-col gap-4 md:gap-6">
+      <div class="flex flex-col pb-4 md:pb-8 gap-4 md:gap-6 border-b border-[var(--color-fixed-white-secondary)]">
+        <div class="flex flex-row justify-between items-start">
+          <span class="w-[100px] md:w-1/2 label-medium-regular text-[var(--color-fixed-white-primary)]">
+            Precio por boleto
+          </span>
+          <span class="label-medium-regular text-[var(--color-fixed-white-primary)]">
+            Bs. {{RifaC.Precio}}
+          </span>
+        </div>
+        <div class="flex flex-row justify-between items-start">
+          <span class="w-[100px] md:w-1/2 label-medium-regular text-[var(--color-fixed-white-primary)]">
+            Cantidad de boletos
+          </span>
+          <span id="ticketsSeleccionados" class="label-medium-regular text-[var(--color-fixed-white-primary)]"></span>
+        </div>
+      </div>
+      <div class="flex flex-row justify-between items-start">
+        <span class="w-[100px] md:w-1/2 label-medium-regular text-[var(--color-fixed-white-primary)]">
+          Total a pagar
+        </span>
+        <span class="label-medium-regular text-[var(--color-fixed-white-primary)]">
+          Bs. <span id="totalPagar"></span>
+        </span>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div class="hidden flex-row border border-[var(--color-fixed-white-primary)] rounded-lg p-4 cursor-pointer" id="botonPagoZelle">
+        <div class="flex flex-col gap-2">
+          <svg width="20" height="20" class="w-6 h-6" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 0.833252V19.1666" stroke="var(--color-fixed-white-primary)" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M14.1667 4.16675H7.91667C7.14312 4.16675 6.40125 4.47404 5.85427 5.02102C5.30729 5.568 5 6.30987 5 7.08341C5 7.85696 5.30729 8.59883 5.85427 9.14581C6.40125 9.69279 7.14312 10.0001 7.91667 10.0001H12.0833C12.8569 10.0001 13.5987 10.3074 14.1457 10.8544C14.6927 11.4013 15 12.1432 15 12.9167C15 13.6903 14.6927 14.4322 14.1457 14.9791C13.5987 15.5261 12.8569 15.8334 12.0833 15.8334H5" stroke="var(--color-fixed-white-primary)" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg> 
+          <div class="flex flex-col gap-1">
+            <span class="body-medium-semibold text-[var(--color-fixed-white-primary)]">Zelle</span>
+            {% comment %} <span class="label-small-regular text-[var(--color-text-secondary)]">Mínimo 10 boletos</span> {% endcomment %}
+          </div>
+
+        </div>
+        <i class="fa-solid fa-arrow-right mr-2 text-[var(--color-fixed-white-primary)]"></i>
+      </div>
+      <div class="flex flex-row border border-[var(--color-fixed-white-primary)] rounded-lg p-4 cursor-pointer" id="botonPagoBinance">
+        <div class="flex flex-col gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="var(--color-fixed-white-primary)" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bitcoin-icon lucide-bitcoin"><path d="M11.767 19.089c4.924.868 6.14-6.025 1.216-6.894m-1.216 6.894L5.86 18.047m5.908 1.042-.347 1.97m1.563-8.864c4.924.869 6.14-6.025 1.215-6.893m-1.215 6.893-3.94-.694m5.155-6.2L8.29 4.26m5.908 1.042.348-1.97M7.48 20.364l3.126-17.727"/></svg>
+          <div class="flex flex-col gap-1">
+            <span class="body-medium-semibold text-[var(--color-fixed-white-primary)]">Binance</span>
+            {% comment %} <span class="label-small-regular text-[var(--color-text-secondary)]">Mínimo 10 boletos</span> {% endcomment %}
+          </div>
+
+        </div>
+        <i class="fa-solid fa-arrow-right mr-2 text-[var(--color-fixed-white-primary)]"></i>
+      </div>
+      <div class="hidden flex-row border border-[var(--color-fixed-white-primary)] rounded-lg p-4 cursor-pointer" id="botonPagoZinli">
+        <div class="flex flex-col gap-2">
+          <i class="fa-solid fa-z w-[20px] h-[20px]  text-[var(--color-fixed-white-primary)]"></i>
+          <div class="flex flex-col gap-1">
+            <span class="body-medium-semibold text-[var(--color-fixed-white-primary)]">Zinli</span>
+            {% comment %} <span class="label-small-regular text-[var(--color-text-secondary)]">Mínimo {{RifaC.MinCompra}} boletos</span> {% endcomment %}
+          </div>
+
+        </div>
+        <i class="fa-solid fa-arrow-right mr-2 text-[var(--color-fixed-white-primary)]"></i>
+      </div>
+      <div class="flex flex-row border border-[var(--color-fixed-white-primary)] rounded-lg p-4 cursor-pointer" id="botonPagoMovil">
+        <div class="flex flex-col gap-2">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14.1666 1.66675H5.83329C4.91282 1.66675 4.16663 2.41294 4.16663 3.33341V16.6667C4.16663 17.5872 4.91282 18.3334 5.83329 18.3334H14.1666C15.0871 18.3334 15.8333 17.5872 15.8333 16.6667V3.33341C15.8333 2.41294 15.0871 1.66675 14.1666 1.66675Z" stroke="var(--color-fixed-white-primary)" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 15H10.0083" stroke="var(--color-fixed-white-primary)" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="flex flex-col gap-1">
+            <span class="body-medium-semibold text-[var(--color-fixed-white-primary)]">Pago móvil</span>
+            {% comment %} <span class="label-small-regular text-[var(--color-text-secondary)]">Mínimo {{RifaC.MinCompra}} boletos</span> {% endcomment %}
+          </div>
+        </div>
+        <i class="fa-solid fa-arrow-right mr-2 text-[var(--color-fixed-white-primary)]"></i>
+      </div>
+    </div>
+    <div class="flex flex-col justify-end grow gap-6">
+      <span class="body-small-regular text-[var(--color-fixed-white-primary)] text-center pt-0 md:pt-8">Al seleccionar un método de pago declaras haber leído y aceptado nuestros  
+        <a class="body-small-bold text-[var(--color-fixed-white-primary)] cursor-pointer" onclick="openModalFooter()">
+          Términos y condiciones.
+        </a>
+      </span>
+      <div class="flex flex-row gap-5 w-full">
+        <button id="buttonVolverPaginaFacturacion" class="button-tonal button-medium w-full">
+          <i class="fa-solid fa-arrow-left mr-2 text-[var(--color-fixed-white-primary)]"></i>
+          <span class="text-[var(--color-fixed-white-primary)]">Volver</span>
+        </button>
+      </div>
+      
+    </div>
+  </section>
+  <section id="whatsappModal" class="hidden flex-col p-4 md:p-10 gap-6 md:gap-8 h-full">
+    <div  class="flex flex-col justify-center gap-4 items-center pt-20 md:pt-2">
+      <a id="linkGoWhatsapp" {% if whatsapp_config != None and whatsapp_config.valor != None %} href="https://wa.me/{{whatsapp_config.valor}}"{% else %} href="#" {%endif%}>
+        <svg width="24" height="24" class="w-10 h-10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0 24L1.687 17.837C0.646 16.033 0.099 13.988 0.1 11.891C0.103 5.335 5.438 0 11.993 0C15.174 0.001 18.16 1.24 20.406 3.488C22.651 5.736 23.887 8.724 23.886 11.902C23.883 18.459 18.548 23.794 11.993 23.794C10.003 23.793 8.042 23.294 6.305 22.346L0 24ZM6.597 20.193C8.273 21.188 9.873 21.784 11.989 21.785C17.437 21.785 21.875 17.351 21.878 11.9C21.88 6.438 17.463 2.01 11.997 2.008C6.545 2.008 2.11 6.442 2.108 11.892C2.107 14.117 2.759 15.783 3.854 17.526L2.855 21.174L6.597 20.193ZM17.984 14.729C17.91 14.605 17.712 14.531 17.414 14.382C17.117 14.233 15.656 13.514 15.383 13.415C15.111 13.316 14.913 13.266 14.714 13.564C14.516 13.861 13.946 14.531 13.773 14.729C13.6 14.927 13.426 14.952 13.129 14.803C12.832 14.654 11.874 14.341 10.739 13.328C9.856 12.54 9.259 11.567 9.086 11.269C8.913 10.972 9.068 10.811 9.216 10.663C9.35 10.53 9.513 10.316 9.662 10.142C9.813 9.97 9.862 9.846 9.962 9.647C10.061 9.449 10.012 9.275 9.937 9.126C9.862 8.978 9.268 7.515 9.021 6.92C8.779 6.341 8.534 6.419 8.352 6.41L7.782 6.4C7.584 6.4 7.262 6.474 6.99 6.772C6.718 7.07 5.95 7.788 5.95 9.251C5.95 10.714 7.015 12.127 7.163 12.325C7.312 12.523 9.258 15.525 12.239 16.812C12.948 17.118 13.502 17.301 13.933 17.438C14.645 17.664 15.293 17.632 15.805 17.556C16.376 17.471 17.563 16.837 17.811 16.143C18.059 15.448 18.059 14.853 17.984 14.729Z" fill="#25D366"/>
+        </svg>
+      </a>
+      <h3 class="heading-small-medium text-color-primary grow text-center">Serás redirigido a un chat de WhatsApp</h3>
+      <p class="body-medium-regular text-color-secondary text-center">Uno de nuestros asesores te atenderá.</p>
+      <p class="body-medium-regular text-color-secondary text-center"><span id="countDownWhatsapp">5</span> s</p>
+      </div>
+    <div class="flex flex-col justify-end grow">
+      <button class="button-tonal button-medium" id="buttonBackWhatsapp">
+        <i class="fa-solid fa-arrow-left mr-2 text-color-secondary"></i>
+        <span>Volver</span>
+      </button>
+    </div>
+  </section>
+  <section id="ekiiPagoModal" class="hidden flex-col p-4 md:p-10 gap-6 md:gap-8 h-full">
+    <div class="flex flex-row justify-center gap-2 items-center md:items-start w-full">
+      <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+      <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+      <div class="bg-[var(--color-container-neutral-contrast)] w-2 h-2 rounded-full"></div>
+      <div class="bg-[var(--color-container-neutral-contrast)] w-2 h-2 rounded-full"></div>
+    </div>
+    <div class="flex flex-row justify-start gap-8 items-center md:items-start">
+      <h3 class="heading-small-medium text-color-primary grow text-center">Indica tus datos</h3>
+    </div>
+    <form id="datosCompradorForm" method="post" enctype="multipart/form-data" class="flex flex-col gap-6">
+      <div class="flex flex-col-reverse gap-2 w-full">
+        <input type="text" name="nombre" id="nombreComprador" required class="input w-full " placeholder="Escribe tu nombre completo">
+        <label class="label-medium-medium">Nombre Completo</label>
+      </div>
+      <div class="flex flex-row justify-end items-end gap-4">
+        <div class="flex flex-col-reverse gap-2">
+          <select name="" id="" name="ente" id="enteComprador" class="input">
+            <option value="V" selected>V</option>
+            <option value="E">E</option>
+            <option value="J">J</option>
+            <option value="G">G</option>
+          </select>
+          <label class="label-medium-medium">Cédula</label>
+        </div>
+        <input type="number" onkeypress="onlyNumberKey(event, 9)" pattern="[0-9]*" name="cedula" id="ciComprador" required class="input w-full" placeholder="Escribe tu cédula">
+      </div>
+      <div class="flex flex-col-reverse gap-2 w-full">
+        <input type="tel" name="numeroTlf" id="tlfComprador" required class="input w-full" placeholder="Escribe tu teléfono">
+        <label class="label-medium-medium">Número de Teléfono</label>
+      </div>
+      <div class="flex flex-col-reverse gap-2 w-full">
+        <input type="email" name="correo" id="correoComprador" required class="input w-full " placeholder="Escribe tu correo electrónico">
+        <label class="label-medium-medium">Correo Comprador</label>
+      </div>
+      <div class="hidden flex-col-reverse gap-2 w-full">
+        <span class="label-medium-medium"><i class="fa fa-info-circle" aria-hidden="true"></i>
+          Recuerda añadir el código de area a tu número de teléfono</span>
+      </div>
+    </form>
+    <div class="flex flex-col justify-end grow">
+      <div class="flex flex-row gap-4">
+        <button type="button" id="paginaEkiiRegresar" class="button-outline button-medium" type="button">
+          <i class="fa-solid fa-arrow-left mr-2 text-color-secondary"></i>
+          <span>Volver</span>
+        </button>
+        <button type="button" id="btContinuarCompra" class="button-happy-primary button-medium w-full" type="button">
+          <span>Continuar</span>
+        </button>
+      </div>
+    </div>
+  </section>
+  <section id="temporizadorContent" class="hidden flex-col p-4 md:p-10 gap-6 md:gap-8 h-full">
+    
+    <div class="flex flex-col gap-4 items-center md:items-start text-center md:text-left w-full">
+      <div class="flex flex-row justify-center gap-2 items-center md:items-start w-full">
+        <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+        <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+        <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+        <div class="bg-[var(--color-container-neutral-contrast)] w-2 h-2 rounded-full"></div>
+      </div>
+      <div class="flex flex-row justify-start gap-8 items-center md:items-start w-full">
+        <h3 class="heading-small-medium text-color-primary grow text-center">Realiza el pago móvil</h3>
+      </div>
+      <p class="body-small-regular text-color-secondary">Tienes <span class="body-small-semibold text-color-secondary">5 minutos para realizar y reportar el pago</span> o la operación se cancelará. En la parte de abajo te dejo mis datos para que realices el pago móvil.</p>
+      <div class="flex flex-row items-center md:items-start text-center md:text-left justify-center gap-2">
+        <svg width="25" height="24" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M13 11.7923V7.5C13 7.35833 12.952 7.23958 12.856 7.14375C12.76 7.04792 12.6411 7 12.4993 7C12.3574 7 12.2388 7.04792 12.1433 7.14375C12.0478 7.23958 12 7.35833 12 7.5V11.8787C12 11.9809 12.0186 12.0799 12.0558 12.1757C12.0929 12.2714 12.1551 12.3628 12.2423 12.45L15.7923 16C15.8859 16.0937 16.0007 16.1437 16.1365 16.15C16.2725 16.1563 16.3937 16.1063 16.5 16C16.6063 15.8937 16.6595 15.7758 16.6595 15.6463C16.6595 15.5168 16.6063 15.3988 16.5 15.2923L13 11.7923ZM12.5033 21C11.2588 21 10.0887 20.7638 8.993 20.2915C7.8975 19.8192 6.9445 19.1782 6.134 18.3685C5.3235 17.5588 4.68192 16.6067 4.20925 15.512C3.73642 14.4175 3.5 13.2479 3.5 12.0033C3.5 10.7588 3.73617 9.58867 4.2085 8.493C4.68083 7.3975 5.32183 6.4445 6.1315 5.634C6.94117 4.8235 7.89333 4.18192 8.988 3.70925C10.0825 3.23642 11.2521 3 12.4967 3C13.7413 3 14.9113 3.23617 16.007 3.7085C17.1025 4.18083 18.0555 4.82183 18.866 5.6315C19.6765 6.44117 20.3181 7.39333 20.7908 8.488C21.2636 9.5825 21.5 10.7521 21.5 11.9967C21.5 13.2413 21.2638 14.4113 20.7915 15.507C20.3192 16.6025 19.6782 17.5555 18.8685 18.366C18.0588 19.1765 17.1067 19.8181 16.012 20.2908C14.9175 20.7636 13.7479 21 12.5033 21ZM12.5 20C14.7167 20 16.6042 19.2208 18.1625 17.6625C19.7208 16.1042 20.5 14.2167 20.5 12C20.5 9.78333 19.7208 7.89583 18.1625 6.3375C16.6042 4.77917 14.7167 4 12.5 4C10.2833 4 8.39583 4.77917 6.8375 6.3375C5.27917 7.89583 4.5 9.78333 4.5 12C4.5 14.2167 5.27917 16.1042 6.8375 17.6625C8.39583 19.2208 10.2833 20 12.5 20Z" fill="var(--color-icon-primary)" fill-opacity="1"/>
+        </svg>
+        <span class="body-small-regular text-color-secondary">
+          <span class="count-digit">0</span>
+          <span class="count-digit">5</span>
+          <span class="separator">:</span>
+          <span class="count-digit">0</span>
+          <span class="count-digit">0</span> 
+          <span> min.</span>
+        </span>
+      </div>
+    </div>
+    <div class="flex flex-col gap-4 md:gap-6">
+      <div class="flex flex-col-reverse gap-2 w-full">
+        <div class="relative">
+          <input id="montoPagarPagoMovil" type="text" name="monto" disabled value="" class="input w-full relative">
+          <span id="copyValue" class="copyInput">Copiar</span>
+        </div>
+        <label for="montoPagarPagoMovil" class="text-color-secondary label-medium-medium">Monto exacto a pagar</label>
+      </div>
+      <div class="bg-[var(--color-components-suggestion-cards-container)] radius-rounded flex flex-row px-2 py-4 gap-2 justify-start border border-[var(--color-border-brand)]">
+        <div class="w-6 h-6">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 16V12" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 8H12.01" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="body-small-regular text-color-brand">
+          Asegúrate de pagar el monto exacto que te indicamos. De lo contrario no podremos validar la operación.
+        </span>      
+      </div>
+    </div>
+    <div class="flex flex-col">
+      <div class="flex flex-row w-full gap-4 py-3">
+        <span class="label-medium-medium text-color-secondary w-[100px]">Banco</span>
+        <span class="grow label-medium-regular text-color-primary">Banesco (0134)</span>
+      </div>
+      <div class="flex flex-row w-full gap-4 py-3">
+        <span class="label-medium-medium text-color-secondary w-[100px]">Teléfono</span>
+        <span class="grow label-medium-regular text-color-primary">04127470479</span>
+        <div id="copyPhoneContainer" class="cursor-pointer">
+          <i id="copyPhone" class="fa-regular fa-copy text-color-brand"></i>
+        </div>
+      </div>
+      <div class="flex flex-row w-full gap-4 py-3">
+        <span class="label-medium-medium text-color-secondary w-[100px]">Cedula</span>
+        <span class="grow label-medium-regular text-color-primary">V31541350</span>
+        <div id="copyCedulaContainer" class="cursor-pointer">
+          <i id="copyCedula" class="fa-regular fa-copy text-color-brand"></i>
+        </div>
+      </div>
+    </div>
+    <div class="flex flex-col justify-end grow">
+      <button class="button-happy-primary button-medium" id="btContinuarCopiar">
+        <span>Reportar pago</span>
+      </button>
+    </div>
+  </section>
+  <section id="temporizadorContentZelle" class="hidden flex-col p-4 md:p-10 gap-6 md:gap-8 h-full">
+    
+    <div class="flex flex-col gap-4 items-center md:items-start text-center md:text-left">
+      <div class="flex flex-row justify-center gap-2 items-center md:items-start w-full">
+        <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+        <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+        <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+        <div class="bg-[var(--color-container-neutral-contrast)] w-2 h-2 rounded-full"></div>
+      </div>
+      <div class="flex flex-row justify-start gap-8 items-center md:items-start w-full">
+        <h3 class="heading-small-medium text-color-primary grow text-center">Realiza el pago por Zelle</h3>
+      </div>
+      <p class="body-small-regular text-color-secondary">Tienes <span class="body-small-semibold text-color-secondary">5 minutos para realizar y reportar el pago</span> o la operación se cancelará. En la parte de abajo te dejo mis datos para que realices el pago.</p>
+      <div class="flex flex-row items-center md:items-start text-center md:text-left justify-center gap-2">
+        <svg width="25" height="24" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M13 11.7923V7.5C13 7.35833 12.952 7.23958 12.856 7.14375C12.76 7.04792 12.6411 7 12.4993 7C12.3574 7 12.2388 7.04792 12.1433 7.14375C12.0478 7.23958 12 7.35833 12 7.5V11.8787C12 11.9809 12.0186 12.0799 12.0558 12.1757C12.0929 12.2714 12.1551 12.3628 12.2423 12.45L15.7923 16C15.8859 16.0937 16.0007 16.1437 16.1365 16.15C16.2725 16.1563 16.3937 16.1063 16.5 16C16.6063 15.8937 16.6595 15.7758 16.6595 15.6463C16.6595 15.5168 16.6063 15.3988 16.5 15.2923L13 11.7923ZM12.5033 21C11.2588 21 10.0887 20.7638 8.993 20.2915C7.8975 19.8192 6.9445 19.1782 6.134 18.3685C5.3235 17.5588 4.68192 16.6067 4.20925 15.512C3.73642 14.4175 3.5 13.2479 3.5 12.0033C3.5 10.7588 3.73617 9.58867 4.2085 8.493C4.68083 7.3975 5.32183 6.4445 6.1315 5.634C6.94117 4.8235 7.89333 4.18192 8.988 3.70925C10.0825 3.23642 11.2521 3 12.4967 3C13.7413 3 14.9113 3.23617 16.007 3.7085C17.1025 4.18083 18.0555 4.82183 18.866 5.6315C19.6765 6.44117 20.3181 7.39333 20.7908 8.488C21.2636 9.5825 21.5 10.7521 21.5 11.9967C21.5 13.2413 21.2638 14.4113 20.7915 15.507C20.3192 16.6025 19.6782 17.5555 18.8685 18.366C18.0588 19.1765 17.1067 19.8181 16.012 20.2908C14.9175 20.7636 13.7479 21 12.5033 21ZM12.5 20C14.7167 20 16.6042 19.2208 18.1625 17.6625C19.7208 16.1042 20.5 14.2167 20.5 12C20.5 9.78333 19.7208 7.89583 18.1625 6.3375C16.6042 4.77917 14.7167 4 12.5 4C10.2833 4 8.39583 4.77917 6.8375 6.3375C5.27917 7.89583 4.5 9.78333 4.5 12C4.5 14.2167 5.27917 16.1042 6.8375 17.6625C8.39583 19.2208 10.2833 20 12.5 20Z" fill="var(--color-icon-primary)" fill-opacity="1"/>
+        </svg>
+        <span class="body-small-regular text-color-secondary">
+          <span class="count-digit-2">0</span>
+          <span class="count-digit-2">5</span>
+          <span class="separator">:</span>
+          <span class="count-digit-2">0</span>
+          <span class="count-digit-2">0</span> 
+          <span> min.</span>
+        </span>
+      </div>
+    </div>
+    <div class="flex flex-col gap-4 md:gap-6">
+      <div class="flex flex-col-reverse gap-2 w-full">
+        <div class="relative">
+          <input id="montoPagarZelle" type="text" name="monto" disabled value="" class="input w-full relative">
+          <span id="copyValueZelle" class="copyInput">Copiar</span>
+        </div>
+        <label for="montoPagarZelle" class="text-color-secondary label-medium-medium">Monto exacto a pagar</label>
+      </div>
+      <div class="bg-[var(--color-components-suggestion-cards-container)] radius-rounded flex flex-row px-2 py-4 gap-2 justify-start border border-[var(--color-border-brand)]">
+        <div class="w-6 h-6">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 16V12" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 8H12.01" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="body-small-regular text-color-brand">
+          Asegúrate de pagar el monto exacto que te indicamos. De lo contrario no podremos validar la operación.
+        </span>      
+      </div>
+    </div>
+    <div class="flex flex-col">
+      <div class="flex flex-row w-full gap-4 py-3">
+        <span class="label-medium-medium text-color-secondary w-[100px]">Correo electrónico</span>
+        <span class="grow label-medium-regular text-color-primary">luisangelamauhad5@gmail.com</span>
+        <div id="copyCorreoZelleContainer" class="cursor-pointer">
+          <i id="copyCorreoZelle" class="fa-regular fa-copy text-color-brand"></i>
+        </div>
+      </div>
+    </div>
+    <div class="flex flex-col justify-end grow">
+      <button class="button-happy-primary button-medium" id="btContinuarCopiarZelle">
+        <span>Reportar pago</span>
+      </button>
+    </div>
+  </section>
+  <section id="temporizadorContentBinance" class="hidden flex-col p-4 md:p-10 gap-6 md:gap-8 h-full">
+    
+    <div class="flex flex-col gap-4 items-center md:items-start text-center md:text-left">
+      <div class="flex flex-row justify-center gap-2 items-center md:items-start w-full">
+        <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+        <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+        <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+        <div class="bg-[var(--color-container-neutral-contrast)] w-2 h-2 rounded-full"></div>
+      </div>
+      <div class="flex flex-row justify-start gap-8 items-center md:items-start w-full">
+        <h3 class="heading-small-medium text-color-primary grow text-center">Realiza el pago por Binance</h3>
+      </div>
+      <p class="body-small-regular text-color-secondary">Tienes <span class="body-small-semibold text-color-secondary">5 minutos para realizar y reportar el pago</span> o la operación se cancelará. En la parte de abajo te dejo mis datos para que realices el pago.</p>
+      <div class="flex flex-row items-center md:items-start text-center md:text-left justify-center gap-2">
+        <svg width="25" height="24" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M13 11.7923V7.5C13 7.35833 12.952 7.23958 12.856 7.14375C12.76 7.04792 12.6411 7 12.4993 7C12.3574 7 12.2388 7.04792 12.1433 7.14375C12.0478 7.23958 12 7.35833 12 7.5V11.8787C12 11.9809 12.0186 12.0799 12.0558 12.1757C12.0929 12.2714 12.1551 12.3628 12.2423 12.45L15.7923 16C15.8859 16.0937 16.0007 16.1437 16.1365 16.15C16.2725 16.1563 16.3937 16.1063 16.5 16C16.6063 15.8937 16.6595 15.7758 16.6595 15.6463C16.6595 15.5168 16.6063 15.3988 16.5 15.2923L13 11.7923ZM12.5033 21C11.2588 21 10.0887 20.7638 8.993 20.2915C7.8975 19.8192 6.9445 19.1782 6.134 18.3685C5.3235 17.5588 4.68192 16.6067 4.20925 15.512C3.73642 14.4175 3.5 13.2479 3.5 12.0033C3.5 10.7588 3.73617 9.58867 4.2085 8.493C4.68083 7.3975 5.32183 6.4445 6.1315 5.634C6.94117 4.8235 7.89333 4.18192 8.988 3.70925C10.0825 3.23642 11.2521 3 12.4967 3C13.7413 3 14.9113 3.23617 16.007 3.7085C17.1025 4.18083 18.0555 4.82183 18.866 5.6315C19.6765 6.44117 20.3181 7.39333 20.7908 8.488C21.2636 9.5825 21.5 10.7521 21.5 11.9967C21.5 13.2413 21.2638 14.4113 20.7915 15.507C20.3192 16.6025 19.6782 17.5555 18.8685 18.366C18.0588 19.1765 17.1067 19.8181 16.012 20.2908C14.9175 20.7636 13.7479 21 12.5033 21ZM12.5 20C14.7167 20 16.6042 19.2208 18.1625 17.6625C19.7208 16.1042 20.5 14.2167 20.5 12C20.5 9.78333 19.7208 7.89583 18.1625 6.3375C16.6042 4.77917 14.7167 4 12.5 4C10.2833 4 8.39583 4.77917 6.8375 6.3375C5.27917 7.89583 4.5 9.78333 4.5 12C4.5 14.2167 5.27917 16.1042 6.8375 17.6625C8.39583 19.2208 10.2833 20 12.5 20Z" fill="var(--color-icon-primary)" fill-opacity="1"/>
+        </svg>
+        <span class="body-small-regular text-color-secondary">
+          <span class="count-digit-3">0</span>
+          <span class="count-digit-3">5</span>
+          <span class="separator">:</span>
+          <span class="count-digit-3">0</span>
+          <span class="count-digit-3">0</span> 
+          <span> min.</span>
+        </span>
+      </div>
+    </div>
+    <div class="flex flex-col gap-4 md:gap-6">
+      <div class="flex flex-col-reverse gap-2 w-full">
+        <div class="relative">
+          <input id="montoPagarBinance" type="text" name="monto" disabled value="" class="input w-full relative">
+          <span id="copyValueBinance" class="copyInput">Copiar</span>
+        </div>
+        <label for="montoPagarBinance" class="text-color-secondary label-medium-medium">Monto exacto a pagar</label>
+      </div>
+      <div class="bg-[var(--color-components-suggestion-cards-container)] radius-rounded flex flex-row px-2 py-4 gap-2 justify-start border border-[var(--color-border-brand)]">
+        <div class="w-6 h-6">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 16V12" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 8H12.01" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="body-small-regular text-color-brand">
+          Asegúrate de pagar el monto exacto que te indicamos. De lo contrario no podremos validar la operación.
+        </span>      
+      </div>
+    </div>
+    <div class="flex flex-col">
+      <div class="flex flex-row w-full gap-4 py-3">
+        <span class="label-medium-medium text-color-secondary w-[100px]">Correo electrónico</span>
+        <span class="grow label-medium-regular text-color-primary">boxandlabel2@gmail.com</span>
+        <div id="copyCorreoBinanceContainer" class="cursor-pointer">
+          <i id="copyCorreoBinance" class="fa-regular fa-copy text-color-brand"></i>
+        </div>
+      </div>
+    </div>
+    <div class="flex flex-col justify-end grow">
+      <button class="button-happy-primary button-medium" id="btContinuarCopiarBinance">
+        <span>Reportar pago</span>
+      </button>
+    </div>
+  </section>
+  <section id="temporizadorContentZinli" class="hidden flex-col p-4 md:p-10 gap-6 md:gap-8 h-full">
+    
+    <div class="flex flex-col gap-4 items-center md:items-start text-center md:text-left">
+      <div class="flex flex-row justify-center gap-2 items-center md:items-start w-full">
+        <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+        <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+        <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+        <div class="bg-[var(--color-container-neutral-contrast)] w-2 h-2 rounded-full"></div>
+      </div>
+      <div class="flex flex-row justify-start gap-8 items-center md:items-start w-full">
+        <h3 class="heading-small-medium text-color-primary grow text-center">Realiza el pago por Zinli</h3>
+      </div>
+      <p class="body-small-regular text-color-secondary">Tienes <span class="body-small-semibold text-color-secondary">5 minutos para realizar y reportar el pago</span> o la operación se cancelará. En la parte de abajo te dejo mis datos para que realices el pago.</p>
+      <div class="flex flex-row items-center md:items-start text-center md:text-left justify-center gap-2">
+        <svg width="25" height="24" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M13 11.7923V7.5C13 7.35833 12.952 7.23958 12.856 7.14375C12.76 7.04792 12.6411 7 12.4993 7C12.3574 7 12.2388 7.04792 12.1433 7.14375C12.0478 7.23958 12 7.35833 12 7.5V11.8787C12 11.9809 12.0186 12.0799 12.0558 12.1757C12.0929 12.2714 12.1551 12.3628 12.2423 12.45L15.7923 16C15.8859 16.0937 16.0007 16.1437 16.1365 16.15C16.2725 16.1563 16.3937 16.1063 16.5 16C16.6063 15.8937 16.6595 15.7758 16.6595 15.6463C16.6595 15.5168 16.6063 15.3988 16.5 15.2923L13 11.7923ZM12.5033 21C11.2588 21 10.0887 20.7638 8.993 20.2915C7.8975 19.8192 6.9445 19.1782 6.134 18.3685C5.3235 17.5588 4.68192 16.6067 4.20925 15.512C3.73642 14.4175 3.5 13.2479 3.5 12.0033C3.5 10.7588 3.73617 9.58867 4.2085 8.493C4.68083 7.3975 5.32183 6.4445 6.1315 5.634C6.94117 4.8235 7.89333 4.18192 8.988 3.70925C10.0825 3.23642 11.2521 3 12.4967 3C13.7413 3 14.9113 3.23617 16.007 3.7085C17.1025 4.18083 18.0555 4.82183 18.866 5.6315C19.6765 6.44117 20.3181 7.39333 20.7908 8.488C21.2636 9.5825 21.5 10.7521 21.5 11.9967C21.5 13.2413 21.2638 14.4113 20.7915 15.507C20.3192 16.6025 19.6782 17.5555 18.8685 18.366C18.0588 19.1765 17.1067 19.8181 16.012 20.2908C14.9175 20.7636 13.7479 21 12.5033 21ZM12.5 20C14.7167 20 16.6042 19.2208 18.1625 17.6625C19.7208 16.1042 20.5 14.2167 20.5 12C20.5 9.78333 19.7208 7.89583 18.1625 6.3375C16.6042 4.77917 14.7167 4 12.5 4C10.2833 4 8.39583 4.77917 6.8375 6.3375C5.27917 7.89583 4.5 9.78333 4.5 12C4.5 14.2167 5.27917 16.1042 6.8375 17.6625C8.39583 19.2208 10.2833 20 12.5 20Z" fill="var(--color-icon-primary)" fill-opacity="1"/>
+        </svg>
+        <span class="body-small-regular text-color-secondary">
+          <span class="count-digit-4">0</span>
+          <span class="count-digit-4">5</span>
+          <span class="separator">:</span>
+          <span class="count-digit-4">0</span>
+          <span class="count-digit-4">0</span> 
+          <span> min.</span>
+        </span>
+      </div>
+    </div>
+    <div class="flex flex-col gap-4 md:gap-6">
+      <div class="flex flex-col-reverse gap-2 w-full">
+        <div class="relative">
+          <input id="montoPagarZinli" type="text" name="monto" disabled value="" class="input w-full relative">
+          <span id="copyValueZinli" class="copyInput">Copiar</span>
+        </div>
+        <label for="montoPagarZinli" class="text-color-secondary label-medium-medium">Monto exacto a pagar</label>
+      </div>
+      <div class="bg-[var(--color-components-suggestion-cards-container)] radius-rounded flex flex-row px-2 py-4 gap-2 justify-start border border-[var(--color-border-brand)]">
+        <div class="w-6 h-6">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 16V12" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 8H12.01" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="body-small-regular text-color-brand">
+          Asegúrate de pagar el monto exacto que te indicamos. De lo contrario no podremos validar la operación.
+        </span>      
+      </div>
+    </div>
+    <div class="flex flex-col">
+      <div class="flex flex-row w-full gap-4 py-3">
+        <span class="label-medium-medium text-color-secondary w-[100px]">Correo electrónico</span>
+        <span class="grow label-medium-regular text-color-primary">boxandlabel2@gmail.com</span>
+        <div id="copyCorreoZinliContainer" class="cursor-pointer">
+          <i id="copyCorreoZinli" class="fa-regular fa-copy text-color-brand"></i>
+        </div>
+      </div>
+    </div>
+    <div class="flex flex-col justify-end grow">
+      <button class="button-happy-primary button-medium" id="btContinuarCopiarZinli">
+        <span>Reportar pago</span>
+      </button>
+    </div>
+  </section>
+  <section id="ComprarContent" class="hidden flex-col p-4 md:p-10 gap-6 md:gap-8 h-full">
+    
+    <div class="flex flex-col gap-4 items-center md:items-start text-center md:text-left">
+      <div class="flex flex-row justify-center gap-2 items-center md:items-start w-full">
+        <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+        <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+        <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+        <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+      </div>
+      <div class="flex flex-row justify-start gap-8 items-center md:items-start w-full">
+        <h3 class="heading-small-medium text-color-primary grow text-center">Detalla el pago que realizaste</h3>
+      </div>
+      <p class="body-small-regular text-color-secondary">Tienes <span class="body-small-semibold text-color-secondary">5 minutos para realizar y reportar el pago</span> o la operación se cancelará.</p>
+      <div class="flex flex-row items-center md:items-start text-center md:text-left justify-center gap-2">
+        <svg width="25" height="24" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M13 11.7923V7.5C13 7.35833 12.952 7.23958 12.856 7.14375C12.76 7.04792 12.6411 7 12.4993 7C12.3574 7 12.2388 7.04792 12.1433 7.14375C12.0478 7.23958 12 7.35833 12 7.5V11.8787C12 11.9809 12.0186 12.0799 12.0558 12.1757C12.0929 12.2714 12.1551 12.3628 12.2423 12.45L15.7923 16C15.8859 16.0937 16.0007 16.1437 16.1365 16.15C16.2725 16.1563 16.3937 16.1063 16.5 16C16.6063 15.8937 16.6595 15.7758 16.6595 15.6463C16.6595 15.5168 16.6063 15.3988 16.5 15.2923L13 11.7923ZM12.5033 21C11.2588 21 10.0887 20.7638 8.993 20.2915C7.8975 19.8192 6.9445 19.1782 6.134 18.3685C5.3235 17.5588 4.68192 16.6067 4.20925 15.512C3.73642 14.4175 3.5 13.2479 3.5 12.0033C3.5 10.7588 3.73617 9.58867 4.2085 8.493C4.68083 7.3975 5.32183 6.4445 6.1315 5.634C6.94117 4.8235 7.89333 4.18192 8.988 3.70925C10.0825 3.23642 11.2521 3 12.4967 3C13.7413 3 14.9113 3.23617 16.007 3.7085C17.1025 4.18083 18.0555 4.82183 18.866 5.6315C19.6765 6.44117 20.3181 7.39333 20.7908 8.488C21.2636 9.5825 21.5 10.7521 21.5 11.9967C21.5 13.2413 21.2638 14.4113 20.7915 15.507C20.3192 16.6025 19.6782 17.5555 18.8685 18.366C18.0588 19.1765 17.1067 19.8181 16.012 20.2908C14.9175 20.7636 13.7479 21 12.5033 21ZM12.5 20C14.7167 20 16.6042 19.2208 18.1625 17.6625C19.7208 16.1042 20.5 14.2167 20.5 12C20.5 9.78333 19.7208 7.89583 18.1625 6.3375C16.6042 4.77917 14.7167 4 12.5 4C10.2833 4 8.39583 4.77917 6.8375 6.3375C5.27917 7.89583 4.5 9.78333 4.5 12C4.5 14.2167 5.27917 16.1042 6.8375 17.6625C8.39583 19.2208 10.2833 20 12.5 20Z" fill="var(--color-icon-primary)" fill-opacity="1"/>
+        </svg>
+        <span class="body-small-regular text-color-secondary">
+          <span class="count-digit-5">0</span>
+          <span class="count-digit-5">5</span>
+          <span class="separator">:</span>
+          <span class="count-digit-5">0</span>
+          <span class="count-digit-5">0</span>
+          <span> min.</span>
+        </span>
+      </div>
+    </div>
+    <div class="flex flex-col gap-4 md:gap-6">
+      <div class="flex flex-col-reverse gap-2 w-full">
+        <div class="relative">
+          <input type="text" onkeypress="onlyReferenceKey(event)" name="referencia" id="nroReferencia" required placeholder="Ej.: 012345678" class="input input-reference w-full relative">
+          <span id="pasteInfo" class="copyInput text-color-brand">Pegar</span>
+        </div>
+        <label for="nroReferencia" class="text-color-secondary label-medium-medium">Número de referencia</label>
+      </div>
+      <div class="bg-[var(--color-components-suggestion-cards-container)] radius-rounded flex flex-row px-2 py-4 gap-2 justify-start border border-[var(--color-border-brand)]">
+        <div class="w-6 h-6">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 16V12" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 8H12.01" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="body-small-regular text-color-brand">
+          Asegúrate de escribir todos los caracteres.
+        </span>      
+      </div>
+    </div>
+    <form id="temporizadorForm" method="post" enctype="multipart/form-data" class="flex flex-col gap-6">
+      <div id="uploadedFile" class="bg-[var(--color-components-suggestion-cards-container)] radius-rounded hidden flex-row px-4 py-4 gap-4 justify-start">
+        <div class="w-7 h-7">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="28" height="28" rx="14" fill="var(--color-icon-secondary)"/>
+            <path d="M14.6665 7.33334H9.99984C9.64622 7.33334 9.30708 7.47382 9.05703 7.72387C8.80698 7.97392 8.6665 8.31305 8.6665 8.66668V19.3333C8.6665 19.687 8.80698 20.0261 9.05703 20.2762C9.30708 20.5262 9.64622 20.6667 9.99984 20.6667H17.9998C18.3535 20.6667 18.6926 20.5262 18.9426 20.2762C19.1927 20.0261 19.3332 19.687 19.3332 19.3333V12L14.6665 7.33334Z" stroke="black" stroke-opacity="0.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M14.6665 7.33334V12H19.3332" stroke="black" stroke-opacity="0.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <div class="flex flex-col grow">
+          <span id="fileNameText" class="body-small-regular text-color-primary">comprobante_1001.jpg</span>
+          <span id="fileSizeText" class="body-small-regular text-color-secondary">200KB</span>
+        </div>
+        <div id="cancelFile" class="cursor-pointer">
+          <i class="p-1 fa fa-times text-xl"></i>      
+        </div>
+      </div>
+      <div id="upload-button" class="flex flex-col gap-6 border border-color-brand border-dashed radius-rounded">
+        <button class="button-primary-neutral button-medium">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.5 12.5V15.8333C17.5 16.2754 17.3244 16.6993 17.0118 17.0118C16.6993 17.3244 16.2754 17.5 15.8333 17.5H4.16667C3.72464 17.5 3.30072 17.3244 2.98816 17.0118C2.67559 16.6993 2.5 16.2754 2.5 15.8333V12.5" stroke="var(--color-icon-brand)" stroke-opacity="1" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M14.1667 6.66667L10 2.5L5.83334 6.66667" stroke="var(--color-icon-brand)" stroke-opacity="1" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 2.5V12.5" stroke="var(--color-icon-brand)" stroke-opacity="1" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            
+          <span class="text-[var(--color-text-brand)]">Cargar comprobante</span>
+        </button>
+      </div>
+      <input id="voucher" required name="file" accept=".jpg, .png, .jpeg, .pdf"  class="hidden" type="file">
+    </form>
+    <div class="flex flex-col justify-end grow">
+      <div class="flex flex-row gap-4">
+        <button type="button" id="paginaCompraContentRegresar" class="button-outline button-medium" type="button">
+          <i class="fa-solid fa-arrow-left mr-2 text-color-secondary"></i>
+          <span>Volver</span>
+        </button>
+        <button type="button" id="btfinalizarCompra" class="button-happy-primary button-medium w-full" type="button">
+          <span>Confirmar compra</span>
+        </button>
+      </div>
+    </div>
+  </section>
+  <section id="finalContent" class="hidden relative flex-col p-4 md:p-10 gap-6 md:gap-8 h-full" style="background: linear-gradient(259.08deg, #C42450 0%, #4E46AD 100%);">
+    <div class="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+    </div>
+    <div class="flex flex-col justify-center gap-4 items-center pt-20 md:pt-2">
+
+      <img id="logoNormalMobile" src=" {% static 'img/avatar.png' %}" alt="Logo" class="block w-[120px] h-[120px]" />
+      <img id="logoNegativoMobile" src=" {% static 'img/avatar.png' %}" alt="Logo" class="hidden w-[120px] h-[120px]" />
+
+      <h3 class="heading-small-medium text-[var(--color-fixed-white-primary)] grow text-center">FELICIDADES 🎉 ESTOS SON TUS NÚMEROS</h3>
+      <p class="body-small-regular text-[var(--color-fixed-white-primary)] text-center"><span class="body-small-medium">En minutos finiquitaremos la aprobación de tu pago</span> y te los enviaremos ya verificados. Si quieres ver tus números en nuestro sistema dirígete a la opción ver numero comprados y coloca tu número de celular.
+      </p>
+      <div id="finalNumerosContenedor" class="w-full"></div>
+    </div>
+    <div class="flex flex-col justify-end grow gap-2">
+      <button class="button-happy-primary button-medium" id="endButton" onclick="endOfProcess()">
+        <span>Ir al inicio</span>
+      </button>
+      <button id="btCompraSelectAlt" class="button button-happy-secondary button-medium w-full">
+        <span>Ver mis boletos comprados</span>
+      </button>
+    </div>
+  </section>
+  <div id="toast-bottom-right" class="hidden items-center w-full max-w-xs p-4 space-x-4 bg-[var(--color-container-heavy-contrast)] divide-x rtl:divide-x-reverse divide-gray-200 rounded-lg shadow-sm right-5 bottom-5" role="alert">
+    <span id="toastText" class="body-small-regular text-[var(--color-text-primary-invert)]">El número no está disponible.</span>
+</div>
+</dialog>
+<!--Modal Verificador-->
+<dialog id="Verifica" class="w-screen h-[100dvh] m-0 md:m-auto max-h-screen max-w-full md:max-w-[560px] md:h-auto md:max-h-[750px] bg-[var(--color-container-neutral-bright)] md:radius-rounded text-color-primary relative">
+  <div class="absolute top-4 right-4 close-button-verifica flex justify-center items-center radius-rounded bg-[var(--color-container-neutral-bright)] text-[var(--color-icon-primary)] p-2 w-10 h-10 cursor-pointer z-10">
+    <i class="fa fa-times text-xl p-1"></i>
+  </div>
+  <form id="paginaVerificaDatos" class="flex flex-col p-4 md:p-10 gap-6 md:gap-8 h-full relative">
+    <div class="flex flex-row justify-start gap-8 items-center md:items-start">
+      <h3 class="heading-small-medium text-color-primary grow text-center">Ver mis boletos comprados</h3>
+    </div>
+    <div class="flex flex-col gap-6">
+      <p class="body-small-regular text-color-secondary">Escribe el número de cédula o el correo electrónico que usaste al comprar tus boletos (no el del pago móvil)</p>
+    </div>
+    <div class="flex flex-col-reverse gap-4 w-full">
+      <div class="flex flex-row gap-4 w-full">
+        <select id="preCedulaVerificador" name="pre" class="input">
+          <option value="V" selected>V</option>
+          <option value="E">E</option>
+          <option value="J">J</option>
+          <option value="G">G</option>
+        </select>
+        <input id="cedulaVerificador" type="number" onkeypress="onlyNumberKey(event, 9)" pattern="[0-9]*" name="cedula" class="input w-full" placeholder="0000000" minlength="5" min="5">
+      </div>
+      <label for="cedulaVerificador">Cédula</label>
+    </div>
+    <div class="flex flex-row gap-2 justify-center items-center">
+      <div class="flex flex-col w-full">
+        <div class="border-b border-color-primary"></div>
+        <div class="border-t border-color-primary"></div>
+      </div>
+      <p class="body-small-regular text-color-secondary">O</p>
+      <div class="flex flex-col w-full">
+        <div class="border-b border-color-primary"></div>
+        <div class="border-t border-color-primary"></div>
+      </div>
+    </div>
+    <div class="flex flex-col-reverse gap-4 w-full">
+      <input id="correoVerificador" type="email" name="correo" class="input w-full" placeholder="micorreo@ejemplo.com">
+      <label for="">Correo electrónico</label>
+    </div>
+    <div class="flex flex-col justify-end grow gap-6">
+      <div class="flex flex-row gap-5">
+        <button type="submit" class="button-happy-primary button-medium w-full" id="botonVerBoletos">
+          <span>Ver boletos</span>
+        </button>
+      </div>
+    </div>
+  </form>
+  <section id="paginaVerificaResultado" class="flex flex-col p-4 md:p-10 gap-6 md:gap-8 h-full">
+    <div class="flex flex-row justify-start gap-8 items-center md:items-start">
+      <h3 class="heading-small-medium text-color-primary grow text-center">Boletos comprados</h3>
+    </div>
+    <div class="flex flex-col">
+      <div class="flex flex-col gap-5 pb-6 border-b border-color-primary">
+        <div class="flex flex-row justify-start items-center grow">
+          <div class="flex flex-row justify-start items-center w-1/4">
+            <span class="body-medium-medium text-color-secondary">Nombre</span>
+          </div>
+          <div class="flex flex-row justify-start items-center w-3/4">
+            <span class="body-medium-regular text-color-primary" id="verificadorName"></span>
+          </div>
+        </div>
+        <div class="flex flex-row justify-start items-center grow">
+          <div class="flex flex-row justify-start items-center w-1/4">
+            <span class="body-medium-medium text-color-secondary">Cédula</span>
+          </div>
+          <div class="flex flex-row justify-start items-center w-3/4">
+            <span class="body-medium-regular text-color-primary" id="verificadorCedula"></span>
+          </div>
+        </div>
+        <div class="flex flex-row justify-start items-center grow">
+          <div class="flex flex-row justify-start items-center w-1/4">
+            <span class="body-medium-medium text-color-secondary">Correo</span>
+          </div>
+          <div class="flex flex-row justify-start items-center w-3/4">
+            <span class="body-medium-regular text-color-primary" id="verificadorCorreo"></span>
+          </div>
+        </div>
+      </div>
+      <div id="verificadorNumerosContenedor" class="bg-[var(--color-components-suggestion-cards-container)] radius-rounded flex flex-row px-2 py-4 h-full gap-2 justify-center">    
+
+      </div>
+    </div>
+  </section>
+</div>
+</dialog>
+<!-- Fin Modal -->
+
+<dialog id="ConsultaDialog">
+  <div id="ConsultaContent">
+    <form>
+      <input type="text" />
+      <button formmethod="dialog" type="submit">Cancel</button>
+    </form>
+
+  </div>
+</dialog>
+<script>
+  //ELEMENTOS
+  const inputNumbers = document.getElementById("numBoletosAdd")
+  const inputTlF = document.getElementById("tlfComprador")
+  const spanMinTickets = document.getElementById("NumeroBoletos")
+  const formularioComprador = document.getElementById("datosCompradorForm")
+  const countContainer = document.querySelectorAll(".count-digit");
+  const countContainer_2 = document.querySelectorAll(".count-digit-2");
+  const countContainer_3 = document.querySelectorAll(".count-digit-3");
+  const countContainer_4 = document.querySelectorAll(".count-digit-4");
+  const countContainer_5 = document.querySelectorAll(".count-digit-5");
+  const btComp = document.getElementById("btCompra")
+  const btCompAlt = document.getElementById("btCompraAlt")
+  const btCompSelect = document.getElementById("btCompraSelect")
+  const btCompSelectAlt = document.getElementById("btCompraSelectAlt")
+  const btFinalizar = document.getElementById("btfinalizarCompra")
+  const fileInput = document.getElementById("voucher")
+  const uploadButton = document.getElementById("upload-button")
+  const btRemove = document.getElementById("RemoverNumero")
+  const btAdd = document.getElementById("AggNumero")
+  const closeModalButtons = document.querySelectorAll(".close-button");
+  const closeVerificaButtons = document.querySelectorAll(".close-button-verifica");
+  const copyValue = document.getElementById('copyValue');
+  const copyValueZelle = document.getElementById('copyValueZelle');
+  const copyValueBinance = document.getElementById('copyValueBinance');
+  const copyValueZinli = document.getElementById('copyValueZinli');
+  const copyCedulaContainer = document.getElementById('copyCedulaContainer');
+  const copyPhoneContainer = document.getElementById('copyPhoneContainer');
+  const copyCorreoZelleContainer = document.getElementById('copyCorreoZelleContainer');
+  const copyCorreoBinanceContainer = document.getElementById('copyCorreoBinanceContainer');
+  const copyCorreoZinliContainer = document.getElementById('copyCorreoZinliContainer');
+  const pasteButton = document.getElementById('pasteInfo');
+  const uploadedFile = document.getElementById('uploadedFile');
+  const fileNameText = document.getElementById('fileNameText');
+  const fileSizeText = document.getElementById('fileSizeText');
+  const cancelFile = document.getElementById('cancelFile');
+  const chartContainer = document.getElementById('chartContainer');
+  const chartContainerAlt = document.getElementById('chartContainerAlt');
+  const nombreContainer = document.getElementById('nombreContainer');
+  const mainButtonContainer = document.getElementById('mainButtonContainer');
+  const botonPagoMovil = document.getElementById('botonPagoMovil');
+  const botonPagoZelle = document.getElementById('botonPagoZelle');
+  const botonPagoBinance = document.getElementById('botonPagoBinance');
+  const botonPagoZinli = document.getElementById('botonPagoZinli');
+  const paginaMetodoRegresar = document.getElementById('paginaMetodoRegresar');
+  const searchNumberBox = document.getElementById('searchNumberBox');
+  const randomNumberBox = document.getElementById('randomNumberBox');
+  const toggleNumberButton = document.getElementById('toggleNumberButton');
+  const inputBuscadorNumeros = document.getElementById('inputBuscadorNumeros');
+  const iconInputBuscadorNumeros = document.getElementById('iconInputBuscadorNumeros');
+  const buttonBuscadorNumeros = document.getElementById('buttonBuscadorNumeros');
+  const buttonVolverPaginaFacturacion = document.getElementById('buttonVolverPaginaFacturacion');
+  const selectedNumbersContainer = document.getElementById('selectedNumbersContainer');
+  const paginaSeleccionaBoletosSiguiente = document.getElementById('paginaSeleccionaBoletosSiguiente');
+  const paginaEligeBoletosSiguiente = document.getElementById('paginaEligeBoletosSiguiente');
+  const buttonBackWhatsapp = document.getElementById('buttonBackWhatsapp');
+  const countDownWhatsapp = document.getElementById('countDownWhatsapp');
+  const whatsappModal = document.getElementById('whatsappModal');
+  const buttonOpenWhatsappModal = document.getElementById('buttonOpenWhatsappModal');
+  const linkGoWhatsapp = document.getElementById('linkGoWhatsapp');
+
+  //VARIABLES
+  let whatsappInterval
+  let tasa = parseFloat('{{tasa.tasa}}')
+  let totalDispobiles = parseInt('{{numDisp}}')
+  let idRifa = parseInt('{{RifaC.Id}}')
+  let RifaMax = parseInt('{{RifaC.MaxCompra}}')
+  let RifaMin = parseInt('{{RifaC.MinCompra}}')
+  let RifaPrecio = parseFloat('{{RifaC.Precio|unlocalize}}')
+  let RifaPrecioAlt = parseFloat('{{RifaC.PrecioAlt|unlocalize}}')
+  let RangoFinal = '{{RifaC.RangoFinal}}'
+  let RangoInicial = '{{RifaC.RangoInicial}}'
+  let MaxLen = RangoFinal.length
+  let ticketCount = 0;
+  let numberArray = []
+  let paginationHTML = ``
+  let legendHTML = ``
+  let numbersHTML = ``
+  let poolHTML = ``
+  let Orden = {}
+  let zeroFill = RangoFinal.toString().length
+  let availableNumbers = []
+  let selectedNumbers = []
+  let bankList = [
+  {% for item in bancos %}
+  { "{{item.code}}": "{{item.name}}" },
+  {% endfor %}
+  ]
+  let data = {
+    "Rifa": idRifa,
+    "Numbers": [],
+    "Number": [],
+    "User": {},
+    "Buyer": {},
+    "Orden": {}
+  }
+  const defaultTimeValue = 5 * 60;
+  // variable to the time
+  let countDownTime = defaultTimeValue;
+  // variable to store time interval
+  let timerID;
+  // Variable to track whether timer is running or not
+  let isStopped = true;
+  //tipo de pago
+  let tipoPago = 3
+  let aleatorio = true
+
+
+  //confetti
+  var confettiPlayers = [];
+
+function makeItConfetti() {
+  var confetti = document.querySelectorAll('.confetti');
+  
+  if (!confetti[0].animate) {
+    return false;
+  }
+
+  for (var i = 0, len = confetti.length; i < len; ++i) {
+    var candycorn = confetti[i];
+    candycorn.innerHTML = '<div class="rotate"><div class="askew"></div></div>';
+    var scale = Math.random() * .7 + .3;
+    var player = candycorn.animate([
+      { transform: `translate3d(${(i/len*100)}vw,-5vh,0) scale(${scale}) rotate(0turn)`, opacity: scale },
+      { transform: `translate3d(${(i/len*100 + 10)}vw,105vh,0) scale(${scale}) rotate(${ Math.random() > .5 ? '' : '-'}2turn)`, opacity: 1 }
+    ], {
+      duration: Math.random() * 3000 + 4000,
+      iterations: Infinity,
+      delay: -(Math.random() * 7000)
+    });
+    
+    confettiPlayers.push(player);
+  }
+}
+
+onChange({currentTarget: {value: 'bookmarks'}})
+
+function onChange(e) {
+  document.body.setAttribute('data-type', e.currentTarget.value);
+  confettiPlayers.forEach(player => player.playbackRate = 2);
+}
+
+
+  // Time Methods
+  // Function calculate time string
+  const findTimeString = () => {
+    let minutes = String(Math.trunc(countDownTime / 60));
+    let seconds = String(countDownTime % 60);
+    if (minutes.length === 1) {
+      minutes = "0" + minutes;
+    }
+    if (seconds.length === 1) {
+      seconds = "0" + seconds;
+    }
+    return minutes + seconds;
+  };
+
+  
+  // Function to show and delete numbers
+  const renderNumbers = () => {
+    const numberHTML = selectedNumbers.map((number) => {
+      return `
+          <div class="flex flex-row gap-2 justify-center items-center border border-[var(--color-border-primary)] py-2 px-8 rounded-md">
+            <span class="text-[var(--color-text-primary)] label-medium-regular">${number}</span>
+            <i class="fa fa-times text-md p-1 cursor-pointer" onClick="diselectNumber('${number}')"></i>
+          </div>
+      `
+    }).join('');
+    selectedNumbersContainer.innerHTML = numberHTML;
+  }
+  const diselectNumber = (number) => {
+    selectedNumbers = selectedNumbers.filter((num) => num !== number)
+    ticketCount = selectedNumbers.length
+    renderNumbers()
+  }
+  const showToast = (msg) =>{
+        document?.getElementById('toast-bottom-right')?.classList?.remove('hidden')
+        document?.getElementById('toast-bottom-right')?.classList?.add('fixed')
+        document.getElementById('toastText').innerHTML = msg
+        setTimeout(()=>{
+          document?.getElementById('toast-bottom-right')?.classList?.add('hidden')
+        }, 3000)
+  }
+
+  // Function to display coundown on screen
+  const renderTime = () => {
+    const time = findTimeString();
+    countContainer.forEach((count, index) => {
+      count.innerHTML = time.charAt(index);
+    });
+    countContainer_2.forEach((count, index) => {
+      count.innerHTML = time.charAt(index);
+    });
+    countContainer_3.forEach((count, index) => {
+      count.innerHTML = time.charAt(index);
+    });
+    countContainer_4.forEach((count, index) => {
+      count.innerHTML = time.charAt(index);
+    });
+    countContainer_5.forEach((count, index) => {
+      count.innerHTML = time.charAt(index);
+    });
+  };
+  const startTimer = () => {
+    if (isStopped) {
+      isStopped = false;
+      timerID = setInterval(runCountDown, 1000);
+    }
+  };
+  const runCountDown = () => {
+    // decrement time
+    countDownTime -= 1;
+    //Display updated time
+    renderTime();
+    // timeout on zero
+    if (countDownTime === 0) {
+      stopTimer();
+      countDownTime = defaultTimeValue;
+      
+      document.getElementById("Compra").close();
+      Swal.fire(
+        'Su compra ha sido cancelada',
+        `Expiro el tiempo limite para completar la compra, intente nuevamente`,
+        'warning')
+      resetModal()
+      document.getElementById("Compra").close();
+    }
+  };
+  // Function to stop Countdown
+  const stopTimer = () => {
+    isStopped = true;
+    if (timerID) {
+      clearInterval(timerID);
+    }
+  };
+  const resetTimer = () => {
+    stopTimer();
+    countDownTime = defaultTimeValue;
+    renderTime();
+  };
+
+  //increase ticket quantity
+  function increaseTickets(num = 1){
+    ticket = -1
+    ticketCount+=num;
+    inputNumbers.value = parseInt(inputNumbers.value) + num;
+    if (inputNumbers.value >= RifaMin && inputNumbers.value <= RifaMax) {
+      inputNumbers.classList.remove('NumeroError')
+    }
+    let RemoverNumero = document.getElementById("RemoverNumero").classList.remove("hidden")
+    checkMinCompra()
+  }
+  function setTicket(num = RifaMin){
+    ticket = -1
+    ticketCount=num;
+    inputNumbers.value = num;
+    if (inputNumbers.value >= RifaMin && inputNumbers.value <= RifaMax) {
+      inputNumbers.classList.remove('NumeroError')
+    }
+    let RemoverNumero = document.getElementById("RemoverNumero").classList.remove("hidden")
+    checkMinCompra()
+  }
+  //validate only numbers
+  function onlyNumberKey(evt, limit = 6) {
+    let key
+    let theEvent = evt || window.event;
+    // Handle paste
+    if (theEvent.type === 'paste'){
+      key = event.clipboardData.getData('text/plain');
+    } 
+    // Handle key press
+    else{
+      key = theEvent.keyCode || theEvent.which;
+      key = String.fromCharCode(key);
+    }
+    let regex = /^[a-zA-Z0-9]+$/;
+    if( !regex.test(key) || evt?.target?.value?.length >= limit) {
+      theEvent.returnValue = false;
+      if(theEvent.preventDefault) theEvent.preventDefault();
+    }
+  }
+  function onlyReferenceKey(evt, limit = 10) {
+    let key
+    let theEvent = evt || window.event;
+    // Handle paste
+    if (theEvent.type === 'paste'){
+      key = event.clipboardData.getData('text/plain');
+    } 
+    // Handle key press
+    else{
+      key = theEvent.keyCode || theEvent.which;
+      key = String.fromCharCode(key);
+    }
+    let regex = tipoPago === 2 || tipoPago === 3 ? /^\d+$/ : /^[a-zA-Z0-9]+$/;
+    if( !regex.test(key) || evt?.target?.value?.length >= limit) {
+      theEvent.returnValue = false;
+      if(theEvent.preventDefault) theEvent.preventDefault();
+    }
+  }
+
+  function closeDialog() {
+    const dialog = document.getElementById("Compra")
+    dialog.close()
+  }
+  function closeDialogVerifica() {
+    const dialog = document.getElementById("Verifica")
+    dialog.close()
+  }
+
+  function resetModal() {
+    const sections = document.getElementById("Compra").getElementsByTagName("section")
+    const forms = document.getElementById("Compra").getElementsByTagName("form")
+    stopTimer()
+    resetTimer()
+    Orden = null
+    for (const iterator of sections) {
+      iterator.style.display = "none"
+    }
+    for (const iterator of forms) {
+      iterator.reset()
+    }
+    if(aleatorio){
+      document.getElementById("paginaSeleccionaBoletos").style.display = "flex"
+    }else{
+      document.getElementById("paginaEligeBoletos").style.display = "flex"
+    }
+  }
+  function resetModalVerifica() {
+    const sections = document.getElementById("Verifica").getElementsByTagName("section")
+    const forms = document.getElementById("Verifica").getElementsByTagName("form")
+    for (const iterator of sections) {
+      iterator.style.display = "none"
+    }
+    for (const iterator of forms) {
+      iterator.reset()
+    }
+    document.getElementById("paginaVerificaDatos").style.display = "flex"
+  }
+
+  async function checkEkiiDatosForm() {
+    const form = document.getElementById("ekiiDatosForm");
+    if (!form.checkValidity()) {
+      form.reportValidity()
+      return false;
+    }
+    let url = "{% url 'createOrder' %}"
+    let buyerF = {
+      "Banco": document.getElementById("bankEkii").value,
+      "Ci": document.getElementById("miniCiEkii").value + document.getElementById("ciEkii").value,
+      "Name": document.getElementById("nombreEkii").value,
+      "Tlf": document.getElementById("tlfEkii").value,
+      "Correo": document.getElementById("correoEkii").value,
+      "PagoUsd": ticketCount * RifaPrecio,
+      "Ref": '',
+      "PagoBs": 0
+    }
+    let userF = {
+      "Nombre": document.getElementById("nombreEkii").value,
+      "Correo": document.getElementById("correoEkii").value,
+      "Telefono": document.getElementById("tlfEkii").value,
+      "Direccion": document.getElementById("direccionUserEki").value,
+      "Ci": document.getElementById("miniCiEkii").value + document.getElementById("ciEkii").value,
+    }
+    data.User = userF
+    data.Buyer = buyerF
+    $("#Compra").fadeOut("fast", function () {});
+    setLoading()
+    let tasaBs = await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json',
+        "X-CSRFToken": getCookie('csrftoken')
+      }
+    })
+    .then(data => data.json()).then(response => {
+      stopLoading()
+      console.log(response.codigoHttp)
+      if (response.codigoHttp != 200) {
+        console.log("error2")
+        const dialog = document.getElementById("Compra")
+        dialog.close()
+        Swal.fire('Ocurrio un problema', response.clientMessage, 'warning')
+          .then(function () {
+            dialog.showModal()
+            $("#Compra").fadeIn("fast", function () {})
+          })
+      } 
+      else{
+        data.Buyer.PagoBs = response.amount
+        Orden = response
+        data.Orden = response
+
+        document.getElementById("tlfCompradorEkii").innerText = buyerF.Tlf
+        document.getElementById("ciCompradorEkii").innerText = buyerF.Ci
+        let bankName = bankList.find(e => e[buyerF.Banco])
+        document.getElementById("bancoCompradorEkii").innerText = `(${buyerF.Banco}) ${bankName[buyerF.Banco]} `
+        document.getElementById("montoEkiiPago").innerText = `${response.amount} Bs`
+        //  document.getElementById("refEkii").innerText=response.orden
+
+        $("#Compra").fadeIn("fast", function () {
+          $("#ekiiPagoModal").fadeOut("slow", function () {
+            $("#ekiiDatos").fadeIn("fast", function () {
+              startTimer()
+            });
+          });
+        })
+      }
+    })
+    .catch(error => {
+      const dialog = document.getElementById("Compra")
+      dialog.close()
+      stopLoading()
+      console.log(error)
+      Swal.fire(
+        'Error',
+        error.message,
+        'error').then(function () {
+          dialog.showModal()
+          $("#Compra").fadeIn("fast", function () {
+          })
+        })
+    });
+  }
+
+  const formularioCompra = ()=>{
+    $("#temporizadorContent").fadeOut("slow", function () {
+      $("#ComprarContent").fadeIn("fast", function () {
+      }).css('display', 'flex');
+    });
+  }
+  const formularioCompraZelle = ()=>{
+    $("#temporizadorContentZelle").fadeOut("slow", function () {
+      $("#ComprarContent").fadeIn("fast", function () {
+      }).css('display', 'flex');
+    });
+  }
+  const formularioCompraZinli = ()=>{
+    $("#temporizadorContentZinli").fadeOut("slow", function () {
+      $("#ComprarContent").fadeIn("fast", function () {
+      }).css('display', 'flex');
+    });
+  }
+  const formularioCompraBinance = ()=>{
+    $("#temporizadorContentBinance").fadeOut("slow", function () {
+      $("#ComprarContent").fadeIn("fast", function () {
+      }).css('display', 'flex');
+    });
+  }
+  const initWhatsappTimer = () => {
+    let time = 6
+    whatsappInterval = setInterval(()=>{
+      if(time > 0){
+        time--
+        countDownWhatsapp.innerText = time
+      }
+      if(time <= 0){
+        clearInterval(whatsappInterval)
+        linkGoWhatsapp.click()
+      }
+    }, 1000)
+  }
+
+  const goBackFromWhatsapp = ()=>{
+    clearInterval(whatsappInterval)
+    $("#whatsappModal").fadeOut("fast", function () {
+      $("#paginaFacturacion").fadeIn("fast", function () {
+      }).css('display', 'flex');
+    });
+  }
+
+  const formularioWhatsapp = ()=>{
+    $("#paginaFacturacion").fadeOut("slow", function () {
+      $("#whatsappModal").fadeIn("fast", function () {
+        initWhatsappTimer()
+      }).css('display', 'flex');
+    });
+  }
+
+  async function checkNumbers() {
+    const url = `{% url 'ConsultaListaV3' %}`
+    data.Numbers = ticketCount
+
+    console.log(data)
+    let returnValue = true
+    await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json',
+        "X-CSRFToken": getCookie('csrftoken')
+      }
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('data consulta listaV3', data)
+        if (data.result == false) {
+          stopLoading()
+          Swal.fire(
+            'Alerta',
+            data.data,
+            'warning')
+          returnValue = false
+        }
+      })
+      .catch(error => {
+        stopLoading()
+        console.log(error)
+        Swal.fire(
+          'Alerta',
+          "Ocurrio un error durante la consulta, intente nuevamente",
+          'error')
+        returnValue = false
+      });
+    return returnValue
+  }
+  async function checkNumber(num) {
+    const url = `{% url 'ConsultaNumero' %}`
+    data.Number = num
+    console.log(data)
+    let returnValue = true
+    await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json',
+        "X-CSRFToken": getCookie('csrftoken')
+      }
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('data ConsultaNumero', data)
+        if (data.result == false) {
+          stopLoading()
+          showToast('El número no está disponible')
+          returnValue = false
+        }
+      })
+      .catch(error => {
+        stopLoading()
+        console.log(error)
+        showToast('Ha ocurrido un error durante la consulta, intente nuevamente')
+        returnValue = false
+      });
+    return returnValue
+  }
+  async function verificaSubmit() {
+    const url = `{% url 'VerificaBoletos' %}`
+    const pre = document.getElementById("preCedulaVerificador")?.value
+    const num = document.getElementById("cedulaVerificador")?.value
+    const correo = document.getElementById("correoVerificador")?.value
+    const cedula = num
+    const form = document.getElementById("paginaVerificaDatos");
+    if (!form.checkValidity()) {
+      form.reportValidity()
+      return false;
+    }
+    data.cedula = cedula
+    data.correo = correo
+    console.log(data)
+    let returnValue = null
+    const nombreContenedor = document.getElementById("verificadorName")
+    const cedulaContenedor = document.getElementById("verificadorCedula")
+    const correoContenedor = document.getElementById("verificadorCorreo")
+    const numerosContenedor = document.getElementById("verificadorNumerosContenedor")
+    await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json',
+        "X-CSRFToken": getCookie('csrftoken')
+      }
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('data VerificaBoletos', data)
+        if (data.result == false) {
+          stopLoading()
+          nombreContenedor.innerText = ''
+          cedulaContenedor.innerText = ''
+          correoContenedor.innerText = ''
+          numerosContenedor.innerText = data.message
+        }else{
+          console.log("data.data: ",data.data)
+          nombreContenedor.innerText = data?.data?.comprador?.Nombre
+          cedulaContenedor.innerText = data?.data?.comprador?.Cedula
+          correoContenedor.innerText = data?.data?.comprador?.Correo
+          numerosContenedor.innerHTML = `
+            <div class="grid grid-cols-[repeat(auto-fit,minmax(45px,1fr))] w-full gap-3">
+              ${data?.data?.numerosAprobados?.map((el, index) => {
+                return `
+                  <div class="flex flex-row justify-center items-center border border-[var(--color-border-primary)] p-2 rounded-lg">
+                    <span class="text-[var(--color-text-primary)] label-medium-regular">${el.Numero}</span>
+                  </div>
+                `
+              }).join('')}
+              ${data?.data?.numerosPendientes?.map((el, index) => {
+                return `
+                  <div class="flex flex-row justify-center items-center border border-[var(--color-border-primary)] p-2 rounded-lg">
+                    <span class="text-[var(--color-text-primary)] label-medium-regular">${el.Numero}</span>
+                  </div>
+                `
+              }).join('')}
+            </div>
+          `
+
+        }
+        returnValue = true
+      })
+      .catch(error => {
+        stopLoading()
+        console.log(error)
+        nombreContenedor.innerText = ''
+        cedulaContenedor.innerText = ''
+        showToast('Ha ocurrido un error durante la consulta, intente nuevamente')
+      });
+    return returnValue
+  }
+  const getTicketNumbers = async ()=>{
+    if(aleatorio){
+      ticketCount = +inputNumbers.value
+    }else{
+      ticketCount = selectedNumbers.length
+    }
+    if (ticketCount > totalDispobiles) {
+      showToast(`No hay suficientes tickets disponibles para tu compra, puedes comprar un máximo de ${totalDispobiles} tickets`)
+      return
+    }
+    if (ticketCount < RifaMin) {
+      showToast(`La cantidad mínima es de ${RifaMin} ticket(s)`)
+      inputNumbers.classList.add("NumeroError")
+      return
+    }
+    if (ticketCount > RifaMax) {
+      showToast(`La cantidad máxima es de ${RifaMax} ticket(s)`)
+      inputNumbers.classList.add("NumeroError")
+      return
+    }
+    setLoading()
+    let valor = await checkNumbers()
+    stopLoading()
+
+    if (valor == false)
+      return
+    document.getElementById("ticketsSeleccionados").innerText = ticketCount
+    document.getElementById("totalPagar").innerText = ticketCount * RifaPrecio
+    {% comment %} document.getElementById("MontoEki").innerText = ` (${ticketCount * RifaPrecio} $)` {% endcomment %}
+
+  }
+  
+  const showVerificador = async function () {
+    resetModal()
+    const dialogCompra = document.getElementById("Compra")
+    dialogCompra.close()
+    resetModalVerifica()
+    const dialog = document.getElementById("Verifica")
+    dialog.showModal()
+  }
+  const showDialog = async function () {
+    aleatorio = true
+    document.getElementById("paginaSeleccionaBoletos").classList.remove('hidden')
+    document.getElementById("paginaSeleccionaBoletos").classList.add('flex')
+    document.getElementById("paginaEligeBoletos").classList.remove('flex')
+    document.getElementById("paginaEligeBoletos").classList.add('hidden')
+    await getTicketNumbers()
+    resetModal()
+    
+    const dialog = document.getElementById("Compra")
+    dialog.showModal()
+  }
+  const showDialogSelect = async function () {
+    aleatorio = false
+    document.getElementById("paginaSeleccionaBoletos").classList.remove('flex')
+    document.getElementById("paginaSeleccionaBoletos").classList.add('hidden')
+    document.getElementById("paginaEligeBoletos").classList.remove('hidden')
+    document.getElementById("paginaEligeBoletos").classList.add('flex')
+    await getTicketNumbers()
+    resetModal()
+    
+    const dialog = document.getElementById("Compra")
+    dialog.showModal()
+  }
+
+  const checkMinCompra = () => {
+    let btCompra = document.getElementById("btCompra")
+    if (inputNumbers.value < RifaMin) {
+      btCompra.classList.add("hidden")
+    }
+    if (inputNumbers.value >= RifaMin) {
+      btCompra.classList.remove("hidden")
+    }
+  }
+
+  function removeLastRow() {
+    if (inputNumbers.value > RifaMin) {
+      inputNumbers.value--
+      if (inputNumbers.value >= RifaMin && inputNumbers.value <= RifaMax) {
+        inputNumbers.classList.remove('NumeroError')
+      }
+      checkMinCompra()
+    }
+
+  }
+
+  function generarNumeros() {
+
+    let contenedoresNumeros = document.getElementById("Numeros").getElementsByTagName("input");
+
+    let numerosList = []
+    for (el of contenedoresNumeros) {
+      let randomNum = getRandomInt(RangoInicial, RangoFinal).toString().padStart(zeroFill, '0')
+      while (numerosList?.some(el => el === randomNum) || !availableNumbers?.some(el => el.Numero === randomNum)) {
+        randomNum = getRandomInt(RangoInicial, RangoFinal).toString().padStart(zeroFill, '0')
+      }
+      numerosList.push(randomNum)
+    }
+
+
+    for (element of contenedoresNumeros) {
+      element.classList.remove("NumeroError")
+      element.value = numerosList.pop()
+    }
+  }
+
+  function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min) + min); // The maximum is exclusive and the minimum is inclusive
+  }
+
+  //FUNCIONES   
+
+  const finalizar = (e) => {
+    e?.preventDefault()
+    let formTemp=document.getElementById("temporizadorForm")
+
+    if (!formTemp.checkValidity()) {
+      formTemp.reportValidity()
+      return false;
+    }
+    if (document.querySelector('#nroReferencia').value.length < 6) {
+      document.querySelector('#nroReferencia').value = document.querySelector('#nroReferencia').value.padStart(6, '0')
+      showToast('El número de referencia debe tener 6 digitos');
+    }
+
+    setLoading()
+    $("#Compra").fadeOut("fast", function () {});
+
+    let url = "{% url 'ComprarRifa' %}"
+    let formBody = new FormData()
+    formBody.append('csrfmiddlewaretoken', getCookie('csrftoken'))
+    formBody.append('idOrden', Orden.pk)
+    formBody.append('referencia', document.querySelector('#nroReferencia').value)
+    formBody.append('Cantidad', ticketCount)
+    formBody.append('tipoPago', tipoPago)
+    
+    formBody.append('file', formTemp.querySelector('#voucher').files[0])
+    console.log('url', url)
+    //post form
+    let tasaBs = fetch(url, {
+      method: 'POST',
+      body: formBody,
+
+    })
+    .then(data => data.json())
+    .then(response => {
+      console.log('data', data)
+      console.log('response', response)
+      if(response?.numeros?.length > 0){
+        let numeros = response.numeros.map((el, index) => {
+          return `
+            <div class="flex flex-row justify-center items-center border border-[var(--color-fixed-white-primary)] p-2 rounded-lg">
+              <span class="text-[var(--color-fixed-white-primary)] label-medium-regular">${el}</span>
+            </div>
+          `
+        }).join('')
+        document.getElementById("finalNumerosContenedor").innerHTML = `
+          <div class="grid grid-cols-[repeat(auto-fit,minmax(45px,1fr))] gap-3 w-full">
+            ${numeros}
+          </div>
+        `
+      }
+      
+      if(response?.status !== 200){
+        throw new Error(response?.message || "Error de servidor")
+      }
+      // if timeout
+      if (response?.status == 502) {
+       let mensaje="El tiempo de espera se ha agotado, pero tu solicitud esta siendo procesada, atento a tu correo para mas detalles o contacta al soporte en caso de dudas."
+       Swal.fire(
+        'Ha ocurrido un problema!',
+        mensaje,
+        'error').then(function () {
+          location.reload()
+        })
+      }
+  
+      stopLoading()
+      $("#Compra").fadeIn("fast", function () {})
+      $("#ComprarContent").fadeOut("slow", function () {
+        $("#finalContent").fadeIn("fast", function () {}).css('display', 'flex');
+        makeItConfetti();
+      })
+      console.log(data)
+
+    }).catch(error => {
+        const dialog = document.getElementById("Compra")
+        dialog.close()
+        stopLoading()
+
+        console.log(error)
+        Swal.fire(
+          'Error',
+          error.message,
+          'error').then(function () {
+            dialog.showModal()
+
+            $("#Compra").fadeIn("fast", function () {})
+          })
+
+      });
+  }
+  const endOfProcess = ()=>{
+    $("#Compra").fadeOut("fast", function () {})
+    resetModal()
+    stopTimer()
+    document.getElementById("Compra").close();
+    location.reload()
+  }
+
+  const escogerTipoPago = ()=>{
+    $("#ekiiPagoModal").fadeOut("slow", function () {
+      if(tipoPago == 3){
+        $("#temporizadorContent").fadeIn("fast", function () {
+          resetTimer()
+          startTimer()
+        }).css('display', 'flex');
+      }
+      if(tipoPago == 4){
+        $("#temporizadorContentZelle").fadeIn("fast", function () {
+          resetTimer()
+          startTimer()
+        }).css('display', 'flex');
+      }
+      if(tipoPago == 2){
+        $("#temporizadorContentBinance").fadeIn("fast", function () {
+          resetTimer()
+          startTimer()
+        }).css('display', 'flex');
+      }
+      if(tipoPago == 5){
+        $("#temporizadorContentZinli").fadeIn("fast", function () {
+          resetTimer()
+          startTimer()
+        }).css('display', 'flex');
+      }
+    });
+  }
+  const regresarNumerosModal = ()=>{
+    $("#paginaFacturacion").fadeOut("slow", function () {
+      if(aleatorio){
+        $("#paginaSeleccionaBoletos").fadeIn("fast", function () {
+        }).css('display', 'flex');
+      }else{
+        $("#paginaEligeBoletos").fadeIn("fast", function () {
+        }).css('display', 'flex');
+      }
+    });
+  }
+  const siguientePaginaFacturacion = async () => {
+    document.getElementById("Compra").close();
+        setLoading()
+        disponible = await fetch(`{% url 'ConsultaV2'%}?rifa=${idRifa}&num=${ticketCount}&orden=${Orden.pk}`)
+      
+      /*  if (disponible.status != 200) {
+          stopLoading()
+
+          Swal.fire(
+            'Alerta',
+            "Ocurrio un error durante la consulta, intente nuevamente",
+            'error'
+          ).then(function () {
+            //open modal
+            document.getElementById("Compra").showModal();
+          })
+          return
+        }
+
+       disponible = await disponible.json()
+          if(disponible.result==false){
+            stopLoading()
+
+            Swal.fire(
+              'Alerta',
+              disponible.data,
+              'warning'
+            ).then(function () {
+              //open modal
+              document.getElementById("Compra").showModal();
+            })
+          return
+          }
+         
+         */
+          stopLoading()
+          document.getElementById("Compra").showModal();
+
+
+    $("#paginaFacturacion").fadeOut("slow", function () {
+      $("#ekiiPagoModal").fadeIn("fast", function () {
+        console.log(ticketCount, RifaPrecio, RifaPrecioAlt)
+        document.getElementById("datosCompradorForm").reset()
+        document.getElementById("montoPagarPagoMovil").value = `Bs. ${(ticketCount * RifaPrecio)}`
+        document.getElementById("montoPagarZelle").value = `$ ${(ticketCount * RifaPrecioAlt)}`
+        document.getElementById("montoPagarBinance").value = `$ ${(ticketCount * RifaPrecioAlt)}`
+        document.getElementById("montoPagarZinli").value = `$ ${(ticketCount * RifaPrecioAlt)}`
+      }).css('display', 'flex');
+    });
+  }
+  
+  const crearOrden = (e) => {
+    e?.preventDefault()
+    console.log(formularioComprador)
+    if (!formularioComprador.checkValidity()) {
+      formularioComprador.reportValidity()
+      return false;
+    }
+    setLoading()
+    $("#Compra").fadeOut("fast", function () {});
+
+    let url = "{% url 'updateOrder' %}"
+    let formBody = new FormData()
+    formBody.append('idRifa', idRifa)
+    formBody.append('idOrden', Orden.pk)
+    formBody.append('csrfmiddlewaretoken', getCookie('csrftoken'))
+    formBody.append('nombre', formularioComprador.querySelector('#nombreComprador').value)
+    formBody.append('correo', formularioComprador.querySelector('#correoComprador').value)
+    formBody.append('cedula', formularioComprador.querySelector('#ciComprador').value)
+    formBody.append('numeroTlf', formularioComprador.querySelector('#tlfComprador').value)
+    console.log('url', url)
+    console.log('formData, name', formBody.get('nombre'))
+    console.log('formData, tickets', formBody.get('numeros'))
+    //post form
+    let tasaBs = fetch(url, {
+      method: 'POST',
+      body: formBody,
+
+    })
+    .then(data => data.json())
+    .then(response => {
+      console.log('data', data)
+      console.log('response', response)
+      
+      if(response?.status !== 200){
+        throw new Error(response?.message || "Error de servidor")
+      }
+      
+      stopLoading()
+      $("#Compra").fadeIn("fast", function () {
+      })
+      console.log(data)
+      Orden=JSON.parse(response?.orden)[0]
+      escogerTipoPago()
+    })
+    .catch(error => {
+      const dialog = document.getElementById("Compra")
+      dialog.close()
+      stopLoading()
+      console.log(error)
+      Swal.fire(
+        'Ocurrio un problema',
+        error.message,
+        'warning').then(function () {
+          dialog.showModal()
+
+          $("#Compra").fadeIn("fast", function () {
+          })
+        })
+    });
+  }
+  const reservarNumeros = (e) => {
+    e?.preventDefault()
+    console.log(formularioComprador)
+    setLoading()
+    $("#Compra").fadeOut("fast", function () {});
+
+    let url = "{% url 'reserveNumbers' %}"
+    let formBody = new FormData()
+    formBody.append('idRifa', idRifa)
+    formBody.append('numeros', ticketCount)
+    if(!aleatorio){
+      formBody.append('boletos', selectedNumbers.join(','))
+    }else{
+      formBody.append('boletos', '')
+    }
+    formBody.append('csrfmiddlewaretoken', getCookie('csrftoken'))
+
+    console.log('url', url)
+    console.log('formData, name', formBody.get('nombre'))
+    console.log('formData, tickets', formBody.get('numeros'))
+    console.log('formData, boletos', formBody.get('boletos'))
+    //post form
+    let tasaBs = fetch(url, {
+      method: 'POST',
+      body: formBody,
+
+    })
+    .then(data => data.json())
+    .then(response => {
+      console.log('data', data)
+      console.log('response', response)
+      
+      if(response?.status !== 200){
+        throw new Error(response?.message || "Error de servidor")
+      }
+      
+      stopLoading()
+      $("#Compra").fadeIn("fast", function () {
+      })
+      console.log(data)
+      Orden=JSON.parse(response?.orden)[0]
+      if(aleatorio){
+        $("#paginaSeleccionaBoletos").fadeOut("slow", function () {
+          $("#paginaFacturacion").fadeIn("fast", function () {
+          }).css('display', 'flex');
+        });
+      }else{
+        $("#paginaEligeBoletos").fadeOut("slow", function () {
+          $("#paginaFacturacion").fadeIn("fast", function () {
+          }).css('display', 'flex');
+        });
+      }
+    })
+    .catch(error => {
+      const dialog = document.getElementById("Compra")
+      dialog.close()
+      stopLoading()
+      console.log(error)
+      Swal.fire(
+        'Ocurrio un problema',
+        error.message,
+        'warning').then(function () {
+          dialog.showModal()
+
+          $("#Compra").fadeIn("fast", function () {
+          })
+        })
+    });
+  }
+
+  const validarArchivo=()=> {
+    const fileInput = document.getElementById("voucher")
+    if(fileInput.files?.length > 0){
+      console.log('se esta ejecutando validar Archivos')
+      if (fileInput.files[0].size > 4194304) {
+        //close modal
+        document.getElementById("Compra").close();
+  
+        Swal.fire(
+          'Error',
+          "El archivo no puede ser mayor a 4MB",
+          'error').then(function () {
+            //open modal
+            document.getElementById("Compra").showModal();
+          })
+          fileInput.value = ""
+        return
+      }
+      // valida file types
+      let allowedExtensions = /(\.jpg|\.jpeg|\.png|\.pdf)$/i;
+      if (!allowedExtensions.exec(fileInput.value)) {
+        document.getElementById("Compra").close();
+        Swal.fire(
+          'Error',
+          "El archivo debe ser una imagen o pdf",
+          'error').then(function () {
+            //open modal
+            document.getElementById("Compra").showModal();
+          })
+          fileInput.value = ""
+        return
+      }
+      console.log(fileInput.files[0])
+      uploadedFile.classList.remove("hidden")
+      uploadedFile.classList.add("flex")
+      uploadButton.classList.remove("flex")
+      uploadButton.classList.add("hidden")
+      let filename = fileInput.files[0]?.name
+      let newFileName = filename
+      if(filename?.length > 20){
+        let extension = filename?.split('.')?.at(-1)
+        newFileName = filename.slice(0,20) + '.' + extension
+      }
+      fileNameText.innerText = newFileName
+      fileSizeText.innerText = ((fileInput.files[0].size || 0) / 1024).toFixed(2) + ' KB'
+    }
+    else{
+      uploadedFile.classList.remove("flex")
+      uploadedFile.classList.add("hidden")
+      uploadButton.classList.remove("hidden")
+      uploadButton.classList.add("flex")
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", async function (event) {
+
+    btComp?.addEventListener("click", showDialog)
+    btCompAlt?.addEventListener("click", showDialog)
+    btCompSelect?.addEventListener("click", showVerificador)
+    btCompSelectAlt?.addEventListener("click", showVerificador)
+    btFinalizar.addEventListener("click", finalizar)
+    formularioComprador.addEventListener("submit", finalizar)
+    fileInput.addEventListener("change", validarArchivo)
+    btRemove.addEventListener("click", removeLastRow)
+    btAdd.addEventListener("click", function () { increaseTickets() })
+    buttonVolverPaginaFacturacion.addEventListener("click", ()=>{ regresarNumerosModal() })
+    paginaSeleccionaBoletosSiguiente.addEventListener("click", async (event)=>{
+      await getTicketNumbers()
+      reservarNumeros(event)
+    })
+    paginaEligeBoletosSiguiente.addEventListener("click", async (event)=>{
+      if(selectedNumbers.length < RifaMin){
+        showToast('Selecciona al menos ' + RifaMin + ' números')
+        return
+      }
+      await getTicketNumbers()
+      reservarNumeros(event)
+    })
+    
+    document.getElementById("btContinuarCompra").addEventListener("click", crearOrden)
+    document.getElementById("btContinuarCopiar").addEventListener("click", formularioCompra)
+    document.getElementById("btContinuarCopiarZelle").addEventListener("click", formularioCompraZelle)
+    document.getElementById("btContinuarCopiarBinance").addEventListener("click", formularioCompraBinance)
+    document.getElementById("btContinuarCopiarZinli").addEventListener("click", formularioCompraZinli)
+    buttonBackWhatsapp.addEventListener("click", ()=>{ goBackFromWhatsapp() })
+    buttonOpenWhatsappModal?.addEventListener("click", ()=>{ formularioWhatsapp() })
+
+
+
+    botonPagoMovil.addEventListener("click", ()=>{
+      tipoPago = 3
+      siguientePaginaFacturacion()
+    })
+    botonPagoZelle?.addEventListener("click", ()=>{
+      tipoPago = 4
+      siguientePaginaFacturacion()
+    })
+    botonPagoBinance?.addEventListener("click", ()=>{
+      tipoPago = 2
+      siguientePaginaFacturacion()
+    })
+    botonPagoZinli?.addEventListener("click", ()=>{
+      tipoPago = 5
+      siguientePaginaFacturacion()
+    })
+
+
+
+    inputNumbers.value = RifaMin
+
+    closeModalButtons.forEach((elem)=>{
+      elem.addEventListener("click", function() {
+        closeDialog()
+      });
+    })
+    closeVerificaButtons.forEach((elem)=>{
+      elem.addEventListener("click", function() {
+        closeDialogVerifica()
+      });
+    })
+    fileNameText.addEventListener("click", ()=>{
+
+    });
+    fileSizeText.addEventListener("click", ()=>{
+      
+    });
+    cancelFile.addEventListener("click", ()=>{
+      const fileInput = document.getElementById("voucher")
+      console.log('cancelFile - click')
+      fileInput.value = []
+      validarArchivo()
+    });
+
+    pasteButton.addEventListener("click", ()=>{
+      window.navigator.clipboard.readText().then(res => {
+        console.log(`paste ${res}`)
+        document.getElementById("nroReferencia").value = res
+      })
+    })
+
+    uploadButton.addEventListener("click", (e)=>{
+      e.preventDefault()
+      const fileInput = document.getElementById("voucher")
+      fileInput.click();
+    })
+
+    iconInputBuscadorNumeros.addEventListener("click", (event)=>{
+      event.preventDefault()
+      inputBuscadorNumeros.focus()
+    })
+
+    inputBuscadorNumeros.addEventListener('keypress',(evt)=>{
+      if(evt?.target?.value?.length >= MaxLen){
+        evt.returnValue = false;
+        evt.preventDefault();
+      }
+    })
+
+
+    buttonBuscadorNumeros.addEventListener("click", async (event)=>{
+      event.preventDefault()
+      if(selectedNumbers.length > ticketCount){
+        showToast('Ya has seleccionado todos los números')
+        return
+      }
+      if(!inputBuscadorNumeros?.value?.trim()){
+        showToast('Ingresa un número')
+        return
+      }
+      if(selectedNumbers.includes(inputBuscadorNumeros?.value?.trim())){
+        showToast('El número ya ha sido seleccionado')
+        return
+      }
+      let number = inputBuscadorNumeros?.value?.trim()
+      if(!number || typeof number !== 'string') return
+      if(number.length < MaxLen){
+        number = number.padStart(MaxLen, '0')
+      } 
+      const isAvailable = await checkNumber(number)
+      if(isAvailable){
+        selectedNumbers.push(number)
+        ticketCount = selectedNumbers.length
+        inputBuscadorNumeros.value = ""
+        inputBuscadorNumeros.focus()
+        renderNumbers()
+      }
+    })
+
+    inputNumbers.addEventListener('input', function () {
+      const replacedStr = (this.value.trim() === "") ? "" : parseInt(this.value.replace(/[^\d]/g, ""))
+      if (isNaN(replacedStr)) {
+        this.value = "";
+      } else {
+        this.value = replacedStr;
+      }
+      if (this.value >= RifaMin && this.value <= RifaMax) {
+        this.classList.remove('NumeroError')
+      } else {
+        this.classList.add('NumeroError')
+      }
+    })
+
+    document.addEventListener("keydown", (function (objEvent) {
+      if (objEvent.keyCode == 9) {  //tab pressed
+        objEvent.preventDefault(); // stops its action
+      }
+    }))
+
+    inputTlF.addEventListener('keypress', function (e) {
+      if (((e.charCode < 48 || e.charCode > 57) && e.charCode!=43) || e?.target?.value?.length >= 15) {
+        e.preventDefault();
+        return
+      }
+    })
+
+    copyCedulaContainer.addEventListener("click", (e)=>{
+      console.log(window.navigator)
+      window.navigator.clipboard.writeText('31541350').then(res => {
+        console.log('exito copiando cedula')
+        document.getElementById('copyCedula').classList.remove('fa-regular', 'fa-copy')
+        document.getElementById('copyCedula').classList.add('fa-solid', 'fa-check')
+        setTimeout(()=>{
+          document.getElementById('copyCedula').classList.remove('fa-solid', 'fa-check')
+          document.getElementById('copyCedula').classList.add('fa-regular', 'fa-copy')
+        }, 3000)
+      });
+    })
+
+    copyPhoneContainer.addEventListener("click", (e)=>{
+      window.navigator.clipboard.writeText('04127470479').then(res => {
+        console.log('exito copiando telefono')
+        document.getElementById('copyPhone').classList.remove('fa-regular', 'fa-copy')
+        document.getElementById('copyPhone').classList.add('fa-solid', 'fa-check')
+        setTimeout(()=>{
+          document.getElementById('copyPhone').classList.remove('fa-solid', 'fa-check')
+          document.getElementById('copyPhone').classList.add('fa-regular', 'fa-copy')
+        }, 3000)
+      });
+    })
+    copyCorreoZelleContainer.addEventListener("click", (e)=>{
+      window.navigator.clipboard.writeText('luisangelamauhad5@gmail.com').then(res => {
+        console.log('exito copiando telefono')
+        document.getElementById('copyCorreoZelle').classList.remove('fa-regular', 'fa-copy')
+        document.getElementById('copyCorreoZelle').classList.add('fa-solid', 'fa-check')
+        setTimeout(()=>{
+          document.getElementById('copyCorreoZelle').classList.remove('fa-solid', 'fa-check')
+          document.getElementById('copyCorreoZelle').classList.add('fa-regular', 'fa-copy')
+        }, 3000)
+      });
+    })
+    copyCorreoBinanceContainer.addEventListener("click", (e)=>{
+      window.navigator.clipboard.writeText('boxandlabel2@gmail.com').then(res => {
+        console.log('exito copiando correo')
+        document.getElementById('copyCorreoBinance').classList.remove('fa-regular', 'fa-copy')
+        document.getElementById('copyCorreoBinance').classList.add('fa-solid', 'fa-check')
+        setTimeout(()=>{
+          document.getElementById('copyCorreoBinance').classList.remove('fa-solid', 'fa-check')
+          document.getElementById('copyCorreoBinance').classList.add('fa-regular', 'fa-copy')
+        }, 3000)
+      });
+    })
+    copyCorreoZinliContainer.addEventListener("click", (e)=>{
+      window.navigator.clipboard.writeText('boxandlabel2@gmail.com').then(res => {
+        console.log('exito copiando correo')
+        document.getElementById('copyCorreoZinli').classList.remove('fa-regular', 'fa-copy')
+        document.getElementById('copyCorreoZinli').classList.add('fa-solid', 'fa-check')
+        setTimeout(()=>{
+          document.getElementById('copyCorreoZinli').classList.remove('fa-solid', 'fa-check')
+          document.getElementById('copyCorreoZinli').classList.add('fa-regular', 'fa-copy')
+        }, 3000)
+      });
+    })
+
+    copyValue.addEventListener("click", (e)=>{
+      window.navigator.clipboard.writeText(document.getElementById("montoPagarPagoMovil")?.value?.slice(3) || '').then(res => {
+        console.log('exito copiando precio')
+        e.target.innerText='Copiado!'
+        setTimeout(()=>{e.target.innerText='Copiar'}, 3000)
+      });
+    })
+    copyValueZelle.addEventListener("click", (e)=>{
+      window.navigator.clipboard.writeText(document.getElementById("montoPagarZelle")?.value?.slice(1) || '').then(res => {
+        console.log('exito copiando precio')
+        e.target.innerText='Copiado!'
+        setTimeout(()=>{e.target.innerText='Copiar'}, 3000)
+      });
+    })
+    copyValueBinance.addEventListener("click", (e)=>{
+      window.navigator.clipboard.writeText(document.getElementById("montoPagarBinance")?.value?.slice(1) || '').then(res => {
+        console.log('exito copiando precio')
+        e.target.innerText='Copiado!'
+        setTimeout(()=>{e.target.innerText='Copiar'}, 3000)
+      });
+    })
+    copyValueZinli.addEventListener("click", (e)=>{
+      window.navigator.clipboard.writeText(document.getElementById("montoPagarZinli")?.value?.slice(1) || '').then(res => {
+        console.log('exito copiando precio')
+        e.target.innerText='Copiado!'
+        setTimeout(()=>{e.target.innerText='Copiar'}, 3000)
+      });
+    })
+
+    
+    document.getElementById("paginaCompraContentRegresar").addEventListener("click", ()=>{
+        $("#ComprarContent").fadeOut("slow", function () {
+          if(tipoPago==3){
+            $("#temporizadorContent").fadeIn("fast", function () {
+            });
+          }
+          if(tipoPago==4){
+            $("#temporizadorContentZelle").fadeIn("fast", function () {
+            });
+          }
+          if(tipoPago==2){
+            $("#temporizadorContentBinance").fadeIn("fast", function () {
+            });
+          }
+          if(tipoPago==5){
+            $("#temporizadorContentZinli").fadeIn("fast", function () {
+            });
+          }
+        });
+      })
+    document.getElementById("paginaVerificaDatos").addEventListener("submit", (e) => {
+      e.preventDefault()
+      verificaSubmit().then((res) => {
+        if (res) {
+          $("#paginaVerificaDatos").fadeOut("slow", function () {
+            $("#paginaVerificaResultado").fadeIn("fast", function () {
+            });
+          }).css('display', 'flex');
+        }
+      })
+      
+    })
+    
+    document.getElementById("paginaEkiiRegresar").addEventListener("click", () => {
+      $("#ekiiPagoModal").fadeOut("slow", function () {
+        $("#paginaFacturacion").fadeIn("fast", function () {
+        }).css('display', 'flex');
+      });
+    })
+  });
+</script>
+

@@ -1,0 +1,76 @@
+{% load Filter %}
+{% load static %}
+
+<div class="flex flex-col items-start text-left w-full h-full">
+	<div class="flex flex-col items-start text-left gap-7 py-6 px-4 lg:px-6 w-full grow">
+		<div class="flex flex-row justify-start gap-8 items-start w-full">
+			<h3 class="title-large-medium text-color-primary grow text-left">Reenvio masivo de correos</h3>
+			<div onclick="closeModalReenvio()" class="flex justify-center  cursor-pointer">
+				<i class="fa fa-times text-xl p-1 text-[var(--color-icon-primary)]"></i>
+			</div>
+		</div>
+		<div
+			class="relative radius-rounded border border-color-primary text-sm text-left bg-transparent text-color-secondary w-full overflow-hidden">
+			<div class="grid grid-cols-[repeat(5,minmax(150px,200px))] bg-transparent w-full overflow-x-scroll">
+				<div class="grid grid-cols-subgrid col-span-5 border-b border-color-primary">
+					<div class="p-4">
+						Rifa
+					</div>
+					<div class="p-4">
+						Estado
+					</div>
+					<div class="p-4">
+						Progreso
+					</div>
+					<div class="p-4">
+						Creado
+					</div>
+					<div class="p-4">
+						Modificado
+					</div>
+				</div>
+				<div
+					class="grid grid-cols-subgrid col-span-5 label-medium-medium text-color-primary border-color-primary max-h-[440px] overflow-y-scroll">
+					{% for c in ReenvioData %}
+					<div
+						class="grid grid-cols-subgrid col-span-5 border-b hover:bg-[var(--color-surface-primary-focused)] label-medium-medium border-color-primary h-max">
+						<div class="p-4 h-16 lg:h-24 overflow-hidden">
+							{{c.idRifa.Nombre}}
+						</div>
+						<div class="p-4 h-16 lg:h-24 overflow-hidden">
+							{% if c.estado == 1 %}
+							Terminado
+							{% elif c.estado == 2 %}
+							Error
+							{% else %}
+							En proceso
+							{% endif %}
+						</div>
+						<div class="p-4 h-16 lg:h-24 overflow-hidden">
+							<span>{{c.ultimo}} de {{c.total}}</span>
+						</div>
+						<div class="p-4 h-16 lg:h-24 overflow-hidden">
+							{{c.created_at|date:'d-m-Y h:i A'}} {{ c.created_at|time:"H:i" }}
+						</div>
+						<div class="p-4 h-16 lg:h-24 overflow-hidden">
+							{{c.updated_at|date:'d-m-Y h:i A'}} {{ c.updated_at|time:"H:i" }}
+						</div>
+					</div>
+					{% endfor %}
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="flex flex-row justify-between items-center justify-self-end p-6 w-full border-t border-color-primary">
+		<button class="button button-outline button-small" type="button" onclick="closeModalReenvio()">
+			<span>Cerrar</span>
+		</button>
+		<button type="button" class="button button-active button-small" onclick="resendMail('{{ Rifa.pk }}')" {% if EnProceso %} disabled {% endif %}>
+			{% if UltimoReenvio.estado == 2 %}
+			Reanudar ({{UltimoReenvio.ultimo}}/{{UltimoReenvio.total}})
+			{% else %}
+			Reenviar correos
+			{% endif %}
+		</button>
+	</div>
+</div>

@@ -1,0 +1,18 @@
+[
+    {
+        "model": "Rifa.Settings",
+        "pk": 1,
+        "fields": {
+          "code": "PHONE_CLIENT",
+          "descripcion": "Número de teléfono del atención al cliente"
+        }
+    },
+    {
+        "model": "Rifa.Settings",
+        "pk": 2,
+        "fields": {
+          "code": "HIDE_TICKET_COUNT",
+          "descripcion": "Ocultar el número de boletos comprados"
+        }
+    }
+]

@@ -1,0 +1,216 @@
+{% load mjml %}
+
+{% mjml %}
+    <mjml>
+        <mj-head>
+            <mj-font name="Inter" href="https://fonts.googleapis.com/css2?family=Inter" />
+            <mj-attributes>
+              <mj-all font-family="Inter, Helvetica, Arial" />
+            </mj-attributes>
+            <mj-style>
+                .image img{
+                  object-position:center !important;
+                  object-fit: cover !important;
+                  border-radius: 8px;
+                  max-height: 252px;
+                  width: 100%;
+
+                }
+                .logos{
+                  vertical-align: middle !important;
+                   height: 60px !important;
+                }
+                .contenedor{
+                  background-color: #FFFFFF0D; border-radius: 8px; padding:12px;
+                }
+                .wrapper{
+                  background-color: #0000;
+                }
+                .footer{
+                  border-top: 1px solid #FFFFFF61;
+                  display: none;
+                }
+                @media (min-width:600px) { 
+                  .image img{
+                    object-position:center !important;
+                    object-fit: cover !important;
+                    border-radius: 8px 8px 0px 0px;
+                    max-height: 430px;
+                    width: 100%;
+
+                  }
+                  .logos{
+                    vertical-align: middle !important;
+                     height: 60px !important;
+                  }
+                  .contenedor{
+                    background-color: #FFFFFF0D; border-radius: 8px; padding:12px;
+                  }
+                  .wrapper{
+                    background-color: #FFFFFF0D;
+                  }
+                  .footer{
+                    border-top: 1px solid #FFFFFF61;
+                    display: block;
+                  }
+                }
+            </mj-style>
+        </mj-head>
+        <mj-body background-color="#121212">
+            <mj-section full-width="full-width">
+                <mj-group>
+                    <mj-column>
+                        <mj-image width="196px" height="32px" src="https://aleautos1.com/static/img/logo-navbar-alt.png"/>
+                    </mj-column>
+                </mj-group>
+            </mj-section>
+            <mj-section full-width="full-width">
+                <mj-column width="100%">
+                  <mj-text>
+                    <h2 style="padding-bottom:8px;margin:0px;font-size:14px; line-height:20px; letter-spacing:4px; font-weight:600; text-transform:uppercase; color: #FFFFFF; text-align: center;">Ya estás participando</h2>
+                    <h1 style="margin:0px;font-size:28px; line-height:32px;font-weight:600; color: #FFFFFF; text-align: center;">Gracias por comprar con Aleautos1</h1>
+                  </mj-text>
+                </mj-column>
+            </mj-section>
+            <mj-wrapper border-radius="8px" padding="16px" css-class="wrapper">
+                <mj-section full-width="full-width" padding="0px">
+                  <mj-column padding="0px">
+                    <mj-image src="https://aleautos1.com{{ rifa.Banner.url  }}" alt="" padding="0px" css-class="image"/>
+                  </mj-column>
+                </mj-section>
+                {% if rifa.FechaSorteo != None %}
+                <mj-section>
+                  <mj-column>
+                    <mj-text padding="0px" align="left">
+                      <span style="background-color: #FFFFFF0D; border-radius: 8px; padding:12px;">
+                        <img src="https://aleautos1.com/static/img/calendar_event_24.svg" alt="" style="vertical-align:middle;padding-right:8px">
+                        <span style="vertical-align:middle;margin:0px;font-size:14px; line-height:20px;font-weight:500; color: #FFFFFFBD; text-align: center;">Sorteo: {% if rifa.FechaSorteo == None %} Por anunciar {% else %} {{rifa.FechaSorteo|date:'d M Y'}} {% endif %}</span>
+                      </span>
+                    </mj-text>
+                  </mj-column>
+                </mj-section>
+                {% endif %}
+                <mj-section padding="10px 0px">
+                  <mj-column padding="0px">
+                    <mj-text padding="0px" align="left">
+                      <h1 style="margin:0px;font-size:28px; line-height:32px;font-weight:700; color: #FFFFFF; text-align: left;">{{rifa.Nombre}}</h1>
+                    </mj-text>
+                  </mj-column>
+                </mj-section>
+                <mj-section padding="10px 0px">
+                  <mj-column padding="0px">
+                    <mj-text padding="8px 0px" align="left">
+                      <span>
+                        <img src="https://aleautos1.com/static/img/user_24px.svg" style="vertical-align:middle;" alt="">
+                        <span style="vertical-align:middle;margin:0px;font-size:14px; line-height:16px;font-weight:400; color: #FFFFFFBD; text-align: left;">Nombre: </span>
+                        <span style="vertical-align:middle;margin:0px;font-size:14px; line-height:16px;font-weight:400; color: #FFFFFF; text-align: left;">{{user.Nombre}}</span>
+                      </span>
+                    </mj-text>
+                  </mj-column>
+                  <mj-column padding="0px">
+                    <mj-text padding="8px 0px" align="left">
+                      <span>
+                        <img src="https://aleautos1.com/static/img/id_card_24px.svg" style="vertical-align:middle;" alt="">
+                        <span style="vertical-align:middle;margin:0px;font-size:14px; line-height:16px;font-weight:400; color: #FFFFFFBD; text-align: left;">Cédula: </span>
+                        <span style="vertical-align:middle;margin:0px;font-size:14px; line-height:16px;font-weight:400; color: #FFFFFF; text-align: left;">{{user.Cedula}}</span>
+                      </span>
+                    </mj-text>
+                  </mj-column>
+                  <mj-column padding="0px">
+                    <mj-text padding="8px 0px" align="left">
+                      <span>
+                        <img src="https://aleautos1.com/static/img/sell_24px.svg" style="vertical-align:middle;" alt="">
+                        <span style="vertical-align:middle;margin:0px;font-size:14px; line-height:16px;font-weight:400; color: #FFFFFFBD; text-align: left;">Núm. compra: </span>
+                        <span style="vertical-align:middle;margin:0px;font-size:14px; line-height:16px;font-weight:400; color: #FFFFFF; text-align: left;">{{reference}}</span>
+                      </span>
+                    </mj-text>
+                  </mj-column>
+                </mj-section>
+                <mj-section>
+                  <mj-column>
+                    <mj-text padding="12px" align="left" css-class="contenedor">
+                      <span>
+                        <img src="https://aleautos1.com/static/img/info_24.svg" alt="" style="display:inline;padding-right:8px;">
+                        <span style="display:inline;margin:0px;font-size:14px; line-height:20px;font-weight:500; color: #FFFFFF; text-align: center;">Guarda este comprobante y te contactaremos el día del sorteo si eres uno de los afortunados.</span>
+                      </span>
+                    </mj-text>
+                  </mj-column>
+                </mj-section>
+                <mj-section>
+                  <mj-column>
+                    <mj-text padding="0px">
+                      <h3 style="margin:0px;font-size:20px; line-height:24px;font-weight:600; color: #FFFFFF; text-align: center;">Boletos comprados <span style="color:#FFFFFF61;">({{len}})</span></h3>
+                    </mj-text>
+                    <mj-text align="center" padding="24px 0px">
+                      {% for x in nums %}
+                        <span style="display:inline-block;margin:4px 7px; color:#FFFFFF; border: 1px solid #FFFFFF61; border-radius:8px; width:72px; min-width:72px; text-align:center; padding:12px 0px;">
+                          {{ x }}
+                        </span>
+                      {% endfor %}
+                    </mj-text>
+                  </mj-column>
+                </mj-section>
+                <mj-section padding="32px 0px">
+                  <mj-column>
+                    <mj-text padding="4px 0px">
+                      <span style="display:inline-block;margin:0px;font-size:14px; line-height:20px;font-weight:400; color: #FFFFFFBD; text-align: left; width:49%" >Precio por boleto</span>
+                      {% if compra.MetodoPago == 3 %}
+                        <span style="display:inline-block;margin:0px;font-size:14px; line-height:20px;font-weight:400; color: #FFFFFFBD; text-align: right; width:49%" >Bs. {{rifa.Precio}}</span>
+                      {% else %}
+                        <span style="display:inline-block;margin:0px;font-size:14px; line-height:20px;font-weight:400; color: #FFFFFFBD; text-align: right; width:49%" >$ {{rifa.PrecioAlt}}</span>
+                      {% endif %}
+                    </mj-text>
+                    <mj-text padding="4px 0px">
+                      <span style="display:inline-block;margin:0px;font-size:14px; line-height:20px;font-weight:400; color: #FFFFFFBD; text-align: left; width:49%" >Cantidad de boletos</span>
+                      <span style="display:inline-block;margin:0px;font-size:14px; line-height:20px;font-weight:400; color: #FFFFFFBD; text-align: right; width:49%" >{{len}}</span>
+                    </mj-text>
+                    <mj-divider padding="8px 0px" border-width="1px" border-style="solid" border-color="lightgrey" />
+                    <mj-text padding="4px 0px">
+                      <span style="display:inline-block;margin:0px;font-size:14px; line-height:20px;font-weight:600; color: #FFFFFF; text-align: left; width:49%" >Total pagado</span>
+                      {% if compra.MetodoPago == 3 %}
+                        <span style="display:inline-block;margin:0px;font-size:14px; line-height:20px;font-weight:600; color: #FFFFFF; text-align: right; width:49%" >Bs. {{totalpago}}</span>
+                      {% else %}
+                        <span style="display:inline-block;margin:0px;font-size:14px; line-height:20px;font-weight:600; color: #FFFFFF; text-align: right; width:49%" >$ {{compra.TotalPagadoAlt}}</span>
+                      {% endif %}
+                    </mj-text>
+                    <mj-text padding="4px 0px">
+                      <img src="https://aleautos1.com/media/qrcode/{{compra.hash}}.png" style="width: 50%;
+                      margin: auto;
+                      text-align: center;
+                      display: block;" 
+                      alt="" padding="0px" css-class="image"/>
+
+                    </mj-text>
+                  </mj-column>
+          
+                  
+                </mj-section>
+                <mj-section css-class="footer">
+                  <mj-column>
+                    <mj-text padding="16px 0px" align="center">
+                      <a href="https://www.instagram.com/aleautos1/" style="padding:0px 24px">
+                        <img src="https://aleautos1.com/static/img/instagram_24px.svg" alt="">
+                      </a>
+                      
+                    </mj-text>
+                    <mj-text padding="16px 0px" align="center">
+                        <img src="https://aleautos1.com/static/img/SUPERGANA.png" style="vertical-align: middle !important; height: 60px !important;"  css-class="logos" alt="">
+                        <img src="https://aleautos1.com/static/img/tachira.png"  style="vertical-align: middle !important; height: 60px !important;"  css-class="image" alt="">
+                    </mj-text>
+                    <mj-text padding="16px">
+                      <a href="https://aleautos1.com/terminos/" style="display:inline-block;margin:0px;font-size:12px; line-height:16px;font-weight:400; color: #FFFFFFBD; text-align: center; width:24%" >Términos</a>
+                      <a href="https://aleautos1.com/privacy/" style="display:inline-block;margin:0px;font-size:12px; line-height:16px;font-weight:400; color: #FFFFFFBD; text-align: center; width:24%" >Privacidad</a>
+                      <a {% if whatsapp_config != None and whatsapp_config.valor != None %} href="https://wa.me/{{whatsapp_config.valor}}"{% else %} href="#" {%endif%} style="display:inline-block;margin:0px;font-size:12px; line-height:16px;font-weight:400; color: #FFFFFFBD; text-align: center; width:24%" >Contáctanos</a>
+                      <a href="#" style="display:inline-block;margin:0px;font-size:12px; line-height:16px;font-weight:400; color: #FFFFFFBD; text-align: center; width:24%" >Dar de baja</a>
+                    </mj-text>
+                  </mj-column>
+                </mj-section>
+            </mj-wrapper>
+            <mj-section>
+              <mj-column>
+                <mj-spacer height="24px"/>
+              </mj-column>
+            </mj-section>
+        </mj-body>
+    </mjml>
+{% endmjml %} 

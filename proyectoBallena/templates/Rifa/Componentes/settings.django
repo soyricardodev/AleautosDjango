@@ -1,0 +1,63 @@
+{% load Filter %}
+{% load static %}
+
+<div class="flex flex-1 lg:max-h-[700px] flex-col items-start text-left w-full h-[100dvh] max-h-[100dvh]">
+  <div class="flex flex-1 lg:max-h-[700px] flex-col items-start text-left gap-7 pt-6 w-full h-[100dvh] max-h-[100dvh]">
+    <div class="flex flex-row justify-start gap-8 items-start w-full border-b border-color-primary px-4 lg:px-6 pb-6">
+      <div class="flex flex-col gap-2 items-start grow">
+        <h3 class="title-large-medium text-color-primary grow text-left">Preferencias</h3>
+        <span class="body-medium-regular text-color-secondary">Este formulario te permite personalizar tu experiencia en
+          nuestra plataforma</span>
+      </div>
+      <div onclick="closeDialogSettings()" class="flex justify-center cursor-pointer">
+        <i class="fa fa-times text-xl p-1 text-[var(--color-icon-primary)]"></i>
+      </div>
+    </div>
+    <form id="settingsForm"
+      class="w-full flex flex-col flex-1 lg:flex-none justify-start overflow-scroll lg:h-[436px] pb-6 px-4 lg:px-6">
+      <div id="detalle-content-tab-general" class="detalle-content-tab flex flex-col gap-10 shrink">
+        {% if whatsapp != None %}
+          <div class="flex flex-row justify-start items-center grow">
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <span class="body-large-medium text-color-secondary">{{whatsapp.descripcion}}</span>
+            </div>
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <div class="flex flex-col-reverse gap-2 w-full">
+                <input type="text" id="input_whatsapp" name="PHONE_CLIENT" value="{{whatsapp.valor|default_if_none:''}}"
+                  class="input w-full" placeholder="584125555555">
+              </div>
+            </div>
+          </div>
+        {% endif %}
+        {% if percent != None %}
+          <div class="flex flex-row justify-start items-center grow">
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <span class="body-large-medium text-color-secondary">{{percent.descripcion}}</span>
+            </div>
+            <div class="flex flex-row justify-start items-center w-1/2">
+              <label class="inline-flex items-center mb-5 cursor-pointer">
+                <input id="input_percent" type="checkbox" class="sr-only peer" name="HIDE_TICKET_COUNT" {% if percent.valor != None %} checked {% endif %}>
+                <div
+                  class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-black after:content-[''] after:absolute after:top-[2px] after:start-[2px] peer-checked:after:bg-[var(--color-container-neutral-bright)] after:bg-[var(--color-icon-primary)] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[var(--color-icon-brand)]">
+                </div>
+              </label>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+  {% if perms.Rifa.change_rifa %}
+    <div
+      class="flex flex-col lg:flex-row-reverse gap-4 justify-between items-center justify-self-end p-6 w-full border-t border-color-primary">
+      <div class="flex flex-row gap-4 w-full lg:w-auto">
+        <button class="button button-outline button-small grow" type="button" onclick="closeDialogSettings()">
+          <span>Cancelar</span>
+        </button>
+        <button id="buttonSavePreferences" class="button button-active button-small grow" type="button">
+          <span>Guardar</span>
+        </button>
+      </div>
+    </div>
+  {% endif %}
+</div>

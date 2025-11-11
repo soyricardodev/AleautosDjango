@@ -1,0 +1,15 @@
+__pycache__
+/vm
+logs/
+media/uploads/
+docker/data
+docker/redis_data
+ballenaEnvironment
+node_modules
+CACHE
+migrations
+.DS_Store
+.vscode/settings.json
+.env
+supervisord.log
+supervisord.pid

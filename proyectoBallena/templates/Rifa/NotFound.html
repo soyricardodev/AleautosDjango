@@ -1,0 +1,32 @@
+{% extends "_base.html" %} {% load static %}
+{% block content %}
+<div class="grid lg:grid-cols-2 lg:py-4 xl:px-40 2xl:px-56 mx-auto">
+  <section class="w-full max-w-lg mx-auto h-full">
+    <div class="h-full px-4 pb-4">
+      <div class="flex flex-col justify-center h-full ">
+        <div class="grid gap-2">
+          <span class="heading-large-semibold">Oops. Error 404.</span>
+          <img src="{% static '/img/error-404.png' %}" alt="error 404 image" class="rounded-lg h-64 w-64 mx-auto lg:hidden">
+        </div>
+        <div class="flex flex-col items-start">
+          <span class="text-sm mt-5">
+            La pagina a la que intentas acceder no existe.
+          </span>
+          <div class="flex justify-start">
+            <a href="{% url 'index' %}" class="button button-medium button-active mt-5">
+              Ir a listado de rifas
+              <i class="fa-solid fa-arrow-right ml-2"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="w-full max-w-lg mx-auto hidden lg:block">
+    <div class="mb-4 lg:mb-14 px-4 rounded-lg justify-center">
+
+      <img src="{% static '/img/error-404.png' %}" alt="" class="rounded-lg h-72 w-72 mx-auto">
+    </div>
+  </section>
+</div>
+{% endblock content %}

@@ -1,0 +1,768 @@
+{% extends '_base_admin.html' %}
+{% load static %}
+{% load Filter %}
+
+{% block titles %}
+<div class="flex flex-col gap-2">
+	<h1 class="heading-xsmall-medium text-left">Dashboard</h1>
+</div>
+<div class="flex flex-row gap-1 justify-start items-center">
+	<a href="{% url 'Dashboard' %}">
+		<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+			<path
+				d="M3.5 9.9994L9.46967 4.02973C9.76256 3.73684 10.2374 3.73684 10.5303 4.02973L16.5 9.9994M5 8.4994V15.2494C5 15.6636 5.33579 15.9994 5.75 15.9994H8.5V12.7494C8.5 12.3352 8.83579 11.9994 9.25 11.9994H10.75C11.1642 11.9994 11.5 12.3352 11.5 12.7494V15.9994H14.25C14.6642 15.9994 15 15.6636 15 15.2494V8.4994M7.5 15.9994H13"
+				stroke="var(--color-icon-brand)" stroke-opacity="1" stroke-linecap="round" stroke-linejoin="round" />
+		</svg>
+	</a>
+	<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+		<path d="M14.4268 7.04688L10.667 17.8545H9.29297L13.0527 7.04688H14.4268Z" fill="var(--color-icon-disabled)"
+			fill-opacity="1" />
+	</svg>
+	<span class="label-medium-regular text-color-secondary">Dashboard</span>
+</div>
+{% endblock %}
+{% block actions %}
+{% if perms.Rifa.add_rifa %}
+<a href="{% url 'Rifa' %}" type="button" class="flex button button-active button-medium justify-center items-center">
+	<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+		<path d="M10 4.16666V15.8333" stroke="var(--color-fixed-black-secondary)" stroke-opacity="1" stroke-width="1.25"
+			stroke-linecap="round" stroke-linejoin="round" />
+		<path d="M4.16675 10H15.8334" stroke="var(--color-fixed-black-secondary)" stroke-opacity="1" stroke-width="1.25"
+			stroke-linecap="round" stroke-linejoin="round" />
+	</svg>
+	<span class="label-medium-semibold">Nueva rifa</span>
+</a>
+<button type="button" class="flex button button-outline button-medium justify-center items-center"
+	onclick="modalSettings()">
+	<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+		<g clip-path="url(#clip0_5_3273)">
+			<path
+				d="M10 12.5C11.3807 12.5 12.5 11.3807 12.5 10C12.5 8.61929 11.3807 7.5 10 7.5C8.61929 7.5 7.5 8.61929 7.5 10C7.5 11.3807 8.61929 12.5 10 12.5Z"
+				stroke="var(--color-icon-primary)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" />
+			<path
+				d="M16.1667 12.5C16.0558 12.7514 16.0227 13.0302 16.0717 13.3005C16.1207 13.5709 16.2496 13.8203 16.4417 14.0167L16.4917 14.0667C16.6467 14.2215 16.7696 14.4053 16.8535 14.6076C16.9373 14.81 16.9805 15.0268 16.9805 15.2459C16.9805 15.4649 16.9373 15.6818 16.8535 15.8841C16.7696 16.0864 16.6467 16.2702 16.4917 16.425C16.3369 16.58 16.1531 16.7029 15.9508 16.7868C15.7484 16.8707 15.5316 16.9139 15.3125 16.9139C15.0935 16.9139 14.8766 16.8707 14.6743 16.7868C14.472 16.7029 14.2882 16.58 14.1334 16.425L14.0834 16.375C13.887 16.1829 13.6375 16.0541 13.3672 16.005C13.0969 15.956 12.8181 15.9891 12.5667 16.1C12.3202 16.2057 12.11 16.3811 11.962 16.6047C11.8139 16.8282 11.7344 17.0902 11.7334 17.3584V17.5C11.7334 17.9421 11.5578 18.366 11.2452 18.6785C10.9327 18.9911 10.5087 19.1667 10.0667 19.1667C9.62468 19.1667 9.20076 18.9911 8.8882 18.6785C8.57563 18.366 8.40004 17.9421 8.40004 17.5V17.425C8.39359 17.1492 8.30431 16.8817 8.1438 16.6573C7.98329 16.4329 7.75899 16.2619 7.50004 16.1667C7.24869 16.0558 6.96988 16.0227 6.69955 16.0717C6.42922 16.1207 6.17977 16.2496 5.98337 16.4417L5.93337 16.4917C5.77858 16.6467 5.59477 16.7696 5.39244 16.8535C5.19011 16.9373 4.97323 16.9805 4.75421 16.9805C4.53518 16.9805 4.3183 16.9373 4.11597 16.8535C3.91364 16.7696 3.72983 16.6467 3.57504 16.4917C3.42008 16.3369 3.29715 16.1531 3.21327 15.9508C3.1294 15.7484 3.08623 15.5316 3.08623 15.3125C3.08623 15.0935 3.1294 14.8766 3.21327 14.6743C3.29715 14.472 3.42008 14.2882 3.57504 14.1334L3.62504 14.0834C3.81715 13.887 3.94603 13.6375 3.99504 13.3672C4.04406 13.0969 4.01097 12.8181 3.90004 12.5667C3.7944 12.3202 3.619 12.11 3.39543 11.962C3.17185 11.8139 2.90986 11.7344 2.64171 11.7334H2.50004C2.05801 11.7334 1.63409 11.5578 1.32153 11.2452C1.00897 10.9327 0.833374 10.5087 0.833374 10.0667C0.833374 9.62468 1.00897 9.20076 1.32153 8.8882C1.63409 8.57563 2.05801 8.40004 2.50004 8.40004H2.57504C2.85087 8.39359 3.11838 8.30431 3.34279 8.1438C3.5672 7.98329 3.73814 7.75899 3.83337 7.50004C3.9443 7.24869 3.97739 6.96988 3.92838 6.69955C3.87936 6.42922 3.75049 6.17977 3.55837 5.98337L3.50837 5.93337C3.35341 5.77858 3.23048 5.59477 3.14661 5.39244C3.06273 5.19011 3.01956 4.97323 3.01956 4.75421C3.01956 4.53518 3.06273 4.3183 3.14661 4.11597C3.23048 3.91364 3.35341 3.72983 3.50837 3.57504C3.66316 3.42008 3.84698 3.29715 4.04931 3.21327C4.25164 3.1294 4.46851 3.08623 4.68754 3.08623C4.90657 3.08623 5.12344 3.1294 5.32577 3.21327C5.5281 3.29715 5.71192 3.42008 5.86671 3.57504L5.91671 3.62504C6.11311 3.81715 6.36255 3.94603 6.63288 3.99504C6.90321 4.04406 7.18203 4.01097 7.43337 3.90004H7.50004C7.74651 3.7944 7.95672 3.619 8.10478 3.39543C8.25285 3.17185 8.3323 2.90986 8.33337 2.64171V2.50004C8.33337 2.05801 8.50897 1.63409 8.82153 1.32153C9.13409 1.00897 9.55801 0.833374 10 0.833374C10.4421 0.833374 10.866 1.00897 11.1786 1.32153C11.4911 1.63409 11.6667 2.05801 11.6667 2.50004V2.57504C11.6678 2.8432 11.7472 3.10519 11.8953 3.32876C12.0434 3.55234 12.2536 3.72774 12.5 3.83337C12.7514 3.9443 13.0302 3.97739 13.3005 3.92838C13.5709 3.87936 13.8203 3.75049 14.0167 3.55837L14.0667 3.50837C14.2215 3.35341 14.4053 3.23048 14.6076 3.14661C14.81 3.06273 15.0268 3.01956 15.2459 3.01956C15.4649 3.01956 15.6818 3.06273 15.8841 3.14661C16.0864 3.23048 16.2702 3.35341 16.425 3.50837C16.58 3.66316 16.7029 3.84698 16.7868 4.04931C16.8707 4.25164 16.9139 4.46851 16.9139 4.68754C16.9139 4.90657 16.8707 5.12344 16.7868 5.32577C16.7029 5.5281 16.58 5.71192 16.425 5.86671L16.375 5.91671C16.1829 6.11311 16.0541 6.36255 16.005 6.63288C15.956 6.90321 15.9891 7.18203 16.1 7.43337V7.50004C16.2057 7.74651 16.3811 7.95672 16.6047 8.10478C16.8282 8.25285 17.0902 8.3323 17.3584 8.33337H17.5C17.9421 8.33337 18.366 8.50897 18.6785 8.82153C18.9911 9.13409 19.1667 9.55801 19.1667 10C19.1667 10.4421 18.9911 10.866 18.6785 11.1786C18.366 11.4911 17.9421 11.6667 17.5 11.6667H17.425C17.1569 11.6678 16.8949 11.7472 16.6713 11.8953C16.4477 12.0434 16.2723 12.2536 16.1667 12.5Z"
+				stroke="var(--color-icon-primary)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" />
+		</g>
+		<defs>
+			<clipPath id="clip0_5_3273">
+				<rect width="20" height="20" fill="none" />
+			</clipPath>
+		</defs>
+	</svg>
+	<span class="label-medium-semibold">Configurar</span>
+</button>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<section class="grid lg:px-[72px] gap-6">
+	<section class="grid mx-5 lg:mx-0 lg:grid-cols-2 gap-6">
+		<div
+			class="grid bg-[var(--color-container-neutral-bright)] border border-color-primary shadow-sm p-6 gap-8 rounded-lg">
+			<header class="flex justify-between gap-4 items-start">
+				<div class="flex flex-col gap-2">
+					<span class="heading-xsmall-medium">Rifa actual</span>
+					<p class="body-medium-regular text-color-secondary">{{ Rifa.Nombre }}</p>
+				</div>
+				{% if Rifa %}
+				{% if perms.Rifa.view_compra %}
+				<a href="{% url 'Historial' Rifa.Id %}" type="button"
+					class="button button-outline button-small rounded-lg flex-nowrap flex justify-center items-center w-max shrink-0">
+					<span class="label-medium-medium hidden lg:flex w-max flex-nowrap">Ver boletos</span>
+					<i class="fa-solid fa-arrow-right text-color-secondary"></i>
+				</a>
+				{% else %}
+				{% if perms.Rifa.add_compra %}
+				<a href="{% url 'Preview' Rifa.NombreEnlace %}" type="button"
+					class="button button-outline button-small rounded-lg flex-nowrap flex justify-center items-center w-max shrink-0">
+					<span class="label-medium-medium hidden lg:flex w-max flex-nowrap">Ver detalle</span>
+					<i class="fa-solid fa-arrow-right text-color-secondary"></i>
+				</a>
+				{% endif %}
+				{% endif %}
+				{% endif %}
+			</header>
+			<footer class="grid lg:flex gap-10">
+				<div class="grid gap-1">
+					<span class="heading-xsmall-medium">{{ totalCompras }}</span>
+					<div class="flex items-center gap-2">
+						<p class="label-medium-regular text-color-secondary">Boletos vendidos</p>
+						<span class="flex w-[6px] h-[6px] me-3 bg-green-500 rounded-full"></span>
+					</div>
+				</div>
+				<div class="grid gap-1">
+					<span class="heading-xsmall-medium">{{ totalDisponibles }}</span>
+					<div class="flex items-center gap-2">
+						<p class="label-medium-regular text-color-secondary">Boletos disponibles</p>
+						<span class="flex w-[6px] h-[6px] me-3 bg-blue-500 rounded-full"></span>
+					</div>
+				</div>
+				<div class="grid gap-1">
+					<span class="heading-xsmall-medium">{{ totalPendientes }}</span>
+					<div class="flex items-center gap-2">
+						<p class="label-medium-regular text-color-secondary">Boletos reservados</p>
+						<span class="flex w-[6px] h-[6px] me-3 bg-yellow-500 rounded-full"></span>
+					</div>
+				</div>
+			</footer>
+		</div>
+		<div
+			class="grid bg-[var(--color-container-neutral-bright)] border border-color-primary shadow-sm p-6 gap-8 rounded-lg">
+			<header class="flex justify-between">
+				<div class="flex flex-col gap-2">
+					<span class="heading-xsmall-medium">Usuarios</span>
+					<p class="body-medium-regular text-color-secondary hidden lg:block">Resumen de los usuarios en el sistema</p>
+				</div>
+				<div>
+					<button id="dropdownRadioButtonGroup" data-dropdown-toggle="dropdownRadio3"
+						class="button button-outline button-small grow lg:grow-0" type="button">
+						<span>Agrupar</span>
+						<i class="fa-solid fa-caret-down text-xs"></i>
+					</button>
+					<div id="dropdownRadio3"
+						class="z-10 hidden w-48 bg-[var(--color-container-neutral-bright)] radius-rounded shadow-md overflow-hidden"
+						data-popper-reference-hidden="" data-popper-escaped="" data-popper-placement="top"
+						style="position: absolute; inset: auto auto 0px 0px; margin: 0px; transform: translate3d(522.5px, 3847.5px, 0px);">
+						<ul class="bg-[#FFFFFF1C] py-2" aria-labelledby="dropdownRadioButton">
+							<li onclick="changeU(3)" id="g3l"
+								class="label-input cursor-pointer p-4 flex flex-row gap-2 label-medium-regular text-color-brand">
+								<span class="label-medium-medium"><input id="grupo3" type="radio" value="3" name="grupo"
+										class="hidden" />Dia</span>
+							</li>
+							<li onclick="changeU(2)" id="g2l" class="label-input cursor-pointer p-4 flex flex-row gap-2 label-medium-regular {% if grupo == '2' %}
+                     text-color-brand
+                  {% else %}
+                     
+                  {% endif %}">
+								<span class="label-medium-medium"><input id="grupo2" type="radio" value="2" name="grupo"
+										class="hidden" />Semana</span>
+							</li>
+							<li onclick="changeU(1)" id="g1l" class="label-input cursor-pointer p-4 flex flex-row gap-2 label-medium-regular {% if grupo == '1' %}
+                     text-color-brand
+                  {% else %}
+                     
+                  {% endif %}">
+								<span class="label-medium-medium"><input id="grupo1" type="radio" value="1" name="grupo"
+										class="hidden" />Mes</span>
+							</li>
+						</ul>
+					</div>
+				</div>
+			</header>
+			<footer class="grid lg:flex gap-10">
+				<div class="grid gap-1">
+					<span class="heading-xsmall-medium" id="nuevosU">{{ d1 }}</span>
+					<div class="flex items-center gap-2">
+						<p class="label-medium-regular text-color-secondary">Usuarios nuevos</p>
+						<span class="flex w-[6px] h-[6px] me-3 bg-green-500 rounded-full"></span>
+					</div>
+				</div>
+				<div class="grid gap-1">
+					<span class="heading-xsmall-medium" id="viejosU">{{ d2 }}</span>
+					<div class="flex items-center gap-2">
+						<p class="label-medium-regular text-color-secondary">Usuarios recurrentes</p>
+						<span class="flex w-[6px] h-[6px] me-3 bg-blue-500 rounded-full"></span>
+					</div>
+				</div>
+			</footer>
+		</div>
+	</section>
+	{% if perms.Rifa.change_compra %}
+	<section class="max-w-[100vw] px-5 lg:px-0">
+		<div
+			class="relative radius-rounded border border-color-primary text-sm text-left bg-[var(--color-container-neutral-bright)] text-color-secondary w-full overflow-hidden">
+			<div class="flex flex-row justify-between items-center p-5 border-b border-color-primary">
+				<h2 class="body-medium-medium">Ventas recientes</h2>
+				<a href="{% url 'Historial' %}" type="button" class="button button-outline button-small">
+					<span class="label-medium-medium hidden lg:inline">Ver todo</span>
+					<i class="fa-solid fa-arrow-right text-color-secondary"></i>
+				</a>
+			</div>
+			<div class="grid grid-cols-[repeat(10,minmax(120px,1fr))] bg-transparent w-full overflow-x-scroll">
+				<div class="grid grid-cols-subgrid col-span-10 border-b border-color-primary">
+					<div class="p-4 flex">
+						<span>Rifa</span>
+					</div>
+					<div class="p-4 flex">
+						<span>Nombre y CI</span>
+					</div>
+					<div class="p-4 flex">
+						<span>Fecha</span>
+					</div>
+					<div class="p-4 flex">
+						<span>Referencia</span>
+					</div>
+					<div class="p-4 flex">
+						<span>Estatus</span>
+					</div>
+					<div class="p-4 flex">
+						<span>Tipo de pago</span>
+					</div>
+					<div class="p-4 flex">
+						<span>Boletos</span>
+					</div>
+					<div class="p-4 flex">
+						<span>Usuario</span>
+					</div>
+					<div class="p-4 flex">
+						<span>Monto</span>
+					</div>
+					<div
+						class="flex justify-center absolute right-0 w-24 lg:w-auto bg-[var(--color-container-neutral-bright)] lg:bg-transparent lg:relative border-l lg:border-l-0 border-color-primary">
+						<div
+							class="lg:bg-transparent bg-[var(--color-container-neutral-bright)] w-full h-full p-4 flex justify-center items-center">
+							Acciones</div>
+					</div>
+				</div>
+				<div class="grid grid-cols-subgrid col-span-10 label-medium-medium  border-color-primary overflow-y-scroll">
+					{% for c in Compras %}
+					<div
+						class="grid grid-cols-subgrid col-span-10 border-b hover:bg-[var(--color-surface-primary-focused)] label-medium-medium border-color-primary h-max">
+						<div class="p-4 h-24 overflow-hidden">{{ c.idRifa.Nombre }}</div>
+						<div class="p-4 h-24 overflow-hidden">
+							<span>{{ c.idComprador.Nombre }}</span>
+							<br />
+							<span class="text-color-secondary">{{ c.idComprador.Cedula }}</span>
+						</div>
+						<div class="p-4 h-24 overflow-hidden">{{ c.FechaCompra|date:'d-m-Y h:i A' }}</div>
+						<div class="p-4 h-24 overflow-hidden">{{ c.Referencia }}</div>
+						<div class="p-4 h-24 overflow-hidden">{{ c.Estado|reversoEstado }}</div>
+						<div class="p-4 h-24 overflow-hidden">{{ c.MetodoPago|reversoMetodoPago }}</div>
+						<div class="p-4 h-24 overflow-hidden">{{ c.NumeroBoletos }}</div>
+						{% if c.author != None %}
+						<div class="p-4 h-24 overflow-hidden">{{ c.author.username }}</div>
+						{% else %}
+						<div class="p-4 h-24 overflow-hidden">Cliente de rifas</div>
+						{% endif %}
+						{% if c.MetodoPago == 3 %}
+						<div class="p-4 h-24 overflow-hidden">Bs. {{ c.TotalPagado|format_price }}</div>
+						{% else %}
+						<div class="p-4 h-24 overflow-hidden">$ {{ c.TotalPagadoAlt|format_price }}</div>
+						{% endif %}
+
+						<div id="btVoucher"
+							class="h-24 overflow-hidden cursor-pointer absolute right-0 w-24 lg:w-auto bg-[var(--color-container-neutral-bright)] lg:bg-transparent lg:relative border-l lg:border-l-0 border-color-primary"
+							title="Acciones sobre la compra" onclick="modalConfirmar('{{ c.Id }}')">
+							<div
+								class="lg:bg-transparent bg-[var(--color-container-neutral-bright)] w-full h-full p-4 flex justify-center items-center">
+								<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path
+										d="M0.833336 9.99998C0.833336 9.99998 4.16667 3.33331 10 3.33331C15.8333 3.33331 19.1667 9.99998 19.1667 9.99998C19.1667 9.99998 15.8333 16.6666 10 16.6666C4.16667 16.6666 0.833336 9.99998 0.833336 9.99998Z"
+										stroke="var(--color-icon-primary)" stroke-opacity="0.74" stroke-width="1.25" stroke-linecap="round"
+										stroke-linejoin="round" />
+									<path
+										d="M10 12.5C11.3807 12.5 12.5 11.3807 12.5 10C12.5 8.61929 11.3807 7.5 10 7.5C8.61929 7.5 7.5 8.61929 7.5 10C7.5 11.3807 8.61929 12.5 10 12.5Z"
+										stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.25" stroke-linecap="round"
+										stroke-linejoin="round" />
+								</svg>
+							</div>
+						</div>
+					</div>
+					{% endfor %}
+				</div>
+			</div>
+		</div>
+	</section>
+	{% endif %}
+</section>
+<dialog id="Compra"
+	class="lg:radius-rounded bg-[var(--color-container-neutral-bright)] shadow-md overflow-hidden w-screen h-[100dvh] lg:w-[700px] lg:max-h-[700px] lg:h-[700px] m-0 lg:m-auto max-w-full max-h-[100dvh]">
+</dialog>
+<dialog id="Settings"
+	class="lg:radius-rounded bg-[var(--color-container-neutral-bright)] shadow-md overflow-hidden w-screen h-[100dvh] lg:w-[700px] lg:max-h-[700px] lg:h-[700px] m-0 lg:m-auto max-w-full max-h-[100dvh]">
+</dialog>
+<dialog id="Comprador"
+	class="lg:radius-rounded bg-[var(--color-container-neutral-bright)] shadow-md overflow-hidden w-screen h-[100dvh] lg:w-[700px] lg:max-h-[700px] lg:h-[700px] m-0 lg:m-auto max-w-full max-h-[100dvh]">
+</dialog>
+<div id="toast-bottom-right" class="hidden items-center w-full max-w-xs p-4 space-x-4 bg-[var(--color-container-neutral-heavy-contrast)] divide-x rtl:divide-x-reverse divide-gray-200 rounded-lg shadow-sm right-5 bottom-5" role="alert">
+	<span id="toastText" class="body-small-regular text-[var(--color-text-primary-invert)]"></span>
+</div>
+<script>
+	var m1 = {{ m1 }}
+	var m2 = {{ m2 }}
+	var s1 = {{ s1 }}
+	var s2 = {{ s2 }}
+	var d1 = {{ d1 }}
+	var d2 = {{ d2 }}
+
+	function changeU(n) {
+
+		let g1l = document.getElementById("g1l")
+		let g2l = document.getElementById("g2l")
+		let g3l = document.getElementById("g3l")
+
+		let nuevosU = document.getElementById("nuevosU")
+		let viejosU = document.getElementById("viejosU")
+
+
+		//text-color-brand  
+		if (n == 1) {
+
+			nuevosU.innerText = m1
+			viejosU.innerHTML = m2
+			g1l.classList.remove("");
+			g1l.classList.add("text-color-brand");
+
+			g2l.classList.remove("text-color-brand");
+			g3l.classList.remove("text-color-brand");
+
+		}
+		if (n == 2) {
+
+			nuevosU.innerText = s1
+			viejosU.innerHTML = s2
+
+			g2l.classList.remove("");
+			g2l.classList.add("text-color-brand");
+
+			g1l.classList.remove("text-color-brand");
+			g3l.classList.remove("text-color-brand");
+		}
+		if (n == 3) {
+
+			nuevosU.innerText = d1
+			viejosU.innerHTML = d2
+
+			g3l.classList.remove("");
+			g3l.classList.add("text-color-brand");
+
+			g2l.classList.remove("text-color-brand");
+			g1l.classList.remove("text-color-brand");
+		}
+
+
+	}
+	function dialogInitTabs() {
+		const tabs = document.querySelectorAll('.detalle-tab-button')
+		tabs.forEach(tab => {
+			tab?.addEventListener("click", (event) => {
+				tabs.forEach(el => {
+					el?.classList.remove("text-color-brand", "border-b-2", "border-color-brand")
+					el?.classList.add("text-color-secondary")
+				})
+				tab?.classList?.remove("text-color-secondary")
+				tab?.classList?.add("text-color-brand", "border-b-2", "border-color-brand")
+				const contentId = tab?.getAttribute('tab')
+				const tabsContents = document.querySelectorAll('.detalle-content-tab')
+				tabsContents.forEach(el => {
+					el?.classList.remove("flex")
+					el?.classList.add("hidden")
+				})
+				const contentElement = document.querySelector(contentId)
+				contentElement?.classList.remove("hidden")
+				contentElement?.classList.add("flex")
+			})
+		})
+	}
+	function closeDialog2() {
+		const dialog = document.getElementById("Compra")
+		dialog.close()
+	}
+	function closeDialogSettings() {
+		const dialog = document.getElementById("Settings")
+		dialog.close()
+	}
+	function ReenviarComprobante(id) {
+
+		document.getElementById("Compra").close();
+		setLoading()
+		data = {
+			'id': id,
+		}
+		let url = "{% url 'ReenviarComprobante' %}"
+		fetch(url, {
+			method: 'POST',
+			body: JSON.stringify(data),
+			headers: {
+				'Content-Type': 'application/json',
+				"X-CSRFToken": getCookie('csrftoken')
+			}
+		}).then(function (result) {
+			//hide modal
+			stopLoading()
+
+			//json response
+			result.json().then(function (data) {
+				if (data['status'] == 200) {
+					Swal.fire(
+						'Exito',
+						"Cambios Guardados",
+						'success').then((result) => {
+
+							if (result.isConfirmed) {
+								location.reload();
+							}
+						})
+
+					let elForm = document.getElementById("formRadio")
+					elForm.submit();
+				} else {
+					Swal.fire(
+						'Error',
+						data['message'],
+						'error').then((result) => {
+							if (result.isConfirmed) {
+
+								document.getElementById("Compra").showModal()
+							}
+						})
+				}
+			})
+		})
+			.catch(error => {
+				console.log(error)
+				Swal.fire(
+					'Error',
+					error.message,
+					'error').then((result) => {
+						if (result.isConfirmed) {
+
+							document.getElementById("Compra").showModal()
+						}
+					})
+			});
+	}
+
+	function aprobar(id) {
+		document.getElementById("Compra").close()
+		setLoading()
+		data = {
+			'id': id,
+		}
+		let url = "{% url 'aprobarCompra' %}"
+		fetch(url, {
+			method: 'POST',
+			body: JSON.stringify(data),
+			headers: {
+				'Content-Type': 'application/json',
+				"X-CSRFToken": getCookie('csrftoken')
+			}
+		}).then(function (result) {
+			//hide modal
+			stopLoading()
+
+			//json response
+			result.json().then(function (data) {
+				if (data['status'] == 200) {
+					Swal.fire(
+						'Exito',
+						"Cambios Guardados",
+						'success').then((result) => {
+
+							if (result.isConfirmed) {
+								location.reload();
+							}
+						})
+					let elForm = document.getElementById("formRadio")
+					elForm.submit();
+				} else {
+					Swal.fire(
+						'Error',
+						data['message'],
+						'error').then((result) => {
+							if (result.isConfirmed) {
+
+								document.getElementById("Compra").showModal()
+
+							}
+						})
+				}
+			})
+
+
+
+
+		})
+			.catch(error => {
+				console.log(error)
+				Swal.fire(
+					'Error',
+					error.message,
+					'error').then((result) => {
+						if (result.isConfirmed) {
+
+							document.getElementById("Compra").showModal()
+
+						}
+					})
+			});
+	}
+
+
+	function rechazar(id) {
+		document.getElementById("Compra").close()
+
+		setLoading()
+		data = {
+			'id': id,
+		}
+		let url = "{% url 'rechazarCompra' %}"
+		fetch(url, {
+			method: 'POST',
+			body: JSON.stringify(data),
+			headers: {
+				'Content-Type': 'application/json',
+				"X-CSRFToken": getCookie('csrftoken')
+			}
+		}).then(function (result) {
+			//hide modal
+			stopLoading()
+
+			//json response
+			result.json().then(function (data) {
+				if (data['status'] == 200) {
+					Swal.fire(
+						'Exito',
+						"Cambios Guardados",
+						'success').then((result) => {
+
+							location.reload();
+						})
+
+					let elForm = document.getElementById("formRadio")
+					elForm.submit();
+				} else {
+					Swal.fire(
+						'Error',
+						data['message'],
+						'error').then((result) => {
+							if (result.isConfirmed) {
+
+								document.getElementById("Compra").showModal()
+
+							}
+						})
+				}
+			})
+		})
+			.catch(error => {
+				console.log(error)
+				Swal.fire(
+					'Error',
+					error.message,
+					'error').then((result) => {
+						if (result.isConfirmed) {
+
+							document.getElementById("Compra").showModal()
+
+						}
+					})
+			});
+	}
+	function download(dataurl, filename) {
+		var a = document.createElement("a");
+		a.href = dataurl;
+		a.setAttribute("download", filename);
+		a.click();
+		return false;
+	}
+	async function savePreferences(e) {
+		e.preventDefault()
+		setLoading()
+		const dialog = document.getElementById("Settings")
+		dialog.close()
+
+		let form = document.getElementById("settingsForm")
+		let formData = new FormData(form)
+		let data = {};
+		formData.forEach((value, key) => {
+			data[key] = !value?.trim() ? null : value;
+		});
+		console.log(data)
+		let url = "{% url 'settings' %}"
+		await fetch(url, {
+			method: 'POST',
+			body: JSON.stringify(data),
+			headers: {
+				'Content-Type': 'application/json',
+				"X-CSRFToken": getCookie('csrftoken')
+			}
+		}).then(function (result) {
+			return result.json();
+
+		}).then(function (result) {
+			showToast(result.message)
+			stopLoading()
+
+		}).catch(error => {
+			stopLoading()
+			dialog.showModal()
+			console.log(error)
+			Swal.fire(
+				'Error',
+				error.message,
+				'error')
+		});
+	}
+	const openDialogComprador = async (compradorId) => {
+		setLoading()
+		data = {
+			'comprador': compradorId,
+		}
+		let url = "{% url 'compradorDialog' %}"
+		await fetch(url, {
+			method: 'POST',
+			body: JSON.stringify(data),
+			headers: {
+				'Content-Type': 'application/json',
+				"X-CSRFToken": getCookie('csrftoken')
+			}
+		}).then(function (result) {
+			stopLoading()
+			return result.text();
+
+		}).then(function (result) {
+
+			let dialog = document.getElementById("Comprador")
+			dialog.innerHTML = result;
+			dialog.showModal()
+
+		})
+			.catch(error => {
+				stopLoading()
+				let dialog = document.getElementById("Comprador")
+				dialog.showModal()
+
+				console.log(error)
+				Swal.fire(
+					'Error',
+					error.message,
+					'error')
+			});
+	}
+	const closeDialogComprador = () => {
+		const dialog = document.getElementById("Comprador")
+		dialog.close()
+	}
+	async function saveComprador(e, id) {
+		e.preventDefault()
+		setLoading()
+		const dialog = document.getElementById("Comprador")
+		document.getElementById("Compra").close();
+		dialog.close()
+
+		let form = document.getElementById("compradorForm")
+		let formData = new FormData(form)
+		let data = {};
+		formData.forEach((value, key) => {
+			data[key] = !value?.trim() ? null : value;
+		});
+		formData.append('id', id)
+		data.id = id
+		console.log(data)
+		let url = "{% url 'comprador' %}"
+		await fetch(url, {
+			method: 'POST',
+			body: JSON.stringify(data),
+			headers: {
+				'Content-Type': 'application/json',
+				"X-CSRFToken": getCookie('csrftoken')
+			}
+		}).then(function (result) {
+			return result.json();
+
+		}).then(function (result) {
+			showToast(result.message)
+			Swal.fire(
+				'Exito',
+				result.message,
+				'success').then((result) => {
+					if (result.isConfirmed) {
+						location.reload();
+					}
+				})
+			stopLoading()
+			//wait 2 seconds before reload
+
+		}).catch(error => {
+			stopLoading()
+			dialog.showModal()
+			console.log(error)
+			Swal.fire(
+				'Error',
+				error.message,
+				'error')
+		});
+	}
+
+	async function modalConfirmar(id) {
+		setLoading()
+
+		data = {
+			'id': id,
+		}
+		let url = "{% url 'dialogCompra' %}"
+		await fetch(url, {
+			method: 'POST',
+			body: JSON.stringify(data),
+			headers: {
+				'Content-Type': 'application/json',
+				"X-CSRFToken": getCookie('csrftoken')
+			}
+		}).then(function (result) {
+			stopLoading()
+			return result.text();
+
+		}).then(function (result) {
+
+			const dialog = document.getElementById("Compra")
+			dialog.innerHTML = result;
+			dialogInitTabs()
+			dialog.showModal()
+
+		})
+			.catch(error => {
+				stopLoading()
+
+				console.log(error)
+				Swal.fire(
+					'Error',
+					error.message,
+					'error')
+			});
+	}
+	async function modalSettings() {
+		setLoading()
+		data = {}
+		let url = "{% url 'dialogSettings' %}"
+		await fetch(url, {
+			method: 'POST',
+			body: JSON.stringify(data),
+			headers: {
+				'Content-Type': 'application/json',
+				"X-CSRFToken": getCookie('csrftoken')
+			}
+		}).then(function (result) {
+			stopLoading()
+			return result.text();
+
+		}).then(function (result) {
+
+			const dialog = document.getElementById("Settings")
+			dialog.innerHTML = result;
+			dialog.showModal()
+			document.getElementById("buttonSavePreferences").addEventListener("click", savePreferences)
+			document.getElementById("settingsForm").addEventListener("submit", savePreferences)
+
+		})
+			.catch(error => {
+				stopLoading()
+
+				console.log(error)
+				Swal.fire(
+					'Error',
+					error.message,
+					'error')
+			});
+	}
+	const showToast = (msg) => {
+		console.log(msg)
+		document?.getElementById('toast-bottom-right')?.classList?.remove('hidden')
+		document?.getElementById('toast-bottom-right')?.classList?.add('fixed')
+		document.getElementById('toastText').innerHTML = msg
+		setTimeout(() => {
+			document?.getElementById('toast-bottom-right')?.classList?.add('hidden')
+		}, 3000)
+	}
+</script>
+{% endblock %}

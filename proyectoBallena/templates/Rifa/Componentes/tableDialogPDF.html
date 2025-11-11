@@ -1,0 +1,191 @@
+{% load Filter %}
+{% load static %}
+<style>
+	@page {
+		size: letter landscape;
+	}
+
+	html {
+		background-color: rgb(17, 24, 39, 1) !important;
+		margin: 0px;
+	}
+
+	table {
+		border-collapse: collapse;
+		border-style: hidden;
+	}
+
+	thead {
+		text-align: center;
+	}
+
+	td,
+	th {
+		text-align: left;
+		word-wrap: break-word;
+		white-space: normal;
+		padding: 2px;
+		-pdf-word-wrap: CJK;
+	}
+
+	table td,
+	table th {
+		border: 1px solid white;
+	}
+</style>
+<div class="relative overflow-x-auto shadow-md sm:rounded-lg text-white" style="color: white !important;  ">
+	{% if grupo == '0'%}
+
+	<table class="w-full text-sm text-left"
+		style="font-size: 12px; text-align: left; background-color: rgb(17,24,39 ,1); color: white; word-wrap: break-word; white-space: normal; ;">
+		<thead class="text-xs uppercase bg-colorSecundario" style="text-align: left;">
+			<tr>
+				<th scope="col" class="px-6 py-3" style="text-align: left;">
+					Id
+				</th>
+				<th scope="col" class="px-6 py-3">
+					Fecha Compra
+				</th>
+				<th scope="col" class="px-6 py-3">
+					Rifa
+				</th>
+				<th scope="col" class="px-6 py-3">
+					Estado de Pago
+				</th>
+				<th scope="col" class="px-6 py-3">
+					Fecha actualización
+				</th>
+				<th scope="col" class="px-6 py-3">
+					Nombre Comprador
+				</th>
+				<th scope="col" class="px-6 py-3">
+					Cedula Comprador
+				</th>
+				<th scope="col" class="px-6 py-3">
+					Tlf Comprador
+				</th>
+				<th scope="col" class="px-6 py-3">
+					Correo Comprador
+				</th>
+				<th scope="col" class="px-6 py-3">
+					Referencia
+				</th>
+				<th scope="col" class="px-6 py-3">
+					Metodo de Pago
+				</th>
+				<th scope="col" class="px-6 py-3">
+					Total Pagado
+				</th>
+				<th scope="col" class="px-6 py-3">
+					Numero de Boletos
+				</th>
+				<th scope="col" class="px-6 py-3">
+					Boleto
+				</th>
+			</tr>
+		</thead>
+		<tbody style="word-wrap: break-word; white-space: normal">
+			{% for c in Compras %}
+			{% for num in c.NumerosCompra.all %}
+			<tr class="bg-colorSecundario border-y">
+				<td class="px-6 py-4">
+					{{c.Id}}
+				</td>
+				<td class="px-6 py-4">
+					{{c.FechaCompra|date:'d-m-Y h:i A'}}
+				</td>
+				<td class="px-6 py-4 min-w-[200px]">
+					{{c.idRifa.Nombre}}
+				</td>
+				<td class="px-6 py-4">
+					{{c.Estado|reversoEstado}}
+				</td>
+				<td class="px-6 py-4">
+					{{c.FechaEstado|date:'d-m-Y h:i A'}}
+				</td>
+				<td class="px-6 py-4">
+					{{c.idComprador.Nombre}}
+				</td>
+				<td class="px-6 py-4">
+					{{c.idComprador.Cedula}}
+				</td>
+				<td class="px-6 py-4">
+					{{c.idComprador.NumeroTlf}}
+				</td>
+				<td class="px-6 py-4">
+					{{c.idComprador.Correo}}
+				</td>
+				<td class="px-6 py-4">
+					{{c.Referencia}}
+				</td>
+				<td class="px-6 py-4">
+					{{c.MetodoPago|reversoMetodoPago}}
+				</td>
+				{% if c.MetodoPago == 3 %}
+				<td class="px-6 py-4">
+					Bs. {{c.TotalPagado|format_price}}
+				</td>
+				{% else %}
+				<td class="px-6 py-4">
+					$ {{c.TotalPagadoAlt|format_price}}
+				</td>
+				{% endif %}
+				<td class="px-6 py-4">
+					{{c.NumeroBoletos}}
+				</td>
+				<td class="px-6 py-4">
+					{{num}}
+				</td>
+			</tr>
+			{% endfor %}
+			{% endfor %}
+		</tbody>
+	</table>
+	{% else %}
+	<table class="w-full text-sm text-left"
+		style="font-size: 12px; text-align: left; background-color: rgb(17,24,39 ,1); color: white; word-wrap: break-word; white-space: normal; ;">
+		<thead class="text-xs uppercase bg-colorSecundario" style="text-align: left;">
+			<tr>
+				<th scope="col" class="px-6 py-3">
+					Grupo
+				</th>
+				<th scope="col" class="px-6 py-3">
+					Total Números
+				</th>
+				<th scope="col" class="px-6 py-3">
+					Total Pagado
+				</th>
+				<th scope="col" class="px-6 py-3">
+					Total Registros
+				</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for c in Compras %}
+			<tr class="bg-colorSecundario border-y">
+				<td class="px-6 py-4">
+					{% if grupo == '1'%}
+					{{c.idComprador__Correo}}
+					{%endif%}
+					{% if grupo == '2'%}
+					{{c.idComprador__Cedula}}
+					{%endif%}
+					{% if grupo == '3'%}
+					{{c.idComprador__Nombre}}
+					{%endif%}
+				</td>
+				<td class="px-6 py-4">
+					{{c.totalNumeros}}
+				</td>
+				<td class="px-6 py-4">
+					{{c.totalPagadoS}}$
+				</td>
+				<td class="px-6 py-4">
+					{{c.head_count}}
+				</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+	{% endif %}
+</div>

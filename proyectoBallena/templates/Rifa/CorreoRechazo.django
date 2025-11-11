@@ -1,0 +1,108 @@
+{% load mjml %}
+
+{% mjml %}
+    <mjml>
+        <mj-head>
+            <mj-font name="Inter" href="https://fonts.googleapis.com/css2?family=Inter" />
+            <mj-attributes>
+              <mj-all font-family="Inter, Helvetica, Arial" />
+            </mj-attributes>
+            <mj-style>
+                .image img{
+                  object-position:center !important;
+                  object-fit: cover !important;
+                  border-radius: 8px;
+                  max-height: 252px;
+                  width: 100%;
+
+                }
+                .contenedor{
+                  background-color: #FFFFFF0D; border-radius: 8px; padding:12px;
+                }
+                .wrapper{
+                  background-color: #0000;
+                  padding:16px;
+
+                }
+                .footer{
+                  border-top: 1px solid #FFFFFF61;
+                  display: none;
+                }
+                @media (min-width:600px) { 
+                  .image img{
+                    object-position:center !important;
+                    object-fit: cover !important;
+                    border-radius: 8px 8px 0px 0px;
+                    max-height: 430px;
+                    width: 100%;
+
+                  }
+                  .contenedor{
+                    background-color: #FFFFFF0D; border-radius: 8px; padding:12px;
+                  }
+                  .wrapper{
+                    background-color: #FFFFFF0D;
+                    padding:32px 24px;
+                  }
+                  .footer{
+                    border-top: 1px solid #FFFFFF61;
+                    display: block;
+                  }
+                }
+            </mj-style>
+        </mj-head>
+        <mj-body background-color="#121212">
+            <mj-section full-width="full-width">
+                <mj-group>
+                    <mj-column>
+                      <mj-image width="196px" height="32px" src="https://aleautos1.com/static/img/logo-navbar-alt.png"/>
+                    </mj-column>
+                </mj-group>
+            </mj-section>
+            <mj-wrapper border-radius="8px" css-class="wrapper">
+                <mj-section padding="0px">
+                  <mj-column padding="0px">
+                    <mj-text padding="0px" align="center">
+                      <h1 style="margin:0px;font-size:30px; line-height:44px;font-weight:700; color: #FFFFFF; text-align: center; padding-bottom: 24px;">¡Gracias por comprar con Aleautos1!</h1>
+                    </mj-text>
+                  </mj-column>
+                </mj-section>
+                <mj-section padding="24px 0px">
+                  <mj-column padding="0px">
+                    <mj-text padding="0px 0px" align="left">
+                      <p style="margin:0px;font-size:16px; line-height:24px;font-weight:400; color: #FFFFFFBD; text-align: left;">
+                        Lamentamos informarte que tu pago ha sido rechazado, por favor ponte en contacto con nosotros para mas detalles. 
+                      </p>
+                      <br>
+                      {% if whatsapp_config != None and whatsapp_config.valor != None %}
+                      <p style="margin:0px;font-size:16px; line-height:24px;font-weight:400; color: #FFFFFFBD; text-align: left;">
+                        Puedes contactarnos al whatsapp a traves del siquiente número <a style="color: #FFFFFF; font-weight: 600; text-decoration: none;" href="https://wa.me/{{whatsapp_config.valor}}" target="_blank">+{{whatsapp_config.valor}}</a> 
+                      </p>
+                      {%endif%}
+                    </mj-text>
+                  </mj-column>
+                </mj-section>
+                <mj-section css-class="footer">
+                  <mj-column>
+                    <mj-text padding="16px 0px" align="center">
+                      <a href="https://www.instagram.com/aleautos1/" style="padding:0px 24px">
+                        <img src="https://aleautos1.com/static/img/instagram_24px.svg" alt="">
+                      </a>
+                    </mj-text>
+                    <mj-text padding="16px">
+                      <a href="https://aleautos1.com/terminos/" style="display:inline-block;margin:0px;font-size:12px; line-height:16px;font-weight:400; color: #FFFFFFBD; text-align: center; width:24%" >Términos</a>
+                      <a href="https://aleautos1.com/privacy/" style="display:inline-block;margin:0px;font-size:12px; line-height:16px;font-weight:400; color: #FFFFFFBD; text-align: center; width:24%" >Privacidad</a>
+                      <a {% if whatsapp_config != None and whatsapp_config.valor != None %} href="https://wa.me/{{whatsapp_config.valor}}"{% else %} href="#" {%endif%} style="display:inline-block;margin:0px;font-size:12px; line-height:16px;font-weight:400; color: #FFFFFFBD; text-align: center; width:24%" >Contáctanos</a>
+                      <a href="#" style="display:inline-block;margin:0px;font-size:12px; line-height:16px;font-weight:400; color: #FFFFFFBD; text-align: center; width:24%" >Dar de baja</a>
+                    </mj-text>
+                  </mj-column>
+                </mj-section>
+            </mj-wrapper>
+            <mj-section>
+              <mj-column>
+                <mj-spacer height="24px"/>
+              </mj-column>
+            </mj-section>
+        </mj-body>
+    </mjml>
+{% endmjml %} 

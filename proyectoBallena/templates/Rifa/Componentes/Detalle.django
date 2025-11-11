@@ -1,0 +1,36 @@
+{% load static %}
+{% load Filter %}
+{% load l10n %}
+
+{% csrf_token %}
+
+<div class="grid px-0 radius-rounded gap-y-5 max-w-[100vw] lg:py-6 lg:w-full">
+  <div class="flex flex-col items-start justify-center gap-4 px-5 lg:px-0">
+    {% if RifaD.FechaSorteo != None %}
+    <div class="flex flex-row justify-between items-center w-full">
+      <div class="flex radius-rounded bg-[var(--color-elevations-01dp)] overflow-hidden shadow-xs">
+        <div class="flex flex-row gap-2 items-center justify-center bg-[var(--color-components-suggestion-cards-container)] px-3 py-1">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z" stroke="var(--color-icon-brand)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16 2V6" stroke="var(--color-icon-brand)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M8 2V6" stroke="var(--color-icon-brand)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M3 10H21" stroke="var(--color-icon-brand)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="body-small-regular text-color-primary">
+           
+            {% if RifaC.FechaSorteo == None %} Por anunciar {% else %} {{RifaC.FechaSorteo|date:'d F Y'}} {% endif %}
+          </span>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    <h2 class="heading-xsmall-bold">{{RifaC.Nombre}} </h2>
+  </div>
+  <div id="chartContainer" class="flex flex-col justify-center items-stretch px-5 lg:px-0 gap-3 pb-6 border-b border-color-primary lg:border-0">
+    <div class="bg-[var(--color-container-neutral-contrast)] w-full h-4 rounded-full">
+      <div class="bg-[var(--color-button-contrast)] h-4 rounded-full" style="width: {{RifaC.TotalNumeros|totalPorcentaje:RifaC.TotalComprados|unlocalize}}%"></div>
+    </div>
+    <span class="body-medium-regular text-color-secondary">Queda un {{RifaC.TotalNumeros|totalPorcentaje:RifaC.TotalComprados|unlocalize}}% de los boletos</span>
+  </div>
+</div>
+

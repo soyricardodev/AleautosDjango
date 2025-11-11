@@ -1,0 +1,15 @@
+  dialog {
+    z-index: 10;
+    margin-top: 10px;
+    background: white;
+    border: none;
+    border-radius: 1rem;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+  }
+
+  dialog::backdrop {
+    background-color: hsla(251, 15%, 29%, 0.25);
+  }
+

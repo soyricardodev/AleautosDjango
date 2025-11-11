@@ -1,0 +1,492 @@
+
+{% extends "_base_admin.html" %}
+{% load static %}
+{% load Filter %}
+
+{% block titles %}
+<div class="flex flex-col gap-2">
+	<h1 class="heading-xsmall-medium  text-left">Detalle de rifa</h1>
+</div>
+<div class="flex flex-row gap-1 justify-start items-center">
+	<a href="{% url 'Dashboard' %}">
+		<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+			<path d="M3.5 9.9994L9.46967 4.02973C9.76256 3.73684 10.2374 3.73684 10.5303 4.02973L16.5 9.9994M5 8.4994V15.2494C5 15.6636 5.33579 15.9994 5.75 15.9994H8.5V12.7494C8.5 12.3352 8.83579 11.9994 9.25 11.9994H10.75C11.1642 11.9994 11.5 12.3352 11.5 12.7494V15.9994H14.25C14.6642 15.9994 15 15.6636 15 15.2494V8.4994M7.5 15.9994H13" stroke="var(--color-icon-brand)" stroke-opacity="1" stroke-linecap="round" stroke-linejoin="round"/>
+		</svg>
+	</a>
+	<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+		<path d="M14.4268 7.04688L10.667 17.8545H9.29297L13.0527 7.04688H14.4268Z" fill="var(--color-icon-disabled)" fill-opacity="1"/>
+	</svg>
+	<a href="{% url 'ListaRifas' %}" class="label-medium-regular  no-underline">
+		Historial de rifas
+  </a>
+	<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+		<path d="M14.4268 7.04688L10.667 17.8545H9.29297L13.0527 7.04688H14.4268Z" fill="var(--color-icon-disabled)" fill-opacity="1"/>
+	</svg>
+	<span class="label-medium-regular text-color-secondary">
+		Detalle de rifa
+	</span>
+</div>
+{% endblock titles %}
+{% block actions %}
+
+{% if perms.Rifa.change_rifa %}
+{% if RifaD.Estado == True %}
+	<button id="btnPausarRifa" class="button button-active lg:button-small button-medium" onclick="changeState('{{RifaD.Id}}')">
+    <svg class="" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8.33333 3.33325H5V16.6666H8.33333V3.33325Z" stroke="var(--color-icon-secondary-invert)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M15 3.33325H11.6666V16.6666H15V3.33325Z" stroke="var(--color-icon-secondary-invert)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+		<span>Pausar publicación</span>
+  </button>
+{% else %}
+	<button id="btnReanudarRifa" class="button button-active lg:button-small button-medium" onclick="changeState('{{RifaD.Id}}')">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M4.16675 2.5L15.8334 10L4.16675 17.5V2.5Z" stroke="var(--color-icon-secondary-invert)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>      
+		<span>Reanudar publicación</span>
+  </button>
+{% endif %}
+{% endif %}
+{% if perms.Rifa.view_compra %}
+  <a href="{% url 'Historial' RifaD.Id %}" class="lg:button button-outline button-medium hidden">
+    <span>Ver boletos vendidos</span>
+  </a>
+{% endif %}
+  <button class="button-blanked lg:button-small button-medium" data-dropdown-toggle="dropdownReenvio1">
+		<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9.99996 10.8334C10.4602 10.8334 10.8333 10.4603 10.8333 10.0001C10.8333 9.53984 10.4602 9.16675 9.99996 9.16675C9.53972 9.16675 9.16663 9.53984 9.16663 10.0001C9.16663 10.4603 9.53972 10.8334 9.99996 10.8334Z" stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M9.99996 4.99992C10.4602 4.99992 10.8333 4.62682 10.8333 4.16659C10.8333 3.70635 10.4602 3.33325 9.99996 3.33325C9.53972 3.33325 9.16663 3.70635 9.16663 4.16659C9.16663 4.62682 9.53972 4.99992 9.99996 4.99992Z" stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M9.99996 16.6667C10.4602 16.6667 10.8333 16.2936 10.8333 15.8333C10.8333 15.3731 10.4602 15 9.99996 15C9.53972 15 9.16663 15.3731 9.16663 15.8333C9.16663 16.2936 9.53972 16.6667 9.99996 16.6667Z" stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span class="flex lg:hidden">Opciones</span>
+	</button>
+	<div id="dropdownReenvio1"
+		class="z-40 hidden w-48 bg-[var(--color-container-neutral-bright)] radius-rounded shadow-md overflow-hidden"
+		data-popper-reference-hidden="" data-popper-escaped="" data-popper-placement="top"
+		style="position: absolute; inset: auto auto 0px 0px; margin: 0px; transform: translate3d(522.5px, 3847.5px, 0px);">
+		<ul class="py-2" aria-labelledby="dropdownRadioButton">
+      {% if perms.Rifa.view_compra %}
+        <a
+        href="{% url 'Historial' RifaD.Id %}" 
+        class="label-input cursor-pointer p-4 flex flex-row gap-2 label-medium-regular" 
+        >
+          <span class="label-medium-regular">Ver boletos</span>
+        </a>
+      {% endif %}
+		<li 
+			class="label-input cursor-pointer p-4 flex flex-row gap-2 label-medium-regular border-b border-color-primary" 
+			id="buttonCopiar" 
+			onclick="copiarEnlace('https://aleautos1.com{% url 'Detalles' RifaD.NombreEnlace %}')"
+			>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 9H11C9.89543 9 9 9.89543 9 11V20C9 21.1046 9.89543 22 11 22H20C21.1046 22 22 21.1046 22 20V11C22 9.89543 21.1046 9 20 9Z" stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M5 15H4C3.46957 15 2.96086 14.7893 2.58579 14.4142C2.21071 14.0391 2 13.5304 2 13V4C2 3.46957 2.21071 2.96086 2.58579 2.58579C2.96086 2.21071 3.46957 2 4 2H13C13.5304 2 14.0391 2.21071 14.4142 2.58579C14.7893 2.96086 15 3.46957 15 4V5" stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        
+			<span class="label-medium-regular">Copiar enlace</span>
+		</li>
+    {% if perms.Rifa.change_rifa %}
+    {% if RifaD.Estado == False %}
+    <a
+      href="{% url 'RifaEdit' RifaD.Id %}" 
+			class="label-input cursor-pointer p-4 flex flex-row gap-2 label-medium-regular" 
+			>
+			<span class="label-medium-regular">Editar</span>
+		</a>
+    {% endif %}
+    <li
+      onclick="copiarRifa('{{RifaD.Id}}')"
+			class="label-input cursor-pointer p-4 flex flex-row gap-2 label-medium-regular" 
+			>
+			<span class="label-medium-regular">Duplicar</span>
+  </li>
+    <li
+      onclick="deleteRifa('{{RifaD.Id}}')"
+			class="label-input cursor-pointer p-4 flex flex-row gap-2 label-medium-regular" 
+			>
+			<span class="label-medium-regular">Eliminar</span>
+</li>
+    <li 
+			class="hidden label-input cursor-pointer p-4  flex-row gap-2 label-medium-regular border-t border-color-primary" 
+			id="buttonDuplicar" 
+      onclick="changeExtension('{{RifaD.Id}}')"
+			>
+      <div class="toggle-button {% if RifaD.Extension %} active {% endif %}">
+        <div class="base"></div>
+        <div class="circle"></div>
+      </div>
+			<span class="label-medium-regular">Extender</span>
+		</li>
+    <li 
+			class="label-input cursor-pointer p-4 flex flex-row gap-2 label-medium-regular" 
+			id="buttonEliminar" 
+      onclick="changeState('{{RifaD.Id}}')"
+			>
+      <div class="toggle-button {% if RifaD.Estado %} active {% endif %}" >
+        <div class="base"></div>
+        <div class="circle"></div>
+      </div>
+			<span class="label-medium-regular">Publicar</span>
+		</li>
+    {% endif %}
+		</ul>
+	</div>
+{% endblock actions %}
+
+{% block content %}
+<div class="grid lg:grid-cols-2 max-w-[100vw] lg:max-w-[1128px] mx-auto">
+  <div>
+    <section class="mb-5">
+      <div class="items-center">
+        <div id="default-carousel" class="relative w-full lg:hidden" data-carousel="slide">
+          <div class="relative h-56 overflow-hidden md:h-80 mx-auto">
+            {% if premios != None %}
+              {% if premios|length == 1 %}
+                {% for p in premios%}
+                <div class=" duration-700 ease-in-out" >
+                  <img src="{{p.FotoPremio.url}}" class="absolute block h-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2" alt="...">
+                </div>
+                {% endfor %}
+              {% else%}
+                {% for p in premios%}
+                  {% comment %} Aca van las imagenes de la rifa segun el modelo {% endcomment %}
+                  <div class="hidden duration-700 ease-in-out" data-carousel-item>
+                    <img src="{{p.FotoPremio.url}}" class="absolute block h-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2" alt="...">
+                  </div>
+                  {% empty %}
+                  {% comment %} Si el ciclo esta vacio que traiga las imagenes de los assets {% endcomment %}
+                  <div class="hidden duration-700 ease-in-out" data-carousel-item>
+                    <img src="{% static '/img/placeholder.png' %}"  class="absolute block w-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2" alt="...">
+                  </div>
+                  <div class="hidden duration-700 ease-in-out" data-carousel-item>
+                    <img src="{% static '/img/placeholder.pngjpg' %}"  class="absolute block w-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2" alt="...">
+                  </div>
+                {% endfor %}
+              {%endif%}
+            {% endif %}
+          </div>
+          <div class="absolute z-30 flex space-x-3 -translate-x-1/2 bottom-5 left-1/2">
+          </div>
+          <button type="button" class="absolute top-0 left-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-prev>
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg sm:w-10 sm:h-10 bg-white/30 dark:bg-gray-800/30 group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none">
+              <svg aria-hidden="true" class="w-5 h-5 text-white sm:w-6 sm:h-6 dark:text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+              <span class="sr-only">Anterior</span>
+            </span>
+          </button>
+          <button type="button" class="absolute top-0 right-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-next>
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg sm:w-10 sm:h-10 bg-white/30 dark:bg-gray-800/30 group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none">
+              <svg aria-hidden="true" class="w-5 h-5 text-white sm:w-6 sm:h-6 dark:text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+              <span class="sr-only">Próximo</span>
+            </span>
+          </button>
+        </div>
+        <div class="hidden lg:flex flex-row gap-6">
+          {% if premios != None %}
+          <div class="flex flex-col gap-2 items-center">
+            {% for p in premios%}
+              <div class="w-[72px] h-[72px] rounded unselected cursor-pointer">
+                <img src="{{p.FotoPremio.url}}" alt="premio" class="miniImage w-[70px] h-[70px] object-contain">
+              </div>
+            {% endfor %}
+          </div>
+          <div class="flex">
+            <img id="imagenGrande" src="{{premios.0.FotoPremio.url}}" alt="premio seleccionado" class="w-full h-[400px] object-cover object-center rounded-lg">
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+    <section class="hidden px-5 gap-6 lg:hidden" id="menuCompraProvisional">
+      <div class="flex flex-row justify-between items-center w-full">
+        <div class="flex radius-rounded bg-[var(--color-surface-secondary)] overflow-hidden">
+          <div class="flex flex-row gap-2 items-center justify-center bg-[#00D3441F] px-2 py-1">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z" stroke="var(--color-icon-brand)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M16 2V6" stroke="var(--color-icon-brand)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M8 2V6" stroke="var(--color-icon-brand)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M3 10H21" stroke="var(--color-icon-brand)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="label-medium-medium text-color-brand">
+              {% if RifaD.FechaSorteo == None %} Por anunciar {% else %} {{RifaD.FechaSorteo|date:'d M Y'}} {% endif %}
+            </span>
+          </div>
+        </div>
+        <div class="flex flex-col text-left">
+          <span class="body-small-regular text-color-secondary">Boleto</span>
+          <span class="body-medium-bold text-color-secondary">Bs. {{RifaD.Precio}}</span>
+        </div>
+      </div>
+      <h2 class="title-medium-bold">{{RifaD.Nombre}} </h2>
+      <button onclick="showMenuCompra()" class="button-active button-medium">
+        <span>Comprar boletos</span>
+      </button>
+    </section>
+    <section class="hidden px-5 lg:px-0 py-6 mt-6 gap-2 lg:block space-y-[15px] justify-center border-y-[1px] border-color-primary">
+      <label class="heading-xsmall-medium">Detalles de la rifa</label>
+      <p class="body-medium-regular text-color-secondary">{{RifaD.Descripcion|safe}}</p>
+    </section>
+    <section class="hidden px-5 lg:px-0 py-6 lg:block space-y-[15px] justify-center">
+      <label class="heading-xsmall-medium color-text-primary">Premios sorteados</label>
+      <ol class="list-decimal list-inside grid gap-6">
+        {% for p in premios %}
+          <li class="flex items-center">
+            <div class="flex gap-4 rounded-lg bg-[var(--color-surface-tertiary)] w-full">
+              <div class="min-w-[72px] max-w-[72px]">
+                {% if p.FotoPremio != None   %}
+                    <img src="{{ p.FotoPremio.url }}" class="w-[72px] h-[72px] rounded-lg object-center object-cover" alt="Foto de premio">
+                  {% else %}
+                    <img src="{% static '/img/placeholder.png' %}" class="w-[72px] h-[72px] rounded-lg object-center object-cover" alt="Foto de premio" >
+                {% endif %} 
+              </div>
+              <div class="grid gap-2 w-full">
+                <div class="border-color-primary border-b py-1 gap-2 max-w-full">
+                    <label class="label-medium-medium">{% if forloop.counter == 1 %} <span>1er</span> {%endif%} {% if forloop.counter == 2 %} <span>2do</span> {%endif%} {% if forloop.counter == 3 %} <span>3er</span> {%endif%}{% if forloop.counter > 3 %} <span>{{forloop.counter}}to</span> {%endif%} Premio</label>
+                </div>
+                <label class="body-medium-regular">{{p.Nombre}}</label>
+              </div>
+            </div>
+          </li>
+        {%endfor%}
+      </ol>
+    </section>
+  </div>
+  <div id="CompraMenu" class="lg:block mx-0 lg:mx-auto w-full lg:max-w-[450px]">
+    {% include "Rifa/Componentes/Compra.django" with RifaC=RifaD numDisp=numDisp tasa=tasa percent_config=percent_config whatsapp_config=whatsapp_config %}
+  </div>
+  <div>
+    <section class="block px-5 lg:px-0 py-6 mt-6 gap-2 lg:hidden space-y-[15px] justify-center border-y-[1px] border-color-primary">
+      <label class="heading-xsmall-medium">Detalles de la rifa</label>
+      <p id="quillEditor2" class="body-medium-regular text-color-secondary">{{RifaD.Descripcion|safe}}</p>
+    </section>
+    <section class="block px-5 py-6 lg:hidden space-y-[15px] justify-center">
+      <label class="heading-xsmall-medium color-text-primary">Premios sorteados</label>
+      <ol class="list-decimal list-inside grid gap-6">
+        {% for p in premios %}
+          <li class="flex items-center">
+            <div class="flex gap-4 rounded-lg bg-[var(--color-surface-tertiary)] w-full">
+              <div class="min-w-[72px] max-w-[72px]">
+                {% if p.FotoPremio != None %}
+                    <img src="{{ p.FotoPremio.url }}" class="w-[72px] h-[72px] object-center object-cover rounded-lg" alt="Foto de premio">
+                  {% else %}
+                    <img src="{% static '/img/placeholder.png' %}" class="w-[72px] h-[72px] rounded-lg object-center object-cover" alt="Foto de premio" >
+                {% endif %} 
+              </div>
+              <div class="grid gap-2 w-full">
+                <div class="border-color-primary border-b py-1 gap-2 max-w-fit">
+                  <label class="label-medium-medium">{% if forloop.counter == 1 %} <span>1er</span> {%endif%} {% if forloop.counter == 2 %} <span>2do</span> {%endif%} {% if forloop.counter == 3 %} <span>3er</span> {%endif%}{% if forloop.counter > 3 %} <span>{{forloop.counter}}to</span> {%endif%} Premio</label>
+              </div>
+                <label class="body-large-regular">{{p.Nombre}}</label>
+              </div>
+            </div>
+          </li>
+        {%endfor%}
+      </ol>
+    </section>
+  </div>
+</div>
+{% endblock content %}
+{% block scripts %}
+  <script>
+    function showMenuCompra(){
+      const menuCompra = document.getElementById('CompraMenu')
+      const menuCompraProvicional = document.getElementById('menuCompraProvisional')
+      menuCompra.classList.remove('hidden')
+      menuCompra.classList.add('block')
+      menuCompraProvicional.classList.remove('block')
+      menuCompraProvicional.classList.add('hidden')
+
+    }
+    function copiarEnlace(texto = ''){
+      window.navigator.clipboard.writeText(texto).then(res => {
+        console.log('exito copiando precio')
+        const buttonCopiar = document.getElementById('buttonCopiar')
+        buttonCopiar.querySelector('span').innerText = 'Copiado!'
+        setTimeout(()=>{
+          buttonCopiar.querySelector('span').innerText = 'Copiar enlace'
+        }, 3000)
+      });
+    }
+    const miniatures = document.querySelectorAll('.miniImage')
+    miniatures.forEach(el=>{
+      el.addEventListener("click", (element)=>{
+        console.log('click')
+        const imagenGrande = document.getElementById('imagenGrande')
+        console.log(imagenGrande)
+        imagenGrande.src = element.target.src
+        miniatures.forEach(mini =>{
+          mini.classList.remove('selected')
+          mini.classList.add('unselected')
+        })
+        element.target.classList.add('selected')
+      })
+    })
+    async function changeState(id){
+      let url =`{% url 'changeState' %}`;
+      data={
+        'id':id
+      };
+      await fetch(url, {
+          method: 'POST',
+          body: JSON.stringify(data),
+          headers: {
+            'Content-Type': 'application/json',
+            "X-CSRFToken": getCookie('csrftoken')
+          }
+        }).then(data => data.json()).then(response=>{
+            console.log(response.codigoHttp)
+              
+              
+              Swal.fire(
+                '¡Completado!',
+                "Cambios guardados exitosamente",
+                'success')
+
+                setTimeout(()=>{
+                  location.reload()
+                },1000)
+    
+          })
+          .catch(error => {
+            console.log(error)
+            Swal.fire(
+                'Error',
+                  error.message,
+                'error')
+          });
+      }
+    
+      async function changeExtension(id){
+      let url =`{% url 'changeExtension' %}`;
+      data={
+        'id':id
+      };
+      await fetch(url, {
+          method: 'POST',
+          body: JSON.stringify(data),
+          headers: {
+            'Content-Type': 'application/json',
+            "X-CSRFToken": getCookie('csrftoken')
+          }
+        }).then(data => data.json()).then(response=>{
+            console.log(response.codigoHttp)
+           
+              
+              Swal.fire(
+                '¡Completado!',
+                "Cambios guardados exitosamente",
+                'success')
+
+                setTimeout(()=>{
+                  location.reload()
+                },1000)
+    
+          })
+          .catch(error => {
+            console.log(error)
+            Swal.fire(
+                'Error',
+                  error.message,
+                'error')
+          });
+      }
+    
+      async function deleteRifa(id){
+    
+      let result = await Swal.fire({
+        title: '¿Está seguro de que desea eliminar la rifa?',
+        text: "¡No podrás revertir esta acción!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        cancelButtonText:'Cancelar',
+        confirmButtonText: '¡Sí, Eliminar!'
+        })
+        if (result.isConfirmed) {
+        //if user confirms then delete
+        deleteRifaConfirmed(id);
+        }
+      }
+    
+      async function deleteRifaConfirmed(id){
+      let url =`{% url 'deleteRifa' %}`;
+      data={
+        'id':id
+      };
+      await fetch(url, {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+        'Content-Type': 'application/json',
+        "X-CSRFToken": getCookie('csrftoken')
+        }
+      }).then(data => data.json()).then(response=>{
+        console.log(response.codigoHttp)
+         
+          
+          Swal.fire(
+          'Alerta!',
+          response.message,
+          response.status)
+        if(response.status == 'success')
+        location.reload();
+        })
+        .catch(error => {
+        console.log(error)
+        Swal.fire(
+          'Error',
+            error.message,
+          'error')
+        });
+      }
+      async function copiarRifa(id){
+    
+      let result = await Swal.fire({
+        title: '¿Está seguro de que desea crear una copia de esta rifa?',
+        text: "¡No podrás revertir esta acción!",
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        cancelButtonText:'Cancelar',
+        confirmButtonText: '¡Sí, Copiar!'
+        })
+        if (result.isConfirmed) {
+        //if user confirms then delete
+        copiarRifaConfirmada(id);
+        }
+      }
+    
+      async function copiarRifaConfirmada(id){
+      let url =`{% url 'copyRifa' %}`;
+      data={
+        'id':id
+      };
+      await fetch(url, {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+        'Content-Type': 'application/json',
+        "X-CSRFToken": getCookie('csrftoken')
+        }
+      }).then(data => data.json()).then(response=>{
+        console.log(response.codigoHttp)
+         
+          
+          Swal.fire(
+          'Alerta!',
+          response.message,
+          response.status)
+        if(response.status == 'success')
+        location.reload();
+        })
+        .catch(error => {
+        console.log(error)
+        Swal.fire(
+          'Error',
+            error.message,
+          'error')
+        });
+      }    
+  </script>
+{% endblock scripts %}

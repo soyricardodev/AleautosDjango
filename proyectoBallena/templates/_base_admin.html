@@ -1,0 +1,377 @@
+{% load compress %}
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <link rel="manifest" href="/manifest.json" /> -->
+    <meta name="keywords" content="rifa, ganar, dinero, sorteo, premios" />
+    <meta name="googlebot" content="notranslate" />
+    {% block meta %}
+    {% endblock meta %}
+    <link rel="shortcut icon" href="{% static 'img/favicon.svg' %}" type="image/x-icon">
+    <title>Aleautos1</title>
+    {% compress css %}
+      <link rel="stylesheet" href="{% static 'src/output.css' %}">
+      <link rel="stylesheet" href="{% static 'src/Styles.css' %}">
+      <link href="{% static 'fontawesomefree/css/all.min.css' %}" rel="stylesheet" type="text/css">
+      <style>
+        button.swal2-confirm.swal2-styled{
+          background-color:#7066e0
+        }
+      </style>
+    {% endcompress %}
+    <script>
+      function initTheme(){
+        if (
+            localStorage.theme === 'dark' ||
+            (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        ) {
+            document.documentElement.classList.add('dark');
+            document?.getElementById('sunIcon')?.classList?.remove('hidden')
+            document?.getElementById('moonIcon')?.classList?.add('hidden')
+            document?.getElementById('logoNormal')?.classList.remove('hidden');
+            document?.getElementById('logoNegativo')?.classList.add('hidden');
+            document?.getElementById('logoNormalMobile')?.classList.remove('hidden');
+            document?.getElementById('logoNegativoMobile')?.classList.add('hidden');
+          } else {
+            document.documentElement.classList.remove('dark');
+            document?.getElementById('sunIcon')?.classList?.add('hidden')
+            document?.getElementById('moonIcon')?.classList?.remove('hidden')
+            document?.getElementById('logoNormal')?.classList.add('hidden');
+            document?.getElementById('logoNegativo')?.classList.remove('hidden');
+            document?.getElementById('logoNormalMobile')?.classList.add('hidden');
+            document?.getElementById('logoNegativoMobile')?.classList.remove('hidden');
+        }
+      }
+    </script>
+    <script src="{% static 'fontawesomefree/js/all.min.js' %}" defer></script>
+  </head>
+  <body>
+    <div class="antialiased flex flex-col min-h-screen bg-[var(--color-surface-dim)]">    
+      <header class="top-0 z-50 bg-[var(--color-container-neutral-bright)]">
+        <div class="shadow-md max-w-[1512px] lg:px-[72px] px-5 h-14 lg:h-[68px] flex items-center m-auto">
+          <nav class="flex flex-wrap items-center justify-between grow" id="navBar">
+            <div class="flex gap-10 items-center justify-start">
+              <a href="{% url 'index'  %}" class="flex items-center">
+                <img id="logoNormal" src=" {% static 'img/logo-navbar-alt.png' %}" alt="Logo" class="block w-[117px] h-[28px]" />
+                <img id="logoNegativo" src=" {% static 'img/logo-navbar.png' %}" alt="Logo" class="hidden w-[117px] h-[28px]" />
+              </a>
+              <ul class="hidden lg:flex items-center justify-start">
+                <li class="px-4 py-5">
+                  <a href="{% url 'Dashboard' %}" class="linkStyle" aria-current="page">
+                    <span>Tablero</span>
+                  </a>
+                </li>               
+                <li id="misRifasButton" class="px-4 py-5 relative flex flex-row gap-2 items-center cursor-pointer">
+                  <span>Mis rifas</span>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M5.21967 8.21967C5.51256 7.92678 5.98744 7.92678 6.28033 8.21967L10 11.9393L13.7197 8.21967C14.0126 7.92678 14.4874 7.92678 14.7803 8.21967C15.0732 8.51256 15.0732 8.98744 14.7803 9.28033L10.5303 13.5303C10.3897 13.671 10.1989 13.75 10 13.75C9.80109 13.75 9.61032 13.671 9.46967 13.5303L5.21967 9.28033C4.92678 8.98744 4.92678 8.51256 5.21967 8.21967Z" fill="var(--color-icon-primary)" fill-opacity="1"/>
+                  </svg>
+                  <div id="misRifasMenu" class="absolute hidden z-50 top-full left-0 shadow-md radius-rounded bg-[var(--color-container-neutral-bright)] overflow-hidden">
+                    <div class="bg-[var(--color-surface-neutral-bright)] flex flex-col py-2 w-[200px]">
+                      <a {% if Rifa != None %}  href="{% url 'Preview' Rifa.NombreEnlace %}" {% endif %} class="flex flex-row items-center justify-start px-4 py-2 gap-2">
+                        <i class="fa-solid fa-circle text-[6px] p-2"></i> 
+                        <span class="label-medium-regular text-color-primary">Rifa actual</span>
+                      </a>
+                      {% if perms.Rifa.view_rifa %}
+                      <a href="{% url 'ListaRifas' %}" class="flex flex-row items-center justify-start px-4 py-2 gap-2">
+                        <i class="fa-solid fa-circle text-[6px] p-2"></i> 
+                        <span class="label-medium-regular text-color-primary">Historial de rifas</span>
+                      </a>
+                      {% endif %}
+                    </div>
+                  </div>                  
+                </li>
+                {% if perms.Rifa.view_compra %}
+                <li class="px-4 py-5">
+                  <a href="{% url 'Historial' %}" class="linkStyle" aria-current="page">
+                    <span>Boletos vendidos</span>
+                  </a>
+                </li>
+                {% endif %}
+              </ul>
+            </div>     
+            <ul class="gap-3 items-center hidden lg:flex">
+              <li>
+                <div id="changeThemeButton" class="cursor-pointer p-2">
+                  <svg id="sunIcon" class="hidden" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g clip-path="url(#clip0_8959_2447)">
+                    <path d="M12 17C14.7614 17 17 14.7614 17 12C17 9.23858 14.7614 7 12 7C9.23858 7 7 9.23858 7 12C7 14.7614 9.23858 17 12 17Z" stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 1V3" stroke="var(--color-icon-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 21V23" stroke="var(--color-icon-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M4.22021 4.22L5.64021 5.64" stroke="var(--color-icon-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M18.3599 18.36L19.7799 19.78" stroke="var(--color-icon-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M1 12H3" stroke="var(--color-icon-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M21 12H23" stroke="var(--color-icon-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M4.22021 19.78L5.64021 18.36" stroke="var(--color-icon-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M18.3599 5.64L19.7799 4.22" stroke="var(--color-icon-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </g>
+                    <defs>
+                    <clipPath id="clip0_8959_2447">
+                    <rect width="24" height="24" fill="var(--color-icon-primary)"/>
+                    </clipPath>
+                    </defs>
+                    </svg>
+                  <svg id="moonIcon" class="" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20.9999 12.79C20.8426 14.4922 20.2038 16.1144 19.1581 17.4668C18.1125 18.8192 16.7034 19.8458 15.0956 20.4265C13.4878 21.0073 11.7479 21.1181 10.0794 20.7461C8.41092 20.3741 6.8829 19.5345 5.67413 18.3258C4.46536 17.117 3.62584 15.589 3.25381 13.9205C2.88178 12.252 2.99262 10.5121 3.57336 8.9043C4.15411 7.29651 5.18073 5.88737 6.53311 4.84175C7.8855 3.79614 9.5077 3.15731 11.2099 3C10.2133 4.34827 9.73375 6.00945 9.85843 7.68141C9.98312 9.35338 10.7038 10.9251 11.8893 12.1106C13.0748 13.2961 14.6465 14.0168 16.3185 14.1415C17.9905 14.2662 19.6516 13.7866 20.9999 12.79Z" stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>                      
+                </div>
+              </li>   
+              <div class="flex w-3 h-8 border-l border-[var(--color-border-primary)]"></div>
+              <li>
+                <a href="{% url 'Logout' %}" class="button button-blanked button-small" aria-current="page">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M7.5 17.5H4.16667C3.72464 17.5 3.30072 17.3244 2.98816 17.0118C2.67559 16.6993 2.5 16.2754 2.5 15.8333V4.16667C2.5 3.72464 2.67559 3.30072 2.98816 2.98816C3.30072 2.67559 3.72464 2.5 4.16667 2.5H7.5" stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M13.3335 14.1668L17.5002 10.0002L13.3335 5.8335" stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M17.5 10H7.5" stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span>Cerrar sesión</span>
+                </a>
+              </li>
+            </ul>
+            <div id="navMenuButton" class="cursor-pointer flex items-center justify-center lg:hidden">
+              <i class="fa-solid fa-bars text-[var(--color-icon-primary)] text-2xl p-2"></i>
+            </div>
+          </nav>
+        </div>
+        <div id="mobileMenu" class="hidden fixed h-[100dvh] w-screen top-0 bottom-0 left-0 bg-[var(--color-container-neutral-bright)] label-medium-medium">
+          <div class="flex flex-col justify-between items-start bg-[var(--color-container-neutral-bright)] w-full pt-16 pb-6 px-4 gap-6">
+            <div class="flex flex-col gap-6 items-stretch justify-start w-full">
+              <a href="{% url 'index'  %}" class="flex items-center">
+                <img id="logoNormalMobile" src=" {% static 'img/logo.png' %}" alt="Logo" class="lg:hidden block w-[196px] h-8" />
+                <img id="logoNegativoMobile" src=" {% static 'img/logo_alt.png' %}" alt="Logo" class="lg:hidden block w-[196px] h-8" />
+              </a>
+              <ul class="flex flex-col items-stretch justify-start gap-2">
+                <li class="px-4 py-5 radius-rounded active-item">
+                  <a href="{% url 'Dashboard' %}" aria-current="page">
+                    <span>Tablero</span>
+                  </a>
+                </li>               
+                <li id="misRifasMobileButton" class="px-4 py-5 radius-rounded relative flex flex-row gap-2 items-center justify-between cursor-pointer">
+                  <span>Mis rifas</span>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M5.21967 8.21967C5.51256 7.92678 5.98744 7.92678 6.28033 8.21967L10 11.9393L13.7197 8.21967C14.0126 7.92678 14.4874 7.92678 14.7803 8.21967C15.0732 8.51256 15.0732 8.98744 14.7803 9.28033L10.5303 13.5303C10.3897 13.671 10.1989 13.75 10 13.75C9.80109 13.75 9.61032 13.671 9.46967 13.5303L5.21967 9.28033C4.92678 8.98744 4.92678 8.51256 5.21967 8.21967Z" fill="var(--color-icon-primary)" fill-opacity="1"/>
+                  </svg>                 
+                </li>
+                <li id="misRifasMobileMenu" class="hidden">
+                  <div class="flex flex-col py-2">
+                    <a {% if Rifa != None %}  href="{% url 'Preview' Rifa.NombreEnlace %}" {% endif %} class="flex flex-row items-center justify-start gap-2 px-4 py-5 radius-rounded pl-10">
+                      <span class="label-medium-regular text-color-primary">Rifa actual</span>
+                    </a>
+                    {% if perms.Rifa.view_rifa %}
+                    <a href="{% url 'ListaRifas' %}" class="flex flex-row items-center justify-start gap-2 px-4 py-5 radius-rounded pl-10">
+                      <span class="label-medium-regular text-color-primary">Historial de rifas</span>
+                    </a>
+                    {% endif %}
+                  </div>
+                </li>
+                {% if perms.Rifa.view_compra %}
+                <li class="px-4 py-5 radius-rounded">
+                  <a href="{% url 'Historial' %}" class="linkStyle" aria-current="page">
+                    <span>Boletos vendidos</span>
+                  </a>
+                </li>
+                {% endif %}
+              </ul>
+            </div>     
+            <ul class="gap-4 items-stretch justify-end flex flex-col w-full">
+              <li>
+                <div id="changeThemeMobileButton" class="cursor-pointer flex items-center justify-start gap-3">
+                  <svg id="sunIconMobile" class="hidden" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g clip-path="url(#clip0_8959_2447)">
+                    <path d="M12 17C14.7614 17 17 14.7614 17 12C17 9.23858 14.7614 7 12 7C9.23858 7 7 9.23858 7 12C7 14.7614 9.23858 17 12 17Z" stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 1V3" stroke="var(--color-icon-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 21V23" stroke="var(--color-icon-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M4.22021 4.22L5.64021 5.64" stroke="var(--color-icon-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M18.3599 18.36L19.7799 19.78" stroke="var(--color-icon-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M1 12H3" stroke="var(--color-icon-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M21 12H23" stroke="var(--color-icon-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M4.22021 19.78L5.64021 18.36" stroke="var(--color-icon-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M18.3599 5.64L19.7799 4.22" stroke="var(--color-icon-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </g>
+                    <defs>
+                    <clipPath id="clip0_8959_2447">
+                    <rect width="24" height="24" fill="var(--color-icon-primary)"/>
+                    </clipPath>
+                    </defs>
+                    </svg>
+                  <svg id="moonIconMobile" class="" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20.9999 12.79C20.8426 14.4922 20.2038 16.1144 19.1581 17.4668C18.1125 18.8192 16.7034 19.8458 15.0956 20.4265C13.4878 21.0073 11.7479 21.1181 10.0794 20.7461C8.41092 20.3741 6.8829 19.5345 5.67413 18.3258C4.46536 17.117 3.62584 15.589 3.25381 13.9205C2.88178 12.252 2.99262 10.5121 3.57336 8.9043C4.15411 7.29651 5.18073 5.88737 6.53311 4.84175C7.8855 3.79614 9.5077 3.15731 11.2099 3C10.2133 4.34827 9.73375 6.00945 9.85843 7.68141C9.98312 9.35338 10.7038 10.9251 11.8893 12.1106C13.0748 13.2961 14.6465 14.0168 16.3185 14.1415C17.9905 14.2662 19.6516 13.7866 20.9999 12.79Z" stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span id="textMobileTheme">Modo claro</span>                      
+                </div>
+              </li>              
+              <li>
+                <a href="{% url 'Logout' %}" class=" flex items-center justify-between gap-3 p-2 pt-6 border-t border-color-primary" aria-current="page">
+                  <span>Cerrar sesión</span>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M7.5 17.5H4.16667C3.72464 17.5 3.30072 17.3244 2.98816 17.0118C2.67559 16.6993 2.5 16.2754 2.5 15.8333V4.16667C2.5 3.72464 2.67559 3.30072 2.98816 2.98816C3.30072 2.67559 3.72464 2.5 4.16667 2.5H7.5" stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M13.3335 14.1668L17.5002 10.0002L13.3335 5.8335" stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M17.5 10H7.5" stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div class="" id="LoaderHusky">
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+      <main class="relative pt-8 grow max-w-[100vw] lg:max-w-[1512px] mx-auto w-full">
+        <div class="flex flex-col lg:flex-row px-5 lg:px-[72px] pb-5 lg:pb-6 w-full items-start justify-between gap-5">
+          <div class="flex flex-col gap-3">
+            {% block titles %}
+            {% endblock titles %}
+          </div>
+          <div class="flex flex-col lg:flex-row-reverse gap-4 lg:gap-5 w-full lg:w-fit">
+            {% block actions %}
+            {% endblock actions %}
+          </div>
+        </div>
+        <div>
+          {% block content %}
+          {% endblock content %}
+        </div>
+      </main>
+      <footer class="bg-[var(--color-container-neutral-bright)] flex justify-center items-center py-2 mt-10">
+        <span class="label-medium-regular text-color-secondary">© Aleautos1 2025</span>
+      </footer>
+    </div>
+
+    <script>
+      initTheme()
+    </script>
+    <script src="{% static '\JS\flowbite.min.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+    <script src="{% static '\JS\jquery-3.7.0.min.js' %}"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@24.5.1/build/css/intlTelInput.css">
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@24.5.1/build/js/intlTelInput.min.js"></script>
+    <script defer>
+      //logica para toggles
+      const toggleButtons = document.querySelectorAll('.toggle-button')
+      toggleButtons.forEach(el =>{
+        el.addEventListener("click", ()=>{
+          el.classList.toggle('active')
+        })
+      })
+
+      //Lógica para mis rifas
+      const misRifasButton = document.getElementById("misRifasButton")
+      const misRifasMenu = document.getElementById("misRifasMenu")
+      function toggleRifasMenu(){
+        misRifasMenu.classList.toggle('hidden')
+        misRifasMenu.classList.toggle('flex')
+      }
+      misRifasButton.addEventListener('click', toggleRifasMenu)
+
+      //Logica para menu mobile
+      const mobileMenu = document.getElementById("mobileMenu")
+      const navMenuButton = document.getElementById("navMenuButton")
+      const misRifasMobileButton = document.getElementById("misRifasMobileButton")
+      const misRifasMobileMenu = document.getElementById("misRifasMobileMenu")
+
+      function toggleMobileMenu(){
+        mobileMenu.classList.toggle('flex')
+        mobileMenu.classList.toggle('hidden')
+      }
+      function toggleMisRifasMobileMenu(){
+        misRifasMobileMenu.classList.toggle('flex')
+        misRifasMobileMenu.classList.toggle('hidden')
+      }
+      misRifasMobileButton.addEventListener('click', toggleMisRifasMobileMenu)
+      navMenuButton.addEventListener('click', toggleMobileMenu)
+
+       //Logica para el cambio de temas
+       const changeThemeButton = document.getElementById("changeThemeButton")
+      const changeThemeMobileButton = document.getElementById("changeThemeMobileButton")
+      const textMobileTheme = document.getElementById("textMobileTheme")
+      function initThemeText(){
+        const lunaMobile = document?.getElementById('moonIconMobile')
+        const solMobile = document?.getElementById('sunIconMobile')
+        if (
+            localStorage.theme === 'dark' ||
+            (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        ) {
+            textMobileTheme.innerText = 'Modo claro'
+            document?.getElementById('sunIconMobile')?.classList?.remove('hidden')
+            document?.getElementById('moonIconMobile')?.classList?.add('hidden')
+          } else {
+            textMobileTheme.innerText = 'Modo oscuro'
+            document?.getElementById('sunIconMobile')?.classList?.add('hidden')
+            document?.getElementById('moonIconMobile')?.classList?.remove('hidden')
+        }
+      }
+      initThemeText()
+      function toggleTheme(){
+        const luna = document?.getElementById('moonIcon')
+        const sol = document?.getElementById('sunIcon')
+        const lunaMobile = document?.getElementById('moonIconMobile')
+        const solMobile = document?.getElementById('sunIconMobile')
+        if (
+            localStorage.theme === 'dark' ||
+            (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        ) {
+		        localStorage.setItem('theme', 'light');
+            textMobileTheme.innerText = 'Modo oscuro'
+          } else {
+            localStorage.setItem('theme', 'dark');
+            textMobileTheme.innerText = 'Modo claro'
+        }
+        document.documentElement.classList.toggle('dark')
+        luna?.classList?.toggle('hidden')
+        sol?.classList?.toggle('hidden')
+        lunaMobile?.classList?.toggle('hidden')
+        solMobile?.classList?.toggle('hidden')
+        document?.getElementById('logoNormal')?.classList.toggle('hidden');
+        document?.getElementById('logoNegativo')?.classList.toggle('hidden');
+        document?.getElementById('logoNormalMobile')?.classList.toggle('hidden');
+        document?.getElementById('logoNegativoMobile')?.classList.toggle('hidden');
+      }
+      changeThemeButton.addEventListener('click', toggleTheme)
+      changeThemeMobileButton.addEventListener('click', ()=>{
+        toggleTheme()
+        toggleMobileMenu()
+      })
+
+      function setLoading() {
+        let element = document.getElementById("LoaderHusky");
+        element.classList.add("lds-ring");
+
+      }
+      function stopLoading() {
+        let element = document.getElementById("LoaderHusky");
+        element.classList.remove("lds-ring");
+      }
+      function getCookie(name) {
+
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';');
+          for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+            }
+          }
+        }
+        return cookieValue;
+      }
+      function focusOnCompra() {
+        let element = document.getElementById("btCompra");
+        element.focus()
+      }
+    </script>
+    {% block scripts %}
+    {% endblock scripts %}
+  </body>
+</html>

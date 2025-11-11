@@ -1,0 +1,141 @@
+<dialog id="dialogBuscaNumeros"
+  class="radius-rounded bg-[var(--color-container-neutral-bright)] shadow-md overflow-hidden max-h-[600px]">
+  <div class="flex flex-col items-start text-left ">
+    <div class="flex flex-col items-start text-left gap-7 p-6">
+      <div class="flex flex-row justify-start gap-8 items-start w-full">
+        <h3 class="title-large-medium text-color-primary grow text-left">Ingresa el número de boleto a buscar</h3>
+        <div id="btnCloseDialogBuscaNumero" class="flex justify-center  cursor-pointer">
+          <i class="fa fa-times text-xl p-1 text-[var(--color-icon-primary)]"></i>
+        </div>
+      </div>
+      <div class="w-full relative grow">
+        <input type="text" id="inputBuscaNumero" name="inputBuscaNumero" placeholder="Escribe el núm. de boleto"
+          class="input input-medium w-full relative">
+      </div>
+    </div>
+    <div class="flex flex-row justify-end items-center p-6 w-full border-t border-color-primary">
+      <button id="btnTableBuscarNumero" class="button button-active button-small" type="button">
+        <span>Buscar</span>
+      </button>
+    </div>
+  </div>
+</dialog>
+<dialog id="dialogTablaBuscaNumeros"
+  class="radius-rounded bg-[var(--color-container-neutral-bright)] shadow-md overflow-hidden w-screen h-[100dvh] lg:w-min lg:max-h-[700px] lg:h-[700px] m-0 lg:m-auto max-h-screen max-w-full">
+</dialog>
+<script>
+  const buttonOpenDialogBuscaNumero = document.getElementById('{{button_id}}')
+  const buttonTableBuscarNumero = document.getElementById("btnTableBuscarNumero");
+  const buttonCloseDialogBuscaNumero = document.getElementById("btnCloseDialogBuscaNumero");
+  const inputBuscaNumero = document.getElementById("inputBuscaNumero")
+
+  function openDialogBuscaNumero() {
+    const dialog = document?.getElementById("dialogBuscaNumeros")
+    dialog?.showModal()
+  }
+  function closeDialogBuscaNumero() {
+    const dialog = document?.getElementById("dialogBuscaNumeros")
+    dialog?.close()
+  }
+  function closeDialogTableNumero() {
+    const dialog = document.getElementById("dialogTablaBuscaNumeros")
+    dialog.close()
+  }
+  function justNumber(e) {
+    const element = e.target
+    const replacedStr = (element.value.trim() === "") ? "" : element.value.replace(/[^\d]/g, "")
+    console.log(replacedStr)
+    if (isNaN(replacedStr)) {
+      element.value = ""
+    } else {
+      element.value = replacedStr
+    }
+  }
+  function buscarNumeroEnter(e) {
+    if (e.key == "Enter") {
+      modalNumero()
+    }
+  }
+  async function modalNumero(page = 1) {
+    setLoading()
+    data = {
+      'numero': inputBuscaNumero.value,
+      page
+    }
+    let url = "{% url 'tableDialogBuscaNumero' %}{%if rifa_id != None%}{{rifa_id}}{%endif%}"
+    await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json',
+        "X-CSRFToken": getCookie('csrftoken')
+      }
+    }).then(function (result) {
+      stopLoading()
+      return result.text();
+    }).then(function (result) {
+      const dialog = document.getElementById("dialogTablaBuscaNumeros")
+      dialog.innerHTML = result;
+      calculatePagination()
+      dialog.showModal()
+      closeDialogBuscaNumero()
+    })
+      .catch(error => {
+        stopLoading()
+        console.log(error)
+        Swal.fire(
+          'Error',
+          error.message,
+          'error')
+      });
+  }
+  const calculatePagination = () => {
+    const areaPaginacion = document.querySelectorAll('.contenedorPaginacionTableNumeros')
+    const maxValue = parseInt(document.getElementById('paginacionTableNumerosMaxValue')?.value)
+    const actualPage = parseInt(document.getElementById('paginacionTableNumerosActualPage')?.value)
+    for (const area of areaPaginacion) {
+      area.innerHTML = ''
+      if (maxValue <= 7) {
+        for (let i = 1; i <= maxValue; i++) {
+          const paginateNumber = document.createElement('span')
+          if (i === actualPage) {
+            paginateNumber.setAttribute('class', "bg-transparent cursor-pointer radius-rounded gap-1 h-[36px] w-[36px] flex justify-center items-center relative text-color-brand overflow-hidden")
+            paginateNumber.innerHTML = `<div class="bg-[var(--color-surface-primary-focused)] px-2 flex justify-center items-center" style="width:100%; height:100%;"><span>${i < 10 ? `0${i}` : i}</span></div>`
+          } else {
+            paginateNumber.onclick = () => { modalNumero(i) }
+            paginateNumber.setAttribute('class', "bg-transparent cursor-pointer radius-rounded px-2 gap-1 h-[36px] w-[36px] flex justify-center items-center")
+            paginateNumber.innerHTML = i < 10 ? `0${i}` : i
+          }
+          area.appendChild(paginateNumber)
+        }
+      } else {
+        const segundo_lugar = actualPage <= 2 ? 2 : null
+        const cuarto_lugar = actualPage >= maxValue - 1 ? maxValue - 1 : null
+        const tercer_lugar = segundo_lugar === null && cuarto_lugar === null ? actualPage : segundo_lugar === null && cuarto_lugar !== null ? cuarto_lugar - 1 : segundo_lugar + 1
+        const pagination = [1, segundo_lugar, tercer_lugar, cuarto_lugar, maxValue]
+        pagination.forEach(el => {
+          const paginateNumber = document.createElement('span')
+          if (el === null) {
+            paginateNumber.setAttribute('class', "bg-transparent cursor-pointer radius-rounded px-2 gap-1 h-[36px] w-[36px] flex justify-center items-center")
+            paginateNumber.innerHTML = '...'
+          } else if (el === actualPage) {
+            paginateNumber.setAttribute('class', "bg-transparent cursor-pointer radius-rounded gap-1 h-[36px] w-[36px] flex justify-center items-center relative text-color-brand overflow-hidden")
+            paginateNumber.innerHTML = `<div class="bg-[var(--color-surface-primary-focused)] px-2 flex justify-center items-center" style="width:100%; height:100%;"><span>${el === null ? '...' : el < 10 ? `0${el}` : el}</span></div>`
+          } else {
+            paginateNumber.onclick = () => { modalNumero(el) }
+            paginateNumber.setAttribute('class', "bg-transparent cursor-pointer radius-rounded px-2 gap-1 h-[36px] w-[36px] flex justify-center items-center")
+            paginateNumber.innerHTML = el < 10 ? `0${el}` : el
+
+          }
+          area.appendChild(paginateNumber)
+        })
+      }
+    }
+  }
+  inputBuscaNumero.addEventListener("input", justNumber)
+  buttonOpenDialogBuscaNumero.addEventListener("click", openDialogBuscaNumero)
+  buttonTableBuscarNumero.addEventListener("click", async () => {
+    await modalNumero();
+  });
+  buttonCloseDialogBuscaNumero.addEventListener("click", closeDialogBuscaNumero)
+</script>

@@ -1,0 +1,126 @@
+{% load mjml %}
+
+{% mjml %}
+    <mjml>
+        <mj-head>
+            <mj-font name="Inter" href="https://fonts.googleapis.com/css2?family=Inter" />
+            <mj-attributes>
+              <mj-all font-family="Inter, Helvetica, Arial" />
+            </mj-attributes>
+            <mj-style>
+                .image img{
+                  object-position:center !important;
+                  object-fit: cover !important;
+                  border-radius: 8px;
+                  max-height: 252px;
+                  width: 100%;
+
+                }
+                .contenedor{
+                  background-color: #FFFFFF0D; border-radius: 8px; padding:12px;
+                }
+                .wrapper{
+                  background-color: #0000;
+                  padding:16px;
+
+                }
+                .footer{
+                  border-top: 1px solid #FFFFFF61;
+                  display: none;
+                }
+                @media (min-width:600px) { 
+                  .image img{
+                    object-position:center !important;
+                    object-fit: cover !important;
+                    border-radius: 8px 8px 0px 0px;
+                    max-height: 430px;
+                    width: 100%;
+
+                  }
+                  .contenedor{
+                    background-color: #FFFFFF0D; border-radius: 8px; padding:12px;
+                  }
+                  .wrapper{
+                    background-color: #FFFFFF0D;
+                    padding:32px 24px;
+                  }
+                  .footer{
+                    border-top: 1px solid #FFFFFF61;
+                    display: block;
+                  }
+                }
+            </mj-style>
+        </mj-head>
+        <mj-body background-color="#121212">
+            <mj-section full-width="full-width">
+                <mj-group>
+                    <mj-column>
+                        <mj-image width="196px" height="32px" src="https://aleautos1.com/static/img/logo-navbar-alt.png"/>
+                    </mj-column>
+                </mj-group>
+            </mj-section>
+            <mj-wrapper border-radius="8px" css-class="wrapper">
+                <mj-section padding="0px">
+                  <mj-column padding="0px">
+                    <mj-text padding="0px" align="center">
+                      <h1 style="margin:0px;font-size:30px; line-height:44px;font-weight:700; color: #FFFFFF; text-align: center; padding-bottom: 24px;">¡Gracias por comprar con Aleautos1!</h1>
+                    </mj-text>
+                  </mj-column>
+                </mj-section>
+                <mj-section>
+                  <mj-column>
+                    <mj-text padding="0px" align="center">
+                      <span style="display:block;background-color: #FFFFFF0D; border-radius: 8px; padding:12px;">
+                        <img src="https://aleautos1.com/static/img/calendar_event_24.svg" alt="" style="vertical-align:middle;padding-right:8px">
+                        <span style="vertical-align:middle;margin:0px;font-size:14px; line-height:20px;font-weight:500; color: #FFFFFFBD; text-align: center;">Sorteo: {{rifa.FechaSorteo|date:'j \d\e F \d\e Y'}}</span>
+                      </span>
+                    </mj-text>
+                  </mj-column>
+                </mj-section>
+                <mj-section padding="24px 0px">
+                  <mj-column padding="0px">
+                    <mj-text padding="0px 0px" align="left">
+                      <p style="margin:0px;font-size:16px; line-height:24px;font-weight:400; color: #FFFFFFBD; text-align: left;">
+                        Gracias por tu compra, puedes revisar nuestros otros sorteos o seguir comprando para aumentar tus posibilidades de ganar. Dentro de las siguientes 10 a 20 horas recibiras actulizaciones sobre el estado de tu compra.
+                      </p>
+                      <br>
+                      <p style="margin:0px;font-size:16px; line-height:24px;font-weight:400; color: #FFFFFFBD; text-align: left;">
+                        Una vez el equipo valide la información de tu pago se te enviara un correo con los datos de tu compra y los numeros de tus boletos los cuales son elegidos aleatoriamente.
+                      </p>
+                      <br>
+
+                      <p style="margin:0px;font-size:16px; line-height:24px;font-weight:400; color: #FFFFFFBD; text-align: left;">
+                        Recuerda tener paciencia, nuestro equipo trabaja lo mas rapido posible, mantente atento. 
+                      </p>
+                      <br>
+
+                      <p style="margin:0px;font-size:16px; line-height:24px;font-weight:400; color: #FFFFFFBD; text-align: left;">
+                        Siguenos en instagram para estar al tanto de los resultados y nuevos sorteos <a href="https://instagram.com/aleautos1?igsh=d3lvNWt6emN2d2Z3" style="color: #48abe0;">@aleautos1</a>.
+                      </p>
+                    </mj-text>
+                  </mj-column>
+                </mj-section>
+                <mj-section css-class="footer">
+                  <mj-column>
+                    <mj-text padding="16px 0px" align="center">
+                      <a href="https://www.instagram.com/aleautos1/" style="padding:0px 24px">
+                        <img src="https://aleautos1.com/static/img/instagram_24px.svg" alt="">
+                      </a>
+                    </mj-text>
+                    <mj-text padding="16px">
+                      <a href="https://aleautos1.com/terminos/" style="display:inline-block;margin:0px;font-size:12px; line-height:16px;font-weight:400; color: #FFFFFFBD; text-align: center; width:24%" >Términos</a>
+                      <a href="https://aleautos1.com/privacy/" style="display:inline-block;margin:0px;font-size:12px; line-height:16px;font-weight:400; color: #FFFFFFBD; text-align: center; width:24%" >Privacidad</a>
+                      <a {% if whatsapp_config != None and whatsapp_config.valor != None %} href="https://wa.me/{{whatsapp_config.valor}}"{% else %} href="#" {%endif%} style="display:inline-block;margin:0px;font-size:12px; line-height:16px;font-weight:400; color: #FFFFFFBD; text-align: center; width:24%" >Contáctanos</a>
+                      <a href="#" style="display:inline-block;margin:0px;font-size:12px; line-height:16px;font-weight:400; color: #FFFFFFBD; text-align: center; width:24%" >Dar de baja</a>
+                    </mj-text>
+                  </mj-column>
+                </mj-section>
+            </mj-wrapper>
+            <mj-section>
+              <mj-column>
+                <mj-spacer height="24px"/>
+              </mj-column>
+            </mj-section>
+        </mj-body>
+    </mjml>
+{% endmjml %} 

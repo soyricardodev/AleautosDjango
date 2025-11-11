@@ -1,0 +1,103 @@
+{% load Filter %}
+{% load static %}
+
+<div class="flex flex-1 lg:max-h-[700px] flex-col items-start text-left w-full h-[100dvh] max-h-[100dvh]">
+  <div class="flex flex-1 lg:max-h-[700px] flex-col items-start text-left gap-7 pt-6 w-full h-[100dvh] max-h-[100dvh]">
+    <div class="flex flex-row justify-start gap-8 items-start w-full border-b border-color-primary px-4 lg:px-6 pb-6">
+      <div class="flex flex-col gap-2 items-start grow">
+        <h3 class="title-large-medium text-color-primary grow text-left">Comprador</h3>
+        <span class="body-medium-regular text-color-secondary">Este formulario te permite editar los datos de un comprador</span>
+      </div>
+      <div onclick="closeDialogComprador()" class="flex justify-center cursor-pointer">
+        <i class="fa fa-times text-xl p-1 text-[var(--color-icon-primary)]"></i>
+      </div>
+    </div>
+    <form id="compradorForm" class="w-full flex flex-col flex-1 lg:flex-none justify-start overflow-scroll lg:h-[436px] pb-6 px-4 lg:px-6">
+      <div class="detalle-content-tab flex flex-col gap-10 shrink">
+        <div class="flex flex-col gap-7 lg:flex-row">
+          <div class="flex flex-col-reverse gap-2 w-full">
+            {% if form.nombre.errors %}
+              <span class="pl-4 label-small-regular text-color-error">{{ form.nombre.errors }}</span>
+            {% endif %}
+            <input type="text"
+              id="nombre"
+              name="nombre"
+              value="{{ form.nombre.value|default_if_none:'' }}"
+              required
+              class="{% if form.nombre.errors %}
+                 input-error
+              {% else %}
+                 input
+              {% endif %} w-full"
+              placeholder="Nombre" />
+            <label class="label-medium-medium">Nombre</label>
+          </div>
+          <div class="flex flex-col-reverse gap-2 w-full">
+            {% if form.cedula.errors %}
+              <span class="pl-4 label-small-regular text-color-error">{{ form.cedula.errors }}</span>
+            {% endif %}
+            <input type="text"
+              id="cedula"
+              name="cedula"
+              oninput="justNumber(event)"
+              value="{{ form.cedula.value|default_if_none:'' }}"
+              required
+              class="{% if form.cedula.errors %}
+                 input-error
+              {% else %}
+                 input
+              {% endif %} w-full"
+              placeholder="Cedula" />
+            <label class="label-medium-medium">Cedula</label>
+          </div>
+        </div>
+        <div class="flex flex-col gap-7 lg:flex-row">
+          <div class="flex flex-col-reverse gap-2 w-full">
+            {% if form.telefono.errors %}
+              <span class="pl-4 label-small-regular text-color-error">{{ form.telefono.errors }}</span>
+            {% endif %}
+            <input type="text"
+              id="telefono"
+              name="telefono"
+              oninput="justNumber(event)"
+              value="{{ form.telefono.value|default_if_none:'' }}"
+              required
+              class="{% if form.telefono.errors %}
+                 input-error
+              {% else %}
+                 input
+              {% endif %} w-full"
+              placeholder="Teléfono" />
+            <label class="label-medium-medium">Teléfono</label>
+          </div>
+          <div class="flex flex-col-reverse gap-2 w-full">
+            {% if form.correo.errors %}
+              <span class="pl-4 label-small-regular text-color-error">{{ form.correo.errors }}</span>
+            {% endif %}
+            <input type="text"
+              id="correo"
+              name="correo"
+              value="{{ form.correo.value|default_if_none:'' }}"
+              required
+              class="{% if form.correo.errors %}
+                 input-error
+              {% else %}
+                 input
+              {% endif %} w-full"
+              placeholder="Correo electrónico" />
+            <label class="label-medium-medium">Correo electrónico</label>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="flex flex-col lg:flex-row-reverse gap-4 justify-between items-center justify-self-end p-6 w-full border-t border-color-primary">
+    <div class="flex flex-row gap-4 w-full lg:w-auto">
+      <button class="button button-tonal button-small grow" type="button" onclick="closeDialogComprador()"><span>Cancelar</span></button>
+      <button onclick="saveComprador(event,{{CompradorId}})" class="button button-active button-small grow" type="button"><span>Guardar</span></button>
+    </div>
+  </div>
+  <div id="toast-bottom-right" class="hidden items-center w-full max-w-xs p-4 space-x-4 bg-[var(--color-container-neutral-heavy-contrast)] divide-x rtl:divide-x-reverse divide-gray-200 rounded-lg shadow-sm right-5 bottom-5" role="alert">
+    <span id="toastText" class="body-small-regular text-[var(--color-text-primary-invert)]"></span>
+  </div>
+</div>
