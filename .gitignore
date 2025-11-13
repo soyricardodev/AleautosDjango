@@ -13,3 +13,4 @@ migrations
 .env
 supervisord.log
 supervisord.pid
+docker/init_db
