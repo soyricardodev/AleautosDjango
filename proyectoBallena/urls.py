@@ -21,6 +21,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("", include("Rifa.urls")),
     path("CMS/", include("CMS.urls")),
+    path('api/', include('pagos_banco.urls')),
 
 ]
 handler404 = 'Rifa.views.handle404'

@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'compressor',
     'CMS',
     'Rifa',
+    'pagos_banco',
     'crispy_forms',
     "crispy_bootstrap5",
     'dynamic_preferences',
@@ -272,6 +273,9 @@ CHINCHIN_PRIVATE=os.environ.get('CHINCHIN_PRIVATE')
 CHINCHIN_ID=os.environ.get('CHINCHIN_ID')
 CHINCHIN_URL=os.environ.get('CHINCHIN_URL')
 API_KEY_CHINCHIN=os.environ.get('API_KEY_CHINCHIN')
+
+# Banco R4 Conecta
+BANCO_UUID_TOKEN = '16354fd1-afdd-4d32-8f1c-331bc39ac824'
 
 #Logging
 LOG_DIRS = ['debug', 'warning']
