@@ -7,8 +7,8 @@ from django.conf import settings
 from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template import loader
-from .forms import RifaForm, VerificaForm, CompradorForm
-from .models import Compra, NumeroRifaComprados, NumeroRifaReservados, NumeroRifaReservadosOrdenes, NumerosCompra,UsuarioStats, Rifa as RifaModel, NumeroRifaDisponibles, NumeroRifaDisponiblesArray, NumeroRifaCompradosArray, PremiosRifa, Tasas, ReenviosMasivos, Settings, Comprador
+from .forms import RifaForm, VerificaForm, CompradorForm, RegistroClienteForm, LoginClienteForm
+from .models import Compra, NumeroRifaComprados, NumeroRifaReservados, NumeroRifaReservadosOrdenes, NumerosCompra,UsuarioStats, Rifa as RifaModel, NumeroRifaDisponibles, NumeroRifaDisponiblesArray, NumeroRifaCompradosArray, PremiosRifa, Tasas, ReenviosMasivos, Settings, Comprador, Cliente
 from django.core.paginator import Paginator
 from django.db import transaction, IntegrityError
 from .apis import get_token, get_data
@@ -24,6 +24,7 @@ import xlwt
 from .templatetags.Filter import reversoEstado,reversoMetodoPago
 from django.contrib.auth import logout, authenticate, login
 from django.contrib.auth.forms import AuthenticationForm #add this
+from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import F
@@ -185,6 +186,142 @@ def Login(request):
         "msg": msg,
     }
     return HttpResponse(template.render(context, request))
+
+
+def registro_cliente(request):
+    """Vista para registro de clientes en /registrate/"""
+    # Si ya está autenticado, redirigir
+    if request.user.is_authenticated:
+        # Verificar si es cliente o admin
+        if hasattr(request.user, 'cliente'):
+            return redirect("/")
+        else:
+            # Es admin, redirigir al dashboard
+            return redirect("Dashboard")
+    
+    template = loader.get_template("Rifa/registro_cliente.html")
+    Rifas = RifaModel.objects.filter(Estado=True).filter(Eliminada=False)
+    Rifa = Rifas.last()
+    msg = ""
+    error = None
+    
+    if request.method == 'POST':
+        form = RegistroClienteForm(request.POST)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    # Crear usuario
+                    user = User.objects.create_user(
+                        username=form.cleaned_data['correo'],  # Usar correo como username
+                        email=form.cleaned_data['correo'],
+                        password=form.cleaned_data['password1'],
+                        first_name=form.cleaned_data['nombre'].split()[0] if form.cleaned_data['nombre'].split() else '',
+                        last_name=' '.join(form.cleaned_data['nombre'].split()[1:]) if len(form.cleaned_data['nombre'].split()) > 1 else ''
+                    )
+                    
+                    # Crear cliente
+                    cliente = Cliente.objects.create(
+                        user=user,
+                        cedula=form.cleaned_data['cedula'],
+                        telefono=form.cleaned_data['telefono'],
+                        direccion=form.cleaned_data.get('direccion', '')
+                    )
+                    
+                    # Auto-login
+                    login(request, user)
+                    
+                    # Redirigir según contexto
+                    next_url = request.GET.get('next', '/')
+                    return redirect(next_url)
+            except Exception as e:
+                logger.error(f"Error al registrar cliente: {str(e)}")
+                error = "Ocurrió un error al registrar. Por favor intenta nuevamente."
+        else:
+            error = "Por favor corrige los errores en el formulario."
+    else:
+        form = RegistroClienteForm()
+    
+    context = {
+        "Rifa": Rifa,
+        "form": form,
+        "msg": msg,
+        "error": error,
+    }
+    return HttpResponse(template.render(context, request))
+
+
+def inicio_sesion_cliente(request):
+    """Vista para inicio de sesión de clientes en /inicia-sesion/"""
+    # Si ya está autenticado, redirigir
+    if request.user.is_authenticated:
+        if hasattr(request.user, 'cliente'):
+            return redirect("/")
+        else:
+            return redirect("Dashboard")
+    
+    template = loader.get_template("Rifa/inicio_sesion_cliente.html")
+    Rifas = RifaModel.objects.filter(Estado=True).filter(Eliminada=False)
+    Rifa = Rifas.last()
+    msg = ""
+    error = None
+    
+    if request.method == 'POST':
+        form = LoginClienteForm(request.POST)
+        if form.is_valid():
+            usuario_input = form.cleaned_data['usuario']
+            password = form.cleaned_data['password']
+            
+            # Intentar autenticar por correo o cédula
+            user = None
+            
+            # Primero intentar por correo (username)
+            try:
+                user = User.objects.get(email=usuario_input)
+            except User.DoesNotExist:
+                pass
+            
+            # Si no se encontró por correo, intentar por cédula
+            if user is None:
+                try:
+                    cliente = Cliente.objects.get(cedula=usuario_input)
+                    user = cliente.user
+                except Cliente.DoesNotExist:
+                    pass
+            
+            # Si encontramos un usuario, verificar contraseña
+            if user:
+                user = authenticate(request, username=user.username, password=password)
+                if user is not None:
+                    # Verificar que sea un cliente, no un admin
+                    if hasattr(user, 'cliente'):
+                        login(request, user)
+                        next_url = request.GET.get('next', '/')
+                        return redirect(next_url)
+                    else:
+                        error = "Esta cuenta es de administrador. Usa /Login/ para acceder."
+                else:
+                    error = "Contraseña incorrecta."
+            else:
+                error = "No se encontró una cuenta con esa cédula o correo."
+        else:
+            error = "Por favor completa todos los campos."
+    else:
+        form = LoginClienteForm()
+    
+    context = {
+        "Rifa": Rifa,
+        "form": form,
+        "msg": msg,
+        "error": error,
+    }
+    return HttpResponse(template.render(context, request))
+
+
+def cerrar_sesion_cliente(request):
+    """Vista para cerrar sesión de clientes"""
+    logout(request)
+    return redirect("/")
+
 
 def export_pdf(template, context):
     template = get_template(template)

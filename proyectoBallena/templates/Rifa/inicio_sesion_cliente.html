@@ -1,0 +1,125 @@
+{% load compress %}
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="keywords" content="rifa, ganar, dinero, sorteo, premios" />
+  <meta name="googlebot" content="notranslate" />
+  <link rel="shortcut icon" href="{% static 'img/favicon.svg' %}" type="image/x-icon">
+  <title>Iniciar sesión - Aleautos1</title>
+  {% compress css %}
+  <link rel="stylesheet" href="{% static 'src/output.css' %}">
+  <link rel="stylesheet" href="{% static 'src/Styles.css' %}">
+  <link href="{% static 'fontawesomefree/css/all.min.css' %}" rel="stylesheet" type="text/css">
+  {% endcompress %}
+  <script>
+    function initTheme() {
+      if (
+        localStorage.theme === 'dark' ||
+        (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
+      ) {
+        document.documentElement.classList.add('dark');
+        document?.getElementById('logoNormal')?.classList.remove('hidden');
+        document?.getElementById('logoNegativo')?.classList.add('hidden');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document?.getElementById('logoNormal')?.classList.add('hidden');
+        document?.getElementById('logoNegativo')?.classList.remove('hidden');
+      }
+    }
+  </script>
+  <script src="{% static 'fontawesomefree/js/all.min.js' %}" defer></script>
+</head>
+
+<body>
+  <div class="antialiased flex flex-col min-h-screen bg-[var(--color-surface-dim)]">
+    <main class="grid lg:items-center grow">
+      <section class="grid lg:pt-0 lg:items-center lg:justify-center">
+        <div
+          class="rounded-lg shadow-sm px-5 lg:p-8 lg:w-[440px] lg:h-[450px] lg:bg-[var(--color-container-neutral-bright)]">
+          <div class="grid gap-8 mt-[140px] lg:mt-0">
+            <img id="logoNormal" src=" {% static 'img/logo-login-alt.png' %}" alt="Logo"
+              class="hidden mx-auto w-[138px] h-8" />
+            <img id="logoNegativo" src=" {% static 'img/logo-login.png' %}" alt="Logo" class="mx-auto w-[138px] h-8" />
+            <h1 class="heading-large-extrabold text-center">Iniciar sesión</h1>
+            <form class="grid gap-6" method="post">
+              {% csrf_token %}
+
+              {% if error %}
+              <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                {{ error }}
+              </div>
+              {% endif %}
+
+              {% if form.non_field_errors %}
+              <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                {{ form.non_field_errors }}
+              </div>
+              {% endif %}
+
+              <div class="flex flex-col gap-2">
+                <label for="id_usuario" class="label-medium-medium text-color-secondary">{{ form.usuario.label
+                  }}</label>
+                {{ form.usuario }}
+                {% if form.usuario.errors %}
+                <span class="text-red-600 text-sm">{{ form.usuario.errors }}</span>
+                {% endif %}
+              </div>
+
+              <div class="grid gap-2 relative w-full">
+                <label for="id_password" class="label-medium-medium text-color-secondary">{{ form.password.label
+                  }}</label>
+                <div id="password-toggle" class="absolute bottom-[16px] right-[8px] flex items-center px-2">
+                  <svg class="w-6 h-6 cursor-pointer" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z"
+                      stroke="var(--color-icon-secondary)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round"
+                      stroke-linejoin="round" />
+                    <path
+                      d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z"
+                      stroke="var(--color-icon-secondary)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round"
+                      stroke-linejoin="round" />
+                  </svg>
+                </div>
+                {{ form.password }}
+                {% if form.password.errors %}
+                <span class="text-red-600 text-sm">{{ form.password.errors }}</span>
+                {% endif %}
+              </div>
+
+              <button type="submit" class="button-active button-large">
+                <span class="mx-auto label-medium-semibold">Iniciar sesión</span>
+              </button>
+
+              <div class="text-center">
+                <p class="label-medium-regular text-color-secondary">
+                  ¿No tienes cuenta?
+                  <a href="{% url 'registro_cliente' %}" class="text-[var(--color-button-primary)] hover:underline">
+                    Regístrate aquí
+                  </a>
+                </p>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+
+</html>
+
+<script>
+  initTheme()
+  const passwordToggle = document.querySelector('#password-toggle')
+
+  passwordToggle.addEventListener('click', function () {
+    const password = document.querySelector('#id_password')
+    password.type === 'password' ? password.type = 'text' : password.type = 'password'
+  })
+</script>

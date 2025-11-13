@@ -2033,7 +2033,39 @@ function onChange(e) {
     }
   }
 
+  // Pre-llenar datos del cliente si está autenticado
+  function prellenarDatosCliente() {
+    {% if user.is_authenticated and user.cliente %}
+    const cliente = {
+      nombre: "{{ user.first_name }} {{ user.last_name }}".trim() || "{{ user.username }}",
+      cedula: "{{ user.cliente.cedula }}",
+      correo: "{{ user.email }}",
+      telefono: "{{ user.cliente.telefono }}"
+    };
+    
+    const nombreInput = document.getElementById("nombreComprador");
+    const cedulaInput = document.getElementById("ciComprador");
+    const correoInput = document.getElementById("correoComprador");
+    const telefonoInput = document.getElementById("tlfComprador");
+    
+    if (nombreInput && cliente.nombre) nombreInput.value = cliente.nombre;
+    if (cedulaInput && cliente.cedula) cedulaInput.value = cliente.cedula;
+    if (correoInput && cliente.correo) correoInput.value = cliente.correo;
+    if (telefonoInput && cliente.telefono) telefonoInput.value = cliente.telefono;
+    
+    // Si el usuario está autenticado y va a pagar con pago móvil, ocultar o deshabilitar campos
+    {% if tipoPago == 3 %}
+    if (nombreInput) nombreInput.disabled = true;
+    if (cedulaInput) cedulaInput.disabled = true;
+    if (correoInput) correoInput.disabled = true;
+    if (telefonoInput) telefonoInput.disabled = true;
+    {% endif %}
+    {% endif %}
+  }
+
   document.addEventListener("DOMContentLoaded", async function (event) {
+    // Pre-llenar datos del cliente
+    prellenarDatosCliente();
 
     btComp?.addEventListener("click", showDialog)
     btCompAlt?.addEventListener("click", showDialog)
@@ -2070,6 +2102,23 @@ function onChange(e) {
 
     botonPagoMovil.addEventListener("click", ()=>{
       tipoPago = 3
+      // Para pago móvil, verificar que el usuario esté autenticado
+      {% if not user.is_authenticated or not user.cliente %}
+      // Redirigir a registro si no está autenticado
+      Swal.fire({
+        title: 'Inicio de sesión requerido',
+        text: 'Para pagar con pago móvil necesitas tener una cuenta. ¿Deseas registrarte?',
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'Registrarme',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.location.href = "{% url 'registro_cliente' %}?next=" + encodeURIComponent(window.location.pathname);
+        }
+      });
+      return;
+      {% endif %}
       siguientePaginaFacturacion()
     })
     botonPagoZelle?.addEventListener("click", ()=>{

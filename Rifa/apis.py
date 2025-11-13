@@ -15,7 +15,7 @@ from django.template import loader
 from django.http import HttpResponse
 from django.shortcuts import render
 from .forms import FirstFileForm, RifaForm, SecondFileForm, UploadFileForm, ReserveForm, UpdateOrderForm, CompradorForm
-from .models import Logger, Comprador,LoggerAprobadoRechazo, NumeroRifaReservados, NumeroRifaReservadosOrdenes, NumerosCompra, OrdenesReservas, Rifa as RifaModel, NumeroRifaDisponibles, NumeroRifaDisponiblesArray, NumeroRifaComprados, NumeroRifaCompradosArray, Ordenes, Compra, Tasas, Settings
+from .models import Logger, Comprador,LoggerAprobadoRechazo, NumeroRifaReservados, NumeroRifaReservadosOrdenes, NumerosCompra, OrdenesReservas, Rifa as RifaModel, NumeroRifaDisponibles, NumeroRifaDisponiblesArray, NumeroRifaComprados, NumeroRifaCompradosArray, Ordenes, Compra, Tasas, Settings, Cliente
 from django.core.paginator import Paginator
 from django.db import transaction, IntegrityError
 from django.core import serializers
@@ -1307,13 +1307,36 @@ def ComprarRifa(request):
                     return JsonResponse({"message": "Archivo no valido", "status": 422}, status=422)
                 
                 with transaction.atomic():  # create comprador
-                    comprador = Comprador()
-                    comprador.Nombre = orden.customer_name
-                    comprador.Correo = orden.customer_email
-                    comprador.NumeroTlf = orden.customer_phone
-                    # comprador.Direccion=form.cleaned_data['direccion']
-                    comprador.Cedula = orden.customer_identification
-                    comprador.save()
+                    # Verificar si hay un cliente autenticado vinculado a esta orden
+                    cliente = None
+                    if request.user.is_authenticated and hasattr(request.user, 'cliente'):
+                        cliente = request.user.cliente
+                        # Buscar si ya existe un Comprador para este cliente
+                        comprador_existente = Comprador.objects.filter(idCliente=cliente).first()
+                        if comprador_existente:
+                            comprador = comprador_existente
+                            # Actualizar datos si es necesario
+                            comprador.Nombre = orden.customer_name
+                            comprador.Correo = orden.customer_email
+                            comprador.NumeroTlf = orden.customer_phone
+                            comprador.Cedula = orden.customer_identification
+                            comprador.save()
+                        else:
+                            comprador = Comprador()
+                            comprador.Nombre = orden.customer_name
+                            comprador.Correo = orden.customer_email
+                            comprador.NumeroTlf = orden.customer_phone
+                            comprador.Cedula = orden.customer_identification
+                            comprador.idCliente = cliente
+                            comprador.save()
+                    else:
+                        # Crear comprador sin cliente (invitado)
+                        comprador = Comprador()
+                        comprador.Nombre = orden.customer_name
+                        comprador.Correo = orden.customer_email
+                        comprador.NumeroTlf = orden.customer_phone
+                        comprador.Cedula = orden.customer_identification
+                        comprador.save()
 
                     # save file locally
 
@@ -1754,6 +1777,20 @@ def createOrder(request):
 
         total = rifa.Precio*form.cleaned_data['numeros'] 
 
+        # Si el usuario está autenticado como cliente, usar sus datos
+        cliente = None
+        if request.user.is_authenticated and hasattr(request.user, 'cliente'):
+            cliente = request.user.cliente
+            nombre = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+            correo = request.user.email
+            cedula = cliente.cedula
+            telefono = cliente.telefono
+        else:
+            # Usar datos del formulario (invitado)
+            nombre = form.cleaned_data['nombre']
+            correo = form.cleaned_data['correo']
+            cedula = form.cleaned_data['cedula']
+            telefono = form.cleaned_data['numeroTlf']
 
         try:
             with transaction.atomic():
@@ -1765,10 +1802,10 @@ def createOrder(request):
              
                 orden.date=country_time
                 orden.amount = total
-                orden.customer_name = form.cleaned_data['nombre']
-                orden.customer_phone = form.cleaned_data['numeroTlf']
-                orden.customer_email = form.cleaned_data['correo']
-                orden.customer_identification =form.cleaned_data['cedula']
+                orden.customer_name = nombre
+                orden.customer_phone = telefono
+                orden.customer_email = correo
+                orden.customer_identification = cedula
                 orden.idRifa = rifa
                 orden.description = f"Compra de Numeros de rifa Fecha: {datetime.now()} Rifa: {rifa.Nombre} Numeros: {list(x.Numero for x in disp)} Total: {total} aleautos1"
 

@@ -4,6 +4,7 @@ from django.db import models
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator 
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.auth.models import User
 from .utils import get_file_path
 import pytz
 from django.utils import timezone
@@ -105,6 +106,21 @@ class ImagenesRifa(models.Model):
     def __str__(self):
         return self.imagePath
     
+class Cliente(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='cliente')
+    cedula = models.CharField(max_length=20, unique=True, db_index=True)
+    telefono = models.CharField(max_length=15)
+    direccion = models.TextField(blank=True, null=True)
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.get_full_name() or self.user.username} - {self.cedula}"
+
+    class Meta:
+        verbose_name = 'Cliente'
+        verbose_name_plural = 'Clientes'
+
+
 class Comprador(models.Model):
     Id = models.BigAutoField(primary_key=True)
     Nombre = models.TextField()
@@ -112,6 +128,7 @@ class Comprador(models.Model):
     Correo = models.EmailField(null=True)
     Direccion = models.TextField()
     NumeroTlf = models.TextField()
+    idCliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, blank=True, related_name='compradores')
 
     def __str__(self):
         return self.Nombre

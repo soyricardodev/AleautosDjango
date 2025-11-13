@@ -37,6 +37,9 @@ urlpatterns = [
 
       path('Login/', views.Login, name="Login"),
       path('Logout/', LogoutView.as_view(next_page=settings.LOGOUT_REDIRECT_URL), name='Logout'),
+      path('registrate/', views.registro_cliente, name='registro_cliente'),
+      path('inicia-sesion/', views.inicio_sesion_cliente, name='inicio_sesion_cliente'),
+      path('cerrar-sesion-cliente/', views.cerrar_sesion_cliente, name='cerrar_sesion_cliente'),
       path('PDF/', views.export_pdf, name="PDF"),
       path('tableDialogPDF/', views.tableDialogPDF, name="tableDialogPDF"),
       path('tableDialogPDF/<int:id>', views.tableDialogPDF, name="tableDialogPDF"),
