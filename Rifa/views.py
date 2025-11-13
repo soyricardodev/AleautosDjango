@@ -70,38 +70,43 @@ def handle500(request, ex=None):
     return render(request,'Rifa/NotFound.html', context)
     return HttpResponseNotFound(content=template.render(context, request), content_type='text/html; charset=utf-8', status=404)
 def index(request):
+    try:
+        template = loader.get_template("Rifa/Index.django")
+        tasa = Tasas.objects.last()
+        Rifas=RifaModel.objects.filter(Estado=True).filter(Eliminada=False)
+        Rifa=Rifas.last()
+        Rifas=Rifas.order_by("-Id")[1:]
+        paginator = Paginator(Rifas, 6)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        numDisp = NumeroRifaDisponibles.objects.filter(idRifa=Rifa).count() if Rifa else 0
+        whatsapp_config=Settings.objects.filter(code="PHONE_CLIENT").first()
+        percent_config=Settings.objects.filter(code="HIDE_TICKET_COUNT").first()
 
-
-    template = loader.get_template("Rifa/Index.django")
-    tasa = Tasas.objects.last()
-    Rifas=RifaModel.objects.filter(Estado=True).filter(Eliminada=False)
-    Rifa=Rifas.last()
-    Rifas=Rifas.order_by("-Id")[1:]
-    paginator = Paginator(Rifas, 6)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    numDisp = NumeroRifaDisponibles.objects.filter(idRifa=Rifa).count()
-    whatsapp_config=Settings.objects.filter(code="PHONE_CLIENT").first()
-    percent_config=Settings.objects.filter(code="HIDE_TICKET_COUNT").first()
-
-    time_remaining = None
-    if Rifa != None:
-      if Rifa.FechaSorteo:
-        now = timezone.now()
-        time_difference = (Rifa.FechaSorteo - now).total_seconds()
-        if time_difference > 1:
-            time_remaining = int(time_difference)
-  
-    context = {
-        "Rifa":Rifa,
-        "Rifas":page_obj,
-        "tasa":tasa,
-        'numDisp':numDisp,
-        'time_remaining':time_remaining,
-        'whatsapp_config':whatsapp_config,
-        'percent_config':percent_config,
-    }
-    return HttpResponse(template.render(context, request))
+        time_remaining = None
+        if Rifa != None:
+          if Rifa.FechaSorteo:
+            now = timezone.now()
+            time_difference = (Rifa.FechaSorteo - now).total_seconds()
+            if time_difference > 1:
+                time_remaining = int(time_difference)
+      
+        context = {
+            "Rifa":Rifa,
+            "Rifas":page_obj,
+            "tasa":tasa,
+            'numDisp':numDisp,
+            'time_remaining':time_remaining,
+            'whatsapp_config':whatsapp_config,
+            'percent_config':percent_config,
+        }
+        return HttpResponse(template.render(context, request))
+    except Exception as e:
+        logger.error(f"Error en vista index: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        # Retornar una respuesta de error o redirigir
+        return HttpResponse(f"Error cargando la página: {str(e)}", status=500)
 @login_required(login_url="/Login/")
 def Dashboard(request):
     template = loader.get_template("Rifa/Dashboard.django")
@@ -154,38 +159,53 @@ def Dashboard(request):
 
 
 def Login(request):
-    if request.user.is_authenticated:
-        return redirect("/")
-    if request.session.get("mensaje"):
-            msg = request.session.get("mensaje")
-            request.session.flush()
-    template = loader.get_template("Rifa/Login.html")
-    Rifas=RifaModel.objects.filter(Estado=True).filter(Eliminada=False)
-    Rifa=Rifas.last()
-    msg=""
-    if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
-        logger.info(username)
-        logger.info(password)
-        user = authenticate(request, username=username, password=password)
-        logger.info(user)
-        if user is not None:
-            login(request, user)
-            return redirect("Dashboard")
+    try:
+        if request.user.is_authenticated:
+            return redirect("/")
+        if request.session.get("mensaje"):
+                msg = request.session.get("mensaje")
+                request.session.flush()
+        template = loader.get_template("Rifa/Login.html")
+        Rifas=RifaModel.objects.filter(Estado=True).filter(Eliminada=False)
+        Rifa=Rifas.last()
+        msg=""
+        if request.method == 'POST':
+            username = request.POST.get('username', '')
+            password = request.POST.get('password', '')
+            logger.info(f"Intento de login - Username: {username}")
+            
+            # Verificar si el usuario existe
+            try:
+                user_exists = User.objects.filter(username=username).exists()
+                logger.info(f"Usuario existe en BD: {user_exists}")
+            except Exception as e:
+                logger.error(f"Error verificando usuario: {e}")
+                msg = "Error de conexión a la base de datos"
+            else:
+                if user_exists:
+                    user = authenticate(request, username=username, password=password)
+                    logger.info(f"Resultado de authenticate: {user}")
+                    if user is not None:
+                        login(request, user)
+                        logger.info(f"Login exitoso para {username}")
+                        return redirect("Dashboard")
+                    else:
+                        logger.warning(f"Autenticación fallida para {username} - contraseña incorrecta")
+                        msg="Usuario o clave invalidos!"
+                else:
+                    logger.warning(f"Usuario {username} no existe en la BD")
+                    msg="Usuario o clave invalidos!"
 
-        else:
-            logger.info("no entro")
-            msg="Usuario o clave invalidos!"
-
-
-
-
-    context = {
-        "Rifa":Rifa,
-        "msg": msg,
-    }
-    return HttpResponse(template.render(context, request))
+        context = {
+            "Rifa":Rifa,
+            "msg": msg,
+        }
+        return HttpResponse(template.render(context, request))
+    except Exception as e:
+        logger.error(f"Error en vista Login: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return HttpResponse(f"Error en el login: {str(e)}", status=500)
 
 
 def registro_cliente(request):
