@@ -275,7 +275,9 @@ def inicio_sesion_cliente(request):
     # Si ya está autenticado, redirigir
     if request.user.is_authenticated:
         if hasattr(request.user, 'cliente'):
-            return redirect("/")
+            # Si hay un parámetro next, redirigir allí, sino al inicio
+            next_url = request.GET.get('next', '/')
+            return redirect(next_url)
         else:
             return redirect("Dashboard")
     
@@ -348,11 +350,11 @@ def mi_perfil(request):
     """
     Vista para mostrar el perfil del cliente autenticado con sus compras y números ganadores
     """
+    # Verificar que el usuario tenga un cliente asociado
+    if not hasattr(request.user, 'cliente'):
+        return redirect('registro_cliente')
+    
     try:
-        # Verificar que el usuario tenga un cliente asociado
-        if not hasattr(request.user, 'cliente'):
-            return redirect('registro_cliente')
-        
         cliente = request.user.cliente
         template = loader.get_template("Rifa/mi_perfil.html")
         
@@ -403,7 +405,9 @@ def mi_perfil(request):
         logger.error(f"Error en mi_perfil: {str(e)}")
         import traceback
         logger.error(traceback.format_exc())
-        return redirect('index')
+        # En caso de error, mostrar página de error en lugar de redirigir
+        from django.http import HttpResponseServerError
+        return HttpResponseServerError("Error al cargar el perfil. Por favor intenta de nuevo.")
 
 
 def export_pdf(template, context):
