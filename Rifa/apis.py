@@ -2267,14 +2267,84 @@ def compra_status(request, id):
             Compra.EstadoCompra.Caducado: "Caducado"
         }
         
-        estado_nombre = estado_map.get(compra.Estado, "Desconocido")
-        pago_confirmado = compra.Estado == Compra.EstadoCompra.Pagado
+        # Importar modelo de transacciones
+        from pagos_banco.models import TransaccionPagoMovil
+        
+        # DEBUG: Log información de la compra
+        logger.info(f"compra_status DEBUG - Compra ID: {compra.Id}, Estado RAW: {compra.Estado}, Tipo: {type(compra.Estado)}")
+        
+        # Convertir estado a entero para comparación segura
+        estado_compra = int(compra.Estado) if compra.Estado else None
+        # Obtener valores de TextChoices para comparación
+        estado_pagado = int(Compra.EstadoCompra.Pagado.value)
+        estado_pendiente = int(Compra.EstadoCompra.Pendiente.value)
+        estado_rechazado = int(Compra.EstadoCompra.Rechazado.value)
+        
+        logger.info(f"compra_status DEBUG - Estado convertido: {estado_compra}, Pagado={estado_pagado}, Pendiente={estado_pendiente}, Rechazado={estado_rechazado}")
+        logger.info(f"compra_status DEBUG - Comparación Pagado: {estado_compra} == {estado_pagado} = {estado_compra == estado_pagado}")
+        
+        # Buscar transacciones vinculadas a esta compra
+        transacciones = TransaccionPagoMovil.objects.filter(idCompra=compra).order_by('-timestamp_consulta', '-timestamp_notificacion')
+        estado_transaccion = None
+        if transacciones.exists():
+            transaccion = transacciones.first()
+            estado_transaccion = transaccion.status
+            logger.info(f"compra_status DEBUG - Transacción encontrada: ID={transaccion.id}, Status={transaccion.status}, idCompra={transaccion.idCompra_id}")
+        else:
+            logger.info(f"compra_status DEBUG - No hay transacciones vinculadas a compra {compra.Id}")
+        
+        # Determinar el estado descriptivo basado en el estado de la compra PRIMERO
+        estado_descriptivo = "esperando_pago"  # Por defecto
+        
+        # Si la compra ya está pagada, confirmada
+        if estado_compra == estado_pagado:
+            estado_descriptivo = "pago_confirmado"
+            logger.info(f"compra_status DEBUG - Compra {compra.Id} está PAGADA, estado_descriptivo = pago_confirmado")
+        # Si la compra está rechazada
+        elif estado_compra == estado_rechazado:
+            estado_descriptivo = "pago_rechazado"
+            logger.info(f"compra_status DEBUG - Compra {compra.Id} está RECHAZADA")
+        # Si la compra está pendiente, buscar transacciones vinculadas DIRECTAMENTE
+        elif estado_compra == estado_pendiente:
+            logger.info(f"compra_status DEBUG - Compra {compra.Id} está PENDIENTE")
+            if transacciones.exists():
+                # Hay transacciones vinculadas a esta compra específica
+                transaccion_mas_reciente = transacciones.first()
+                estado_transaccion = transaccion_mas_reciente.status
+                
+                if transaccion_mas_reciente.status == 'CONFIRMADO':
+                    # Si hay una transacción confirmada vinculada, la compra debería estar pagada
+                    # Pero si la compra sigue pendiente, algo está mal, mantener esperando_pago
+                    estado_descriptivo = "esperando_pago"
+                    logger.warning(f"compra_status DEBUG - Compra {compra.Id} está PENDIENTE pero tiene transacción CONFIRMADO - INCONSISTENCIA")
+                elif transaccion_mas_reciente.status == 'CONSULTADO':
+                    estado_descriptivo = "validando_pago"
+                    logger.info(f"compra_status DEBUG - Compra {compra.Id} tiene transacción CONSULTADO, estado_descriptivo = validando_pago")
+                elif transaccion_mas_reciente.status == 'RECHAZADO':
+                    estado_descriptivo = "pago_rechazado"
+                    logger.info(f"compra_status DEBUG - Compra {compra.Id} tiene transacción RECHAZADO")
+                else:
+                    estado_descriptivo = "esperando_pago"
+                    logger.info(f"compra_status DEBUG - Compra {compra.Id} tiene transacción con status {transaccion_mas_reciente.status}, estado_descriptivo = esperando_pago")
+            else:
+                # No hay transacciones vinculadas, definitivamente está esperando pago
+                estado_descriptivo = "esperando_pago"
+                logger.info(f"compra_status DEBUG - Compra {compra.Id} PENDIENTE sin transacciones, estado_descriptivo = esperando_pago")
+        else:
+            logger.warning(f"compra_status DEBUG - Compra {compra.Id} tiene estado desconocido: {estado_compra}")
+        
+        estado_nombre = estado_map.get(estado_compra, "Desconocido")
+        pago_confirmado = estado_compra == estado_pagado
+        
+        logger.info(f"compra_status DEBUG - RESULTADO FINAL: estado_nombre={estado_nombre}, pago_confirmado={pago_confirmado}, estado_descriptivo={estado_descriptivo}, estado_transaccion={estado_transaccion}")
         
         return JsonResponse({
             "status": estado_nombre,
             "compra_estado": compra.Estado,
             "pago_confirmado": pago_confirmado,
-            "id_compra": compra.Id
+            "id_compra": compra.Id,
+            "estado_descriptivo": estado_descriptivo,
+            "estado_transaccion": estado_transaccion
         }, status=200)
         
     except Exception as e:
