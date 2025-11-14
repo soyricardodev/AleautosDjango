@@ -2126,6 +2126,167 @@ def verificarPagoR4(request):
     return JsonResponse({"message": "Método no permitido", "status": 405}, status=405)
 
 
+@login_required(login_url="/inicia-sesion/")
+def rechazarCompraTimeout(request, id):
+    """
+    Endpoint para rechazar una compra cuando expira el timeout de 5 minutos.
+    Libera los números reservados para que otros puedan comprarlos.
+    """
+    try:
+        # Validar que la compra existe
+        try:
+            compra = Compra.objects.get(Id=id)
+        except Compra.DoesNotExist:
+            return JsonResponse({
+                "message": "La compra no existe",
+                "status": 404
+            }, status=404)
+        
+        # Validar que la compra pertenece al usuario autenticado
+        if compra.idComprador and compra.idComprador.idCliente:
+            if compra.idComprador.idCliente.user != request.user:
+                return JsonResponse({
+                    "message": "No tienes permiso para rechazar esta compra",
+                    "status": 403
+                }, status=403)
+        else:
+            return JsonResponse({
+                "message": "Esta compra no está asociada a un cliente",
+                "status": 403
+            }, status=403)
+        
+        # Validar que la compra está en estado Pendiente
+        if compra.Estado != Compra.EstadoCompra.Pendiente:
+            return JsonResponse({
+                "message": "Esta compra ya fue procesada",
+                "status": 400
+            }, status=400)
+        
+        # Validar que sea método PagoMovil
+        if compra.MetodoPago != Compra.MetodoPagoOpciones.PagoMovil:
+            return JsonResponse({
+                "message": "Esta compra no es de pago móvil",
+                "status": 400
+            }, status=400)
+        
+        with transaction.atomic():
+            # Buscar la orden asociada por rifa, fecha y monto
+            # La orden debe estar relacionada con los números reservados
+            numeros_compra = NumerosCompra.objects.filter(idCompra=compra)
+            numeros_list = [nc.Numero for nc in numeros_compra]
+            
+            # Buscar la orden que tiene estos números reservados
+            orden = None
+            if numeros_list:
+                numeros_reservados = NumeroRifaReservadosOrdenes.objects.filter(
+                    idRifa=compra.idRifa,
+                    Numero__in=numeros_list
+                ).first()
+                
+                if numeros_reservados:
+                    orden = numeros_reservados.idOrden
+            
+            # Rechazar la compra
+            compra.Estado = Compra.EstadoCompra.Rechazado
+            country_time_zone = pytz.timezone('America/Caracas')
+            country_time = datetime.now(country_time_zone)
+            compra.FechaEstado = country_time
+            compra.recuperado = True
+            compra.save()
+            
+            # Liberar números reservados
+            if orden:
+                numeros_reservados = NumeroRifaReservadosOrdenes.objects.filter(idOrden=orden)
+                for num_reservado in numeros_reservados:
+                    # Liberar el número a disponibles
+                    NumeroRifaDisponibles.objects.create(
+                        Numero=num_reservado.Numero,
+                        idRifa=compra.idRifa
+                    )
+                # Eliminar las reservas
+                numeros_reservados.delete()
+            
+            # Actualizar contador de la rifa
+            rifa = compra.idRifa
+            rifa.TotalComprados = F('TotalComprados') - compra.NumeroBoletos
+            rifa.save()
+            
+            logger.info(f"Compra {compra.Id} rechazada por timeout, números liberados")
+            
+            return JsonResponse({
+                "message": "Compra rechazada y números liberados",
+                "status": 200
+            }, status=200)
+            
+    except Exception as e:
+        logger.error(f"Error en rechazarCompraTimeout: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return JsonResponse({
+            "message": "Error en el servidor",
+            "status": 500
+        }, status=500)
+
+
+@login_required(login_url="/inicia-sesion/")
+def compra_status(request, id):
+    """
+    Endpoint para polling del estado de una compra.
+    Retorna el estado actual de la compra para verificación automática.
+    """
+    try:
+        # Validar que la compra existe
+        try:
+            compra = Compra.objects.get(Id=id)
+        except Compra.DoesNotExist:
+            return JsonResponse({
+                "message": "La compra no existe",
+                "status": 404
+            }, status=404)
+        
+        # Validar que la compra pertenece al usuario autenticado
+        if compra.idComprador and compra.idComprador.idCliente:
+            if compra.idComprador.idCliente.user != request.user:
+                return JsonResponse({
+                    "message": "No tienes permiso para consultar esta compra",
+                    "status": 403
+                }, status=403)
+        else:
+            # Si la compra no tiene cliente asociado, no permitir acceso
+            return JsonResponse({
+                "message": "Esta compra no está asociada a un cliente",
+                "status": 403
+            }, status=403)
+        
+        # Mapear estados numéricos a nombres legibles
+        estado_map = {
+            Compra.EstadoCompra.Pendiente: "Pendiente",
+            Compra.EstadoCompra.Cancelado: "Cancelado",
+            Compra.EstadoCompra.Pagado: "Pagado",
+            Compra.EstadoCompra.Rechazado: "Rechazado",
+            Compra.EstadoCompra.Caducado: "Caducado"
+        }
+        
+        estado_nombre = estado_map.get(compra.Estado, "Desconocido")
+        pago_confirmado = compra.Estado == Compra.EstadoCompra.Pagado
+        
+        return JsonResponse({
+            "status": estado_nombre,
+            "compra_estado": compra.Estado,
+            "pago_confirmado": pago_confirmado,
+            "id_compra": compra.Id
+        }, status=200)
+        
+    except Exception as e:
+        logger.error(f"Error en compra_status: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return JsonResponse({
+            "message": "Error en el servidor",
+            "status": 500
+        }, status=500)
+
+
 # endregion
 @login_required(login_url="/Login/")
 def deleteComprobantes(request):
