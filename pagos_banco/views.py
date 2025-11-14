@@ -250,21 +250,45 @@ class NotificaView(View):
                     print(f"❌ VALIDACIÓN FALLIDA: Campos requeridos faltantes")
                     return JsonResponse({"abono": False})
                 
-                # 3. BUSCAR compras pendientes por MONTO (no por cliente, porque no sabemos quién pagó)
+                # 3. BUSCAR compras pendientes por MONTO y TELÉFONO (para mayor precisión)
                 monto_decimal = float(monto)
+                
+                # Normalizar teléfono: quitar espacios, guiones, etc.
+                telefono_normalizado = str(telefono_emisor).strip().replace('-', '').replace(' ', '') if telefono_emisor else None
+                
+                # Primero intentar buscar por monto Y teléfono (más preciso)
                 compras_pendientes = Compra.objects.filter(
                     Estado=Compra.EstadoCompra.Pendiente,
                     MetodoPago=Compra.MetodoPagoOpciones.PagoMovil
                 ).filter(
                     Q(TotalPagado__gte=monto_decimal - 0.01) & 
                     Q(TotalPagado__lte=monto_decimal + 0.01)
-                ).order_by('-FechaCompra')
+                )
                 
-                compra = compras_pendientes.first()
+                # Si tenemos teléfono, filtrar también por teléfono del comprador
+                if telefono_normalizado:
+                    # Buscar compras donde el teléfono del comprador coincida
+                    compras_con_telefono = compras_pendientes.filter(
+                        idComprador__NumeroTlf__icontains=telefono_normalizado
+                    ).order_by('-FechaCompra')
+                    
+                    if compras_con_telefono.exists():
+                        compra = compras_con_telefono.first()
+                        logger.info(f"Notifica R4: ✓ Compra encontrada por monto Y teléfono: #{compra.Id}, Tel: {telefono_emisor}")
+                        print(f"✅ Compra encontrada por monto Y teléfono: #{compra.Id}")
+                    else:
+                        # Si no hay coincidencia exacta, buscar solo por monto
+                        compra = compras_pendientes.order_by('-FechaCompra').first()
+                        if compra:
+                            logger.warning(f"Notifica R4: ⚠ Compra encontrada solo por monto (teléfono no coincide): #{compra.Id}, Tel esperado: {telefono_emisor}, Tel compra: {compra.idComprador.NumeroTlf if compra.idComprador else 'N/A'}")
+                            print(f"⚠ Compra encontrada solo por monto (teléfono no coincide)")
+                else:
+                    # Si no hay teléfono, buscar solo por monto
+                    compra = compras_pendientes.order_by('-FechaCompra').first()
                 
                 if not compra:
-                    logger.warning(f"Notifica R4: ✗ RECHAZADO - No se encontró compra pendiente para monto {monto}")
-                    print(f"❌ VALIDACIÓN FALLIDA: No se encontró compra pendiente para monto {monto}")
+                    logger.warning(f"Notifica R4: ✗ RECHAZADO - No se encontró compra pendiente para monto {monto}, teléfono {telefono_emisor}")
+                    print(f"❌ VALIDACIÓN FALLIDA: No se encontró compra pendiente para monto {monto}, teléfono {telefono_emisor}")
                     return JsonResponse({"abono": False})
                 
                 logger.info(f"Notifica R4: ✓ Compra encontrada: #{compra.Id}, Cliente: {compra.idComprador.Nombre if compra.idComprador else 'N/A'}")
