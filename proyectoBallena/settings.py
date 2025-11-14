@@ -304,6 +304,7 @@ LOGGING = {
             'when': 'D',
             'backupCount': 100,
             'formatter': 'standard',
+            'delay': True,  # Delay file opening until first log
         },
         # Handler for warnings and errors
         'file_warnings_errors': {
@@ -313,18 +314,26 @@ LOGGING = {
             'when': 'D',
             'backupCount': 100,
             'formatter': 'standard',
+            'delay': True,  # Delay file opening until first log
         },
         'console': {
             'class': 'logging.StreamHandler',
             'formatter': 'standard',
+            'level': 'INFO',  # Solo mostrar INFO y superior en consola, no DEBUG
         },
     },
     'loggers': {
         'ballena': {
             'handlers': ['file_all', 'file_warnings_errors', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        }
+            'level': 'INFO',  # Cambiar a INFO para reducir ruido, solo DEBUG en archivos
+            'propagate': False,  # No propagar para evitar duplicados
+        },
+        # Silenciar loggers problemáticos
+        'django': {
+            'handlers': ['file_all'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
     }
 }
 
