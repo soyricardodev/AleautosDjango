@@ -425,18 +425,18 @@
     <div class="flex flex-col">
       <div class="flex flex-row w-full gap-4 py-3">
         <span class="label-medium-medium text-color-secondary w-[100px]">Banco</span>
-        <span class="grow label-medium-regular text-color-primary">Banesco (0134)</span>
+        <span class="grow label-medium-regular text-color-primary">R4</span>
       </div>
       <div class="flex flex-row w-full gap-4 py-3">
         <span class="label-medium-medium text-color-secondary w-[100px]">Teléfono</span>
-        <span class="grow label-medium-regular text-color-primary">04127470479</span>
+        <span class="grow label-medium-regular text-color-primary">04123270566</span>
         <div id="copyPhoneContainer" class="cursor-pointer">
           <i id="copyPhone" class="fa-regular fa-copy text-color-brand"></i>
         </div>
       </div>
       <div class="flex flex-row w-full gap-4 py-3">
-        <span class="label-medium-medium text-color-secondary w-[100px]">Cedula</span>
-        <span class="grow label-medium-regular text-color-primary">V31541350</span>
+        <span class="label-medium-medium text-color-secondary w-[100px]">Rif</span>
+        <span class="grow label-medium-regular text-color-primary">J-506638452</span>
         <div id="copyCedulaContainer" class="cursor-pointer">
           <i id="copyCedula" class="fa-regular fa-copy text-color-brand"></i>
         </div>
@@ -459,7 +459,7 @@
       <div class="flex flex-row justify-start gap-8 items-center md:items-start w-full">
         <h3 class="heading-small-medium text-color-primary grow text-center">Realiza el pago por Pago Móvil</h3>
       </div>
-      <p class="body-small-regular text-color-secondary">Realiza el pago móvil con los datos que te mostramos abajo. Una vez realizado el pago, presiona el botón "Ya pagué" para verificar tu pago automáticamente.</p>
+      <p class="body-small-regular text-color-secondary">Esperando confirmación del pago. Por favor, realiza el Pago Móvil desde tu banco y mantén esta página abierta.</p>
     </div>
     <div class="flex flex-col gap-4 md:gap-6">
       <div class="flex flex-col-reverse gap-2 w-full">
@@ -485,18 +485,18 @@
     <div class="flex flex-col">
       <div class="flex flex-row w-full gap-4 py-3">
         <span class="label-medium-medium text-color-secondary w-[100px]">Banco</span>
-        <span class="grow label-medium-regular text-color-primary">Banesco (0134)</span>
+        <span class="grow label-medium-regular text-color-primary">R4</span>
       </div>
       <div class="flex flex-row w-full gap-4 py-3">
         <span class="label-medium-medium text-color-secondary w-[100px]">Teléfono</span>
-        <span class="grow label-medium-regular text-color-primary">04127470479</span>
+        <span class="grow label-medium-regular text-color-primary">04123270566</span>
         <div id="copyPhoneContainerR4" class="cursor-pointer">
           <i id="copyPhoneR4" class="fa-regular fa-copy text-color-brand"></i>
         </div>
       </div>
       <div class="flex flex-row w-full gap-4 py-3">
-        <span class="label-medium-medium text-color-secondary w-[100px]">Cédula</span>
-        <span class="grow label-medium-regular text-color-primary">V31541350</span>
+        <span class="label-medium-medium text-color-secondary w-[100px]">Rif</span>
+        <span class="grow label-medium-regular text-color-primary">J-506638452</span>
         <div id="copyCedulaContainerR4" class="cursor-pointer">
           <i id="copyCedulaR4" class="fa-regular fa-copy text-color-brand"></i>
         </div>
@@ -513,9 +513,7 @@
       <span id="mensajeVerificacionR4" class="body-small-regular text-color-brand"></span>
     </div>
     <div class="flex flex-col justify-end grow">
-      <button class="button-happy-primary button-medium" id="btYaPagueR4">
-        <span>Ya pagué</span>
-      </button>
+      <!-- El polling automático se iniciará después de crear la orden -->
     </div>
   </section>
   <section id="temporizadorContentZelle" class="hidden flex-col p-4 md:p-10 gap-6 md:gap-8 h-full">
@@ -1300,6 +1298,8 @@ function onChange(e) {
   }
 
   function closeDialog() {
+    // Detener polling si está activo
+    detenerPolling()
     const dialog = document.getElementById("Compra")
     dialog.close()
   }
@@ -1859,6 +1859,11 @@ function onChange(e) {
   
   // Variable para almacenar la compra R4
   let CompraR4 = null
+  // Variables para polling automático
+  let pollingIntervalId = null
+  let pollingTimeoutId = null
+  const POLLING_INTERVAL = 4000 // 4 segundos
+  const POLLING_TIMEOUT = 300000 // 5 minutos (300 segundos)
   
   // Función para crear orden de pago móvil R4
   const crearOrdenPagoMovilR4 = async () => {
@@ -1901,6 +1906,10 @@ function onChange(e) {
       $("#paginaFacturacion").fadeOut("slow", function () {
         $("#ekiiPagoModal").fadeIn("fast", function () {
           escogerTipoPago()
+          // Iniciar polling automático después de mostrar la sección
+          if (CompraR4 && CompraR4.pk) {
+            iniciarPollingCompra(CompraR4.pk)
+          }
         }).css('display', 'flex');
       })
       
@@ -1914,85 +1923,127 @@ function onChange(e) {
     }
   }
   
-  // Función para verificar pago R4
-  const verificarPagoR4 = async () => {
-    if (!CompraR4 || !CompraR4.pk) {
-      Swal.fire({
-        title: 'Error',
-        text: 'No se encontró la compra',
-        icon: 'error'
-      })
-      return
-    }
+  // Función para iniciar polling automático del estado de la compra
+  const iniciarPollingCompra = (idCompra) => {
+    // Detener cualquier polling anterior
+    detenerPolling()
     
+    // Mostrar loader mientras se espera
     setLoading()
+    
+    let tiempoTranscurrido = 0
     const estadoVerificacion = document.getElementById("estadoVerificacionR4")
     const mensajeVerificacion = document.getElementById("mensajeVerificacionR4")
-    const botonYaPague = document.getElementById("btYaPagueR4")
     
-    try {
-      const url = "{% url 'verificarPagoR4' %}"
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-          idCompra: CompraR4.pk
+    // Función de polling
+    const hacerPolling = async () => {
+      try {
+        const url = `/api/compra/${idCompra}/status/`
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+          }
         })
-      })
-      
-      const data = await response.json()
-      stopLoading()
-      
-      if (data.pago_confirmado) {
-        // Pago confirmado
-        estadoVerificacion.classList.remove('hidden')
-        estadoVerificacion.classList.remove('border-[var(--color-border-brand)]')
-        estadoVerificacion.classList.add('border-green-500')
-        mensajeVerificacion.textContent = `✅ ${data.message}`
-        mensajeVerificacion.classList.remove('text-color-brand')
-        mensajeVerificacion.classList.add('text-green-500')
-        botonYaPague.disabled = true
-        botonYaPague.textContent = 'Pago Confirmado'
         
-        // Redirigir a la página final después de un momento
-        setTimeout(() => {
-          $("#Compra").fadeOut("fast", function () {
-            $("#ComprarContent").fadeOut("slow", function () {
-              $("#finalContent").fadeIn("fast", function () {}).css('display', 'flex');
-              makeItConfetti();
-            })
-          })
-        }, 2000)
-      } else {
-        // Pago no confirmado aún
-        estadoVerificacion.classList.remove('hidden')
-        mensajeVerificacion.textContent = `⏳ ${data.message}`
-        mensajeVerificacion.classList.add('text-color-brand')
+        const data = await response.json()
         
-        // Si el estado es "Esperando confirmación", sugerir volver a intentar
-        if (data.estado_transaccion === 'CONSULTADO') {
+        if (data.pago_confirmado) {
+          // Pago confirmado - detener polling y redirigir
+          detenerPolling()
+          stopLoading()
+          
+          estadoVerificacion.classList.remove('hidden')
+          estadoVerificacion.classList.remove('border-[var(--color-border-brand)]')
+          estadoVerificacion.classList.add('border-green-500')
+          mensajeVerificacion.textContent = '✅ Pago confirmado exitosamente'
+          mensajeVerificacion.classList.remove('text-color-brand')
+          mensajeVerificacion.classList.add('text-green-500')
+          
+          // Redirigir a la página final después de 2 segundos
           setTimeout(() => {
-            Swal.fire({
-              title: 'Esperando confirmación',
-              text: 'El banco está procesando tu pago. Puedes cerrar esta ventana y volver a verificar más tarde, o esperar unos segundos y presionar "Ya pagué" nuevamente.',
-              icon: 'info',
-              confirmButtonText: 'Entendido'
+            $("#Compra").fadeOut("fast", function () {
+              $("#ComprarContent").fadeOut("slow", function () {
+                $("#finalContent").fadeIn("fast", function () {}).css('display', 'flex');
+                makeItConfetti();
+              })
             })
-          }, 500)
+          }, 2000)
+        } else if (data.status === "Rechazado") {
+          // Pago rechazado - detener polling y mostrar error
+          detenerPolling()
+          stopLoading()
+          
+          estadoVerificacion.classList.remove('hidden')
+          estadoVerificacion.classList.add('border-red-500')
+          mensajeVerificacion.textContent = '❌ El banco rechazó la transacción. Verifica los datos e intenta de nuevo.'
+          mensajeVerificacion.classList.remove('text-color-brand')
+          mensajeVerificacion.classList.add('text-red-500')
+        } else if (data.status === "Pendiente") {
+          // Continuar polling - no hacer nada, el polling continuará
+          // El loader seguirá mostrándose
         }
+        
+      } catch (error) {
+        console.error('Error en polling:', error)
+        // No detener el polling por errores de red, continuar intentando
       }
-    } catch (error) {
+    }
+    
+    // Iniciar polling inmediatamente
+    hacerPolling()
+    
+    // Configurar intervalo para polling periódico
+    pollingIntervalId = setInterval(hacerPolling, POLLING_INTERVAL)
+    
+    // Configurar timeout de 5 minutos
+    pollingTimeoutId = setTimeout(async () => {
+      detenerPolling()
       stopLoading()
+      
+      // Rechazar la compra en el backend y liberar números
+      try {
+        const url = `/api/compra/${idCompra}/rechazar-timeout/`
+        await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+          }
+        })
+      } catch (error) {
+        console.error('Error al rechazar compra:', error)
+      }
+      
+      estadoVerificacion.classList.remove('hidden')
+      estadoVerificacion.classList.add('border-yellow-500')
+      mensajeVerificacion.textContent = '⏱️ El tiempo ha expirado. Por favor, intenta de nuevo.'
+      mensajeVerificacion.classList.remove('text-color-brand')
+      mensajeVerificacion.classList.add('text-yellow-600')
+      
       Swal.fire({
-        title: 'Error',
-        text: error.message || 'Error al verificar el pago',
-        icon: 'error'
+        title: 'Tiempo agotado',
+        text: 'El tiempo para confirmar el pago ha expirado. Los números han sido liberados. Por favor, intenta realizar la compra nuevamente.',
+        icon: 'warning',
+        confirmButtonText: 'Entendido'
       })
+    }, POLLING_TIMEOUT)
+  }
+  
+  // Función para detener el polling
+  const detenerPolling = () => {
+    if (pollingIntervalId) {
+      clearInterval(pollingIntervalId)
+      pollingIntervalId = null
+    }
+    if (pollingTimeoutId) {
+      clearTimeout(pollingTimeoutId)
+      pollingTimeoutId = null
     }
   }
+  
+  // Función verificarPagoR4 eliminada - ahora se usa polling automático
   const regresarNumerosModal = ()=>{
     $("#paginaFacturacion").fadeOut("slow", function () {
       if(aleatorio){
@@ -2302,11 +2353,7 @@ function onChange(e) {
     document.getElementById("btContinuarCopiarBinance").addEventListener("click", formularioCompraBinance)
     document.getElementById("btContinuarCopiarZinli").addEventListener("click", formularioCompraZinli)
     
-    // Event listeners para R4
-    const btYaPagueR4 = document.getElementById("btYaPagueR4")
-    if (btYaPagueR4) {
-      btYaPagueR4.addEventListener("click", verificarPagoR4)
-    }
+    // Event listeners para R4 (polling automático, no se necesita botón manual)
     
     // Copiar monto R4
     const copyValueR4 = document.getElementById("copyValueR4")
