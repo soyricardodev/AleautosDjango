@@ -67,6 +67,39 @@
 
           </div>
           <div class="flex gap-2 items-center">
+            {% if user.is_authenticated and user.cliente %}
+            <!-- Usuario autenticado como cliente - Mostrar avatar con dropdown -->
+            <div class="relative" id="userMenuContainer">
+              <button id="userMenuButton" class="flex items-center gap-2 p-2 rounded-full hover:bg-white/10 transition-colors">
+                <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                  <span class="text-[var(--color-fixed-white-primary)] text-sm font-semibold">
+                    {{ user.first_name|first|default:user.username|first|upper }}
+                  </span>
+                </div>
+                <svg class="w-4 h-4 text-[var(--color-fixed-white-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </button>
+              <div id="userMenuDropdown" class="hidden absolute right-0 mt-2 w-48 bg-[var(--color-container-neutral-bright)] rounded-lg shadow-lg border border-[var(--color-border-primary)] z-50">
+                <div class="py-1">
+                  <a href="{% url 'mi_perfil' %}" class="flex items-center gap-3 px-4 py-2 text-color-primary hover:bg-[var(--color-container-neutral-dim)] transition-colors">
+                    <i class="fa-solid fa-ticket w-5"></i>
+                    <span class="body-medium-regular">Ver mis tickets</span>
+                  </a>
+                  <a href="{% url 'cerrar_sesion_cliente' %}" class="flex items-center gap-3 px-4 py-2 text-color-primary hover:bg-[var(--color-container-neutral-dim)] transition-colors">
+                    <i class="fa-solid fa-sign-out-alt w-5"></i>
+                    <span class="body-medium-regular">Cerrar sesión</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+            {% else %}
+            <!-- Usuario no autenticado - Mostrar botón de registro -->
+            <a href="{% url 'registro_cliente' %}" class="button-outline button-medium !border-[var(--color-fixed-white-primary)] !text-[var(--color-fixed-white-primary)] hover:!bg-white/10">
+              <span>Registrarse</span>
+            </a>
+            {% endif %}
+            <div class="w-1 h-8 border-l-2 border-[var(--color-fixed-white-border)]"></div>
             <div id="changeThemeButton" class="cursor-pointer p-2">
               <svg id="sunIcon" class="hidden" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 xmlns="http://www.w3.org/2000/svg">
@@ -105,7 +138,6 @@
                   stroke="var(--color-fixed-white-secondary)" stroke-opacity="1" stroke-width="2" stroke-linecap="round"
                   stroke-linejoin="round" />
               </svg>
-
             </div>
             <div class="w-1 h-8 border-l-2 border-[var(--color-fixed-white-border)]"></div>
             <div class="flex gap-2 items-center bg-[#FFFFFF] rounded-full px-3 py-2">
@@ -275,6 +307,26 @@
         sol?.classList?.toggle('hidden')
       }
       changeThemeButton.addEventListener('click', toggleTheme)
+
+      // Lógica para el dropdown del menú de usuario
+      const userMenuButton = document.getElementById('userMenuButton')
+      const userMenuDropdown = document.getElementById('userMenuDropdown')
+      
+      if (userMenuButton && userMenuDropdown) {
+        // Toggle dropdown al hacer click
+        userMenuButton.addEventListener('click', (e) => {
+          e.stopPropagation()
+          userMenuDropdown.classList.toggle('hidden')
+        })
+        
+        // Cerrar dropdown al hacer click fuera
+        document.addEventListener('click', (e) => {
+          const container = document.getElementById('userMenuContainer')
+          if (container && !container.contains(e.target)) {
+            userMenuDropdown.classList.add('hidden')
+          }
+        })
+      }
 
       function setLoading() {
         let element = document.getElementById("LoaderHusky");
