@@ -884,16 +884,16 @@
       <img id="logoNegativoMobile" src=" {% static 'img/avatar.png' %}" alt="Logo" class="hidden w-[120px] h-[120px]" />
 
       <h3 class="heading-small-medium text-[var(--color-fixed-white-primary)] grow text-center">FELICIDADES 🎉 ESTOS SON TUS NÚMEROS</h3>
-      <p class="body-small-regular text-[var(--color-fixed-white-primary)] text-center"><span class="body-small-medium">En minutos finiquitaremos la aprobación de tu pago</span> y te los enviaremos ya verificados. Si quieres ver tus números en nuestro sistema dirígete a la opción ver numero comprados y coloca tu número de celular.
+      <p class="body-small-regular text-[var(--color-fixed-white-primary)] text-center"><span class="body-small-medium">¡Tu pago ha sido confirmado exitosamente!</span> Estos son los números que acabas de comprar. Puedes ver todos tus números en tu perfil.
       </p>
       <div id="finalNumerosContenedor" class="w-full"></div>
     </div>
     <div class="flex flex-col justify-end grow gap-2">
-      <button class="button-happy-primary button-medium" id="endButton" onclick="endOfProcess()">
-        <span>Ir al inicio</span>
-      </button>
-      <button id="btCompraSelectAlt" class="button button-happy-secondary button-medium w-full">
-        <span>Ver mis boletos comprados</span>
+      <a href="{% url 'mi_perfil' %}" class="button-happy-primary button-medium text-center">
+        <span>Ver mi perfil completo</span>
+      </a>
+      <button class="button-happy-secondary button-medium" id="endButton" onclick="endOfProcess()">
+        <span>Cerrar y volver al inicio</span>
       </button>
     </div>
   </section>
@@ -1776,11 +1776,12 @@ function onChange(e) {
           `
         }).join('')
         document.getElementById("finalNumerosContenedor").innerHTML = `
-          <div class="grid grid-cols-[repeat(auto-fit,minmax(45px,1fr))] gap-3 w-full">
+          <div class="flex justify-center gap-3 w-full">
             ${numeros}
           </div>
         `
       }
+      //grid grid-cols-[repeat(auto-fit,minmax(45px,1fr))] gap-3 w-full
       
       if(response?.status !== 200){
         throw new Error(response?.message || "Error de servidor")
@@ -2002,7 +2003,7 @@ function onChange(e) {
         const estadoDesc = data.estado_descriptivo || 'esperando_pago'
         
         if (estadoDesc === 'pago_confirmado' || data.pago_confirmado) {
-          // Pago confirmado - detener polling y redirigir
+          // Pago confirmado - detener polling y mostrar números
           detenerPolling()
           stopLoading()
           
@@ -2014,15 +2015,33 @@ function onChange(e) {
           mensajeVerificacion.classList.remove('text-yellow-600')
           mensajeVerificacion.classList.add('text-green-500')
           
-          // Redirigir a la página final después de 2 segundos
+          // Obtener números de la compra confirmada
+          const numeros = data.numeros || []
+          
+          // Mostrar números en el contenedor
+          const finalNumerosContenedor = document.getElementById('finalNumerosContenedor')
+          if (numeros.length > 0 && finalNumerosContenedor) {
+            const numerosHTML = numeros.map(num => `
+              <div class="flex justify-center items-center border border-[var(--color-fixed-white-primary)] p-2 rounded-lg">
+                <span class="text-[var(--color-fixed-white-primary)] label-medium-semibold">${num}</span>
+              </div>
+            `).join('')
+            
+            finalNumerosContenedor.innerHTML = `
+              <div class="grid grid-cols-[repeat(auto-fit,minmax(60px,1fr))] gap-3 w-full">
+                ${numerosHTML}
+              </div>
+            `
+          }
+          
+          // Mostrar la página final después de 1 segundo (más rápido para mejor UX)
           setTimeout(() => {
-            $("#Compra").fadeOut("fast", function () {
-              $("#ComprarContent").fadeOut("slow", function () {
-                $("#finalContent").fadeIn("fast", function () {}).css('display', 'flex');
+            $("#temporizadorContentR4").fadeOut("fast", function () {
+              $("#finalContent").fadeIn("fast", function () {
                 makeItConfetti();
-              })
+              }).css('display', 'flex');
             })
-          }, 2000)
+          }, 1000)
         } else if (estadoDesc === 'validando_pago') {
           // Banco está validando el pago
           stopLoading() // Quitar loader general, mostrar estado específico
