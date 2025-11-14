@@ -2258,13 +2258,13 @@ def compra_status(request, id):
                 "status": 403
             }, status=403)
         
-        # Mapear estados numéricos a nombres legibles
+        # Mapear estados numéricos a nombres legibles (usar valores enteros como claves)
         estado_map = {
-            Compra.EstadoCompra.Pendiente: "Pendiente",
-            Compra.EstadoCompra.Cancelado: "Cancelado",
-            Compra.EstadoCompra.Pagado: "Pagado",
-            Compra.EstadoCompra.Rechazado: "Rechazado",
-            Compra.EstadoCompra.Caducado: "Caducado"
+            int(Compra.EstadoCompra.Pendiente.value): "Pendiente",
+            int(Compra.EstadoCompra.Cancelado.value): "Cancelado",
+            int(Compra.EstadoCompra.Pagado.value): "Pagado",
+            int(Compra.EstadoCompra.Rechazado.value): "Rechazado",
+            int(Compra.EstadoCompra.Caducado.value): "Caducado"
         }
         
         # Importar modelo de transacciones
