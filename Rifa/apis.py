@@ -2336,7 +2336,14 @@ def compra_status(request, id):
         estado_nombre = estado_map.get(estado_compra, "Desconocido")
         pago_confirmado = estado_compra == estado_pagado
         
-        logger.info(f"compra_status DEBUG - RESULTADO FINAL: estado_nombre={estado_nombre}, pago_confirmado={pago_confirmado}, estado_descriptivo={estado_descriptivo}, estado_transaccion={estado_transaccion}")
+        # Si la compra está pagada, obtener los números
+        numeros = []
+        if pago_confirmado:
+            numeros_compra = NumerosCompra.objects.filter(idCompra=compra).values_list('Numero', flat=True)
+            numeros = list(numeros_compra)
+            logger.info(f"compra_status DEBUG - Compra {compra.Id} pagada, números obtenidos: {len(numeros)}")
+        
+        logger.info(f"compra_status DEBUG - RESULTADO FINAL: estado_nombre={estado_nombre}, pago_confirmado={pago_confirmado}, estado_descriptivo={estado_descriptivo}, estado_transaccion={estado_transaccion}, numeros={len(numeros)}")
         
         return JsonResponse({
             "status": estado_nombre,
@@ -2344,7 +2351,8 @@ def compra_status(request, id):
             "pago_confirmado": pago_confirmado,
             "id_compra": compra.Id,
             "estado_descriptivo": estado_descriptivo,
-            "estado_transaccion": estado_transaccion
+            "estado_transaccion": estado_transaccion,
+            "numeros": numeros  # Agregar números cuando está pagada
         }, status=200)
         
     except Exception as e:

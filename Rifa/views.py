@@ -343,6 +343,69 @@ def cerrar_sesion_cliente(request):
     return redirect("/")
 
 
+@login_required(login_url="/inicia-sesion/")
+def mi_perfil(request):
+    """
+    Vista para mostrar el perfil del cliente autenticado con sus compras y números ganadores
+    """
+    try:
+        # Verificar que el usuario tenga un cliente asociado
+        if not hasattr(request.user, 'cliente'):
+            return redirect('registro_cliente')
+        
+        cliente = request.user.cliente
+        template = loader.get_template("Rifa/mi_perfil.html")
+        
+        # Obtener rifa activa
+        rifas_activas = RifaModel.objects.filter(Estado=True, Eliminada=False).order_by('-Id')
+        rifa_activa = rifas_activas.first()
+        
+        # Obtener todas las compras pagadas del cliente para la rifa activa
+        compras_pagadas = []
+        todos_los_numeros = []
+        
+        if rifa_activa:
+            # Buscar compras pagadas del cliente para esta rifa
+            compras = Compra.objects.filter(
+                idRifa=rifa_activa,
+                idComprador__idCliente=cliente,
+                Estado=Compra.EstadoCompra.Pagado
+            ).order_by('-FechaCompra')
+            
+            for compra in compras:
+                numeros_compra = NumerosCompra.objects.filter(idCompra=compra).values_list('Numero', flat=True)
+                numeros_list = list(numeros_compra)
+                compras_pagadas.append({
+                    'compra': compra,
+                    'numeros': numeros_list,
+                    'cantidad': len(numeros_list),
+                    'fecha': compra.FechaCompra,
+                    'monto': compra.TotalPagado
+                })
+                todos_los_numeros.extend(numeros_list)
+        
+        # Obtener información del comprador
+        comprador = Comprador.objects.filter(idCliente=cliente).first()
+        
+        context = {
+            'cliente': cliente,
+            'comprador': comprador,
+            'rifa_activa': rifa_activa,
+            'compras_pagadas': compras_pagadas,
+            'todos_los_numeros': sorted(todos_los_numeros, key=lambda x: int(x) if x.isdigit() else 0),
+            'total_numeros': len(todos_los_numeros),
+            'total_compras': len(compras_pagadas)
+        }
+        
+        return HttpResponse(template.render(context, request))
+        
+    except Exception as e:
+        logger.error(f"Error en mi_perfil: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return redirect('index')
+
+
 def export_pdf(template, context):
     template = get_template(template)
  #   template=get_template("Rifa/Componentes/tableDialog.html")

@@ -40,6 +40,7 @@ urlpatterns = [
       path('registrate/', views.registro_cliente, name='registro_cliente'),
       path('inicia-sesion/', views.inicio_sesion_cliente, name='inicio_sesion_cliente'),
       path('cerrar-sesion-cliente/', views.cerrar_sesion_cliente, name='cerrar_sesion_cliente'),
+      path('mi-perfil/', views.mi_perfil, name='mi_perfil'),
       path('PDF/', views.export_pdf, name="PDF"),
       path('tableDialogPDF/', views.tableDialogPDF, name="tableDialogPDF"),
       path('tableDialogPDF/<int:id>', views.tableDialogPDF, name="tableDialogPDF"),
