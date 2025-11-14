@@ -122,6 +122,7 @@ class NotificaView(View):
                     # Actualizar compra a Pagado
                     compra.Estado = Compra.EstadoCompra.Pagado
                     compra.FechaEstado = timezone.now()
+                    compra.Referencia = referencia
                     compra.save()
                     compra_actualizada = True
                     logger.info(f"Notifica R4: Compra {compra.Id} marcada como Pagada para cliente {id_comercio}")
@@ -147,6 +148,9 @@ class NotificaView(View):
                 transaccion.concepto = data.get('Concepto')
                 transaccion.status = 'CONFIRMADO'
                 transaccion.timestamp_notificacion = timezone.now()
+                # Vincular con la compra si existe y no está vinculada
+                if compra_actualizada and compra and not transaccion.idCompra:
+                    transaccion.idCompra = compra
                 transaccion.save()
             
             except TransaccionPagoMovil.DoesNotExist:
@@ -161,6 +165,10 @@ class NotificaView(View):
                     status='CONFIRMADO',
                     timestamp_notificacion=timezone.now()
                 )
+                # Vincular con la compra si existe
+                if compra_actualizada and compra:
+                    transaccion.idCompra = compra
+                    transaccion.save()
             
             # --- Fin Lógica de Negocio ---
 

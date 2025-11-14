@@ -26,6 +26,9 @@ class TransaccionPagoMovil(models.Model):
 
     # Estado
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDIENTE')
+    
+    # Relación con Compra
+    idCompra = models.ForeignKey('Rifa.Compra', on_delete=models.SET_NULL, null=True, blank=True, related_name='transacciones_pago_movil', db_index=True)
 
     def __str__(self):
         return f"{self.id_cliente} - {self.referencia} - {self.status}"

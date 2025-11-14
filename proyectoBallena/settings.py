@@ -38,7 +38,7 @@ COMPRESS_ROOT = SITE_ROOT + '/templates/static'
 COMPRESS_ENABLED = True
 
 MJML_BACKEND_MODE = 'cmd'
-MJML_EXEC_CMD = os.environ.get('MJML_EXEC_CMD', SITE_ROOT + '/node_modules/.bin/mjml')
+MJML_EXEC_CMD = os.environ.get('MJML_EXEC_CMD', 'mjml')
 MJML_CHECK_CMD_ON_STARTUP = True
 
 STATICFILES_FINDERS = ('compressor.finders.CompressorFinder',)
@@ -327,4 +327,4 @@ LOGGING = {
 }
 
 MJML_BACKEND_MODE = 'cmd'
-MJML_EXEC_CMD = SITE_ROOT + '/node_modules/.bin/mjml'
+MJML_EXEC_CMD = 'mjml'

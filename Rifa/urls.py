@@ -120,6 +120,9 @@ urlpatterns = [
   path("api/updateOrder", apis.updateOrder, name="updateOrder"),
   path("api/reserveNumbers", apis.reserveNumbers, name="reserveNumbers"),
   path("api/CheckPay", apis.CheckPay, name="CheckPay"),
+  # Pago móvil R4
+  path("api/createOrderPagoMovilR4", apis.createOrderPagoMovilR4, name="createOrderPagoMovilR4"),
+  path("api/verificarPagoR4", apis.verificarPagoR4, name="verificarPagoR4"),
   
 
 

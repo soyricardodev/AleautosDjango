@@ -448,6 +448,76 @@
       </button>
     </div>
   </section>
+  <section id="temporizadorContentR4" class="hidden flex-col p-4 md:p-10 gap-6 md:gap-8 h-full">
+    <div class="flex flex-col gap-4 items-center md:items-start text-center md:text-left">
+      <div class="flex flex-row justify-center gap-2 items-center md:items-start w-full">
+        <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+        <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+        <div class="bg-[var(--color-icon-brand)] w-2 h-2 rounded-full"></div>
+        <div class="bg-[var(--color-container-neutral-contrast)] w-2 h-2 rounded-full"></div>
+      </div>
+      <div class="flex flex-row justify-start gap-8 items-center md:items-start w-full">
+        <h3 class="heading-small-medium text-color-primary grow text-center">Realiza el pago por Pago Móvil</h3>
+      </div>
+      <p class="body-small-regular text-color-secondary">Realiza el pago móvil con los datos que te mostramos abajo. Una vez realizado el pago, presiona el botón "Ya pagué" para verificar tu pago automáticamente.</p>
+    </div>
+    <div class="flex flex-col gap-4 md:gap-6">
+      <div class="flex flex-col-reverse gap-2 w-full">
+        <div class="relative">
+          <input id="montoPagarR4" type="text" name="monto" disabled value="" class="input w-full relative">
+          <span id="copyValueR4" class="copyInput">Copiar</span>
+        </div>
+        <label for="montoPagarR4" class="text-color-secondary label-medium-medium">Monto exacto a pagar</label>
+      </div>
+      <div class="bg-[var(--color-components-suggestion-cards-container)] radius-rounded flex flex-row px-2 py-4 gap-2 justify-start border border-[var(--color-border-brand)]">
+        <div class="w-6 h-6">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 16V12" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 8H12.01" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="body-small-regular text-color-brand">
+          Asegúrate de pagar el monto exacto que te indicamos. De lo contrario no podremos validar la operación.
+        </span>      
+      </div>
+    </div>
+    <div class="flex flex-col">
+      <div class="flex flex-row w-full gap-4 py-3">
+        <span class="label-medium-medium text-color-secondary w-[100px]">Banco</span>
+        <span class="grow label-medium-regular text-color-primary">Banesco (0134)</span>
+      </div>
+      <div class="flex flex-row w-full gap-4 py-3">
+        <span class="label-medium-medium text-color-secondary w-[100px]">Teléfono</span>
+        <span class="grow label-medium-regular text-color-primary">04127470479</span>
+        <div id="copyPhoneContainerR4" class="cursor-pointer">
+          <i id="copyPhoneR4" class="fa-regular fa-copy text-color-brand"></i>
+        </div>
+      </div>
+      <div class="flex flex-row w-full gap-4 py-3">
+        <span class="label-medium-medium text-color-secondary w-[100px]">Cédula</span>
+        <span class="grow label-medium-regular text-color-primary">V31541350</span>
+        <div id="copyCedulaContainerR4" class="cursor-pointer">
+          <i id="copyCedulaR4" class="fa-regular fa-copy text-color-brand"></i>
+        </div>
+      </div>
+    </div>
+    <div id="estadoVerificacionR4" class="hidden bg-[var(--color-components-suggestion-cards-container)] radius-rounded flex flex-row px-2 py-4 gap-2 justify-start border border-[var(--color-border-brand)]">
+      <div class="w-6 h-6">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 16V12" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 8H12.01" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span id="mensajeVerificacionR4" class="body-small-regular text-color-brand"></span>
+    </div>
+    <div class="flex flex-col justify-end grow">
+      <button class="button-happy-primary button-medium" id="btYaPagueR4">
+        <span>Ya pagué</span>
+      </button>
+    </div>
+  </section>
   <section id="temporizadorContentZelle" class="hidden flex-col p-4 md:p-10 gap-6 md:gap-8 h-full">
     
     <div class="flex flex-col gap-4 items-center md:items-start text-center md:text-left">
@@ -1762,9 +1832,8 @@ function onChange(e) {
   const escogerTipoPago = ()=>{
     $("#ekiiPagoModal").fadeOut("slow", function () {
       if(tipoPago == 3){
-        $("#temporizadorContent").fadeIn("fast", function () {
-          resetTimer()
-          startTimer()
+        // Para pago móvil R4, mostrar la sección R4
+        $("#temporizadorContentR4").fadeIn("fast", function () {
         }).css('display', 'flex');
       }
       if(tipoPago == 4){
@@ -1786,6 +1855,143 @@ function onChange(e) {
         }).css('display', 'flex');
       }
     });
+  }
+  
+  // Variable para almacenar la compra R4
+  let CompraR4 = null
+  
+  // Función para crear orden de pago móvil R4
+  const crearOrdenPagoMovilR4 = async () => {
+    setLoading()
+    try {
+      const url = "{% url 'createOrderPagoMovilR4' %}"
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+          idRifa: idRifa,
+          cantidad: ticketCount,
+          numeros: selectedNumbers
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (data.status !== 200) {
+        throw new Error(data.message || "Error al crear la orden")
+      }
+      
+      // Parsear la orden y compra
+      const ordenData = JSON.parse(data.orden)[0]
+      const compraData = JSON.parse(data.compra)[0]
+      
+      Orden = ordenData
+      CompraR4 = compraData
+      
+      // Actualizar el monto en la UI
+      const monto = data.monto || (ticketCount * RifaPrecio)
+      document.getElementById("montoPagarR4").value = `Bs. ${monto}`
+      
+      stopLoading()
+      
+      // Mostrar la sección de pago R4
+      $("#paginaFacturacion").fadeOut("slow", function () {
+        $("#ekiiPagoModal").fadeIn("fast", function () {
+          escogerTipoPago()
+        }).css('display', 'flex');
+      })
+      
+    } catch (error) {
+      stopLoading()
+      Swal.fire({
+        title: 'Error',
+        text: error.message,
+        icon: 'error'
+      })
+    }
+  }
+  
+  // Función para verificar pago R4
+  const verificarPagoR4 = async () => {
+    if (!CompraR4 || !CompraR4.pk) {
+      Swal.fire({
+        title: 'Error',
+        text: 'No se encontró la compra',
+        icon: 'error'
+      })
+      return
+    }
+    
+    setLoading()
+    const estadoVerificacion = document.getElementById("estadoVerificacionR4")
+    const mensajeVerificacion = document.getElementById("mensajeVerificacionR4")
+    const botonYaPague = document.getElementById("btYaPagueR4")
+    
+    try {
+      const url = "{% url 'verificarPagoR4' %}"
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+          idCompra: CompraR4.pk
+        })
+      })
+      
+      const data = await response.json()
+      stopLoading()
+      
+      if (data.pago_confirmado) {
+        // Pago confirmado
+        estadoVerificacion.classList.remove('hidden')
+        estadoVerificacion.classList.remove('border-[var(--color-border-brand)]')
+        estadoVerificacion.classList.add('border-green-500')
+        mensajeVerificacion.textContent = `✅ ${data.message}`
+        mensajeVerificacion.classList.remove('text-color-brand')
+        mensajeVerificacion.classList.add('text-green-500')
+        botonYaPague.disabled = true
+        botonYaPague.textContent = 'Pago Confirmado'
+        
+        // Redirigir a la página final después de un momento
+        setTimeout(() => {
+          $("#Compra").fadeOut("fast", function () {
+            $("#ComprarContent").fadeOut("slow", function () {
+              $("#finalContent").fadeIn("fast", function () {}).css('display', 'flex');
+              makeItConfetti();
+            })
+          })
+        }, 2000)
+      } else {
+        // Pago no confirmado aún
+        estadoVerificacion.classList.remove('hidden')
+        mensajeVerificacion.textContent = `⏳ ${data.message}`
+        mensajeVerificacion.classList.add('text-color-brand')
+        
+        // Si el estado es "Esperando confirmación", sugerir volver a intentar
+        if (data.estado_transaccion === 'CONSULTADO') {
+          setTimeout(() => {
+            Swal.fire({
+              title: 'Esperando confirmación',
+              text: 'El banco está procesando tu pago. Puedes cerrar esta ventana y volver a verificar más tarde, o esperar unos segundos y presionar "Ya pagué" nuevamente.',
+              icon: 'info',
+              confirmButtonText: 'Entendido'
+            })
+          }, 500)
+        }
+      }
+    } catch (error) {
+      stopLoading()
+      Swal.fire({
+        title: 'Error',
+        text: error.message || 'Error al verificar el pago',
+        icon: 'error'
+      })
+    }
   }
   const regresarNumerosModal = ()=>{
     $("#paginaFacturacion").fadeOut("slow", function () {
@@ -2095,6 +2301,46 @@ function onChange(e) {
     document.getElementById("btContinuarCopiarZelle").addEventListener("click", formularioCompraZelle)
     document.getElementById("btContinuarCopiarBinance").addEventListener("click", formularioCompraBinance)
     document.getElementById("btContinuarCopiarZinli").addEventListener("click", formularioCompraZinli)
+    
+    // Event listeners para R4
+    const btYaPagueR4 = document.getElementById("btYaPagueR4")
+    if (btYaPagueR4) {
+      btYaPagueR4.addEventListener("click", verificarPagoR4)
+    }
+    
+    // Copiar monto R4
+    const copyValueR4 = document.getElementById("copyValueR4")
+    if (copyValueR4) {
+      copyValueR4.addEventListener("click", function() {
+        const montoInput = document.getElementById("montoPagarR4")
+        const monto = montoInput.value.replace('Bs. ', '').trim()
+        navigator.clipboard.writeText(monto).then(() => {
+          showToast('Monto copiado al portapapeles')
+        })
+      })
+    }
+    
+    // Copiar teléfono R4
+    const copyPhoneR4 = document.getElementById("copyPhoneR4")
+    const copyPhoneContainerR4 = document.getElementById("copyPhoneContainerR4")
+    if (copyPhoneContainerR4) {
+      copyPhoneContainerR4.addEventListener("click", function() {
+        navigator.clipboard.writeText("04127470479").then(() => {
+          showToast('Teléfono copiado al portapapeles')
+        })
+      })
+    }
+    
+    // Copiar cédula R4
+    const copyCedulaContainerR4 = document.getElementById("copyCedulaContainerR4")
+    if (copyCedulaContainerR4) {
+      copyCedulaContainerR4.addEventListener("click", function() {
+        navigator.clipboard.writeText("V31541350").then(() => {
+          showToast('Cédula copiada al portapapeles')
+        })
+      })
+    }
+    
     buttonBackWhatsapp.addEventListener("click", ()=>{ goBackFromWhatsapp() })
     buttonOpenWhatsappModal?.addEventListener("click", ()=>{ formularioWhatsapp() })
 
@@ -2104,22 +2350,21 @@ function onChange(e) {
       tipoPago = 3
       // Para pago móvil, verificar que el usuario esté autenticado
       {% if not user.is_authenticated or not user.cliente %}
-      // Redirigir a registro si no está autenticado
-      Swal.fire({
-        title: 'Inicio de sesión requerido',
-        text: 'Para pagar con pago móvil necesitas tener una cuenta. ¿Deseas registrarte?',
-        icon: 'info',
-        showCancelButton: true,
-        confirmButtonText: 'Registrarme',
-        cancelButtonText: 'Cancelar'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          window.location.href = "{% url 'registro_cliente' %}?next=" + encodeURIComponent(window.location.pathname);
-        }
-      });
+      // Guardar estado de la compra en sessionStorage
+      const compraState = {
+        rifa: idRifa,
+        cantidad: ticketCount,
+        numeros: selectedNumbers,
+        ordenId: Orden?.pk || null
+      }
+      sessionStorage.setItem('compraPagoMovil', JSON.stringify(compraState))
+      // Redirigir directamente a registro sin alerta
+      const currentUrl = window.location.pathname + window.location.search
+      window.location.href = "{% url 'registro_cliente' %}?next=" + encodeURIComponent(currentUrl) + "&rifa=" + idRifa + "&cantidad=" + ticketCount
       return;
       {% endif %}
-      siguientePaginaFacturacion()
+      // Si está autenticado, crear orden automáticamente
+      crearOrdenPagoMovilR4()
     })
     botonPagoZelle?.addEventListener("click", ()=>{
       tipoPago = 4

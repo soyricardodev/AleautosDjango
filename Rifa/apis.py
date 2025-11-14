@@ -1842,6 +1842,290 @@ def consultOrder(request):
     return HttpResponse("Error", status=400)
 
 
+@login_required(login_url="/inicia-sesion/")
+def createOrderPagoMovilR4(request):
+    """
+    Endpoint para crear orden de pago móvil R4 automáticamente con datos del cliente autenticado
+    """
+    if request.method == "POST":
+        try:
+            # Verificar que el usuario tenga un cliente asociado
+            if not request.user.is_authenticated or not hasattr(request.user, 'cliente'):
+                return JsonResponse({"message": "Debes tener una cuenta de cliente para pagar con pago móvil", "status": 403}, status=403)
+            
+            cliente = request.user.cliente
+            data = json.loads(request.body) if request.body else {}
+            
+            idRifa = data.get('idRifa')
+            cantidad = data.get('cantidad', 1)
+            numeros_seleccionados = data.get('numeros', [])  # Lista de números específicos si los hay
+            
+            if not idRifa:
+                return JsonResponse({"message": "ID de rifa requerido", "status": 422}, status=422)
+            
+            try:
+                rifa = RifaModel.objects.get(Id=idRifa)
+            except RifaModel.DoesNotExist:
+                return JsonResponse({"message": "La rifa no existe", "status": 422}, status=422)
+            
+            # Validar estado y publicación
+            if rifa.Estado == False or rifa.Eliminada == True:
+                return JsonResponse({"message": "Rifa no disponible", "status": 422}, status=422)
+            
+            # Validar fecha
+            country_time_zone = pytz.timezone('America/Caracas')
+            country_time = datetime.now(country_time_zone)
+            if rifa.FechaSorteo != None:
+                if country_time >= rifa.FechaSorteo:
+                    if rifa.Extension == False:
+                        return JsonResponse({"message": "Rifa expirada", "status": 422}, status=422)
+            
+            # Validar cantidad
+            if cantidad < rifa.MinCompra or cantidad > rifa.MaxCompra:
+                return JsonResponse({"message": "Cantidad inválida", "status": 422}, status=422)
+            
+            # Validar disponibilidad
+            disponibles = NumeroRifaDisponibles.objects.filter(idRifa=idRifa).count()
+            if cantidad > disponibles:
+                return JsonResponse({"message": "No hay disponibles suficientes", "status": 422}, status=422)
+            
+            # Calcular total
+            total = rifa.Precio * cantidad
+            totalAlt = rifa.PrecioAlt * cantidad if hasattr(rifa, 'PrecioAlt') and rifa.PrecioAlt else None
+            
+            # Obtener datos del cliente
+            nombre = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+            correo = request.user.email
+            cedula = cliente.cedula
+            telefono = cliente.telefono
+            
+            try:
+                with transaction.atomic():
+                    # Crear orden
+                    orden = OrdenesReservas()
+                    orden.date = country_time
+                    orden.amount = total
+                    orden.customer_name = nombre
+                    orden.customer_phone = telefono
+                    orden.customer_email = correo
+                    orden.customer_identification = cedula
+                    orden.idRifa = rifa
+                    # Guardar la orden primero para tener el ID
+                    orden.save()
+                    
+                    # Reservar números
+                    numeros_reservados = []
+                    if numeros_seleccionados and len(numeros_seleccionados) > 0:
+                        # Reservar números específicos
+                        for num in numeros_seleccionados:
+                            if NumeroRifaDisponibles.objects.filter(idRifa=rifa, Numero=num).exists():
+                                NumeroRifaReservadosOrdenes.objects.create(
+                                    idRifa=rifa, Numero=num, date=country_time, idOrden=orden)
+                                NumeroRifaDisponibles.objects.filter(idRifa=rifa, Numero=num).delete()
+                                numeros_reservados.append(num)
+                        
+                        # Si faltan números, reservar aleatorios
+                        faltantes = cantidad - len(numeros_reservados)
+                        if faltantes > 0:
+                            disp = NumeroRifaDisponibles.objects.filter(
+                                idRifa=rifa).order_by('?')[:faltantes]
+                            for x in disp:
+                                NumeroRifaReservadosOrdenes.objects.create(
+                                    idRifa=rifa, Numero=x.Numero, date=country_time, idOrden=orden)
+                                NumeroRifaDisponibles.objects.get(
+                                    idRifa=rifa, Numero=x.Numero).delete()
+                                numeros_reservados.append(x.Numero)
+                    else:
+                        # Reservar números aleatorios
+                        disp = NumeroRifaDisponibles.objects.filter(
+                            idRifa=rifa).order_by('?')[:cantidad]
+                        for x in disp:
+                            NumeroRifaReservadosOrdenes.objects.create(
+                                idRifa=rifa, Numero=x.Numero, date=country_time, idOrden=orden)
+                            NumeroRifaDisponibles.objects.get(
+                                idRifa=rifa, Numero=x.Numero).delete()
+                            numeros_reservados.append(x.Numero)
+                    
+                    # Actualizar la descripción de la orden con los números reservados
+                    orden.description = f"Compra de Numeros de rifa Fecha: {datetime.now()} Rifa: {rifa.Nombre} Numeros: {numeros_reservados} Total: {total} aleautos1"
+                    orden.save()
+                    
+                    # Obtener o crear comprador
+                    comprador_existente = Comprador.objects.filter(idCliente=cliente).first()
+                    if comprador_existente:
+                        comprador = comprador_existente
+                        comprador.Nombre = nombre
+                        comprador.Correo = correo
+                        comprador.NumeroTlf = telefono
+                        comprador.Cedula = cedula
+                        comprador.save()
+                    else:
+                        comprador = Comprador()
+                        comprador.Nombre = nombre
+                        comprador.Correo = correo
+                        comprador.NumeroTlf = telefono
+                        comprador.Cedula = cedula
+                        comprador.idCliente = cliente
+                        comprador.save()
+                    
+                    # Crear compra con estado Pendiente y método PagoMovil
+                    compra = Compra()
+                    compra.idComprador = comprador
+                    compra.idRifa = rifa
+                    compra.TasaBS = Tasas.objects.latest('id').tasa if Tasas.objects.exists() else None
+                    compra.MetodoPago = Compra.MetodoPagoOpciones.PagoMovil
+                    compra.Estado = Compra.EstadoCompra.Pendiente
+                    compra.NumeroBoletos = cantidad
+                    compra.TotalPagado = total
+                    compra.TotalPagadoAlt = totalAlt
+                    compra.FechaCompra = country_time
+                    compra.FechaEstado = country_time
+                    compra.author = request.user
+                    compra.save()
+                    
+                    # Crear números de compra
+                    for num in numeros_reservados:
+                        NumerosCompra.objects.create(
+                            idCompra=compra,
+                            Numero=num
+                        )
+                    
+                    serialized_orden = serializers.serialize('json', [orden,])
+                    serialized_compra = serializers.serialize('json', [compra,])
+                    
+                    return JsonResponse({
+                        "message": "Orden creada exitosamente",
+                        "status": 200,
+                        "orden": serialized_orden,
+                        "compra": serialized_compra,
+                        "numeros": numeros_reservados,
+                        "monto": float(total)
+                    }, status=200)
+                    
+            except Exception as ex:
+                logger.error(f"Error en createOrderPagoMovilR4: {str(ex)}")
+                import traceback
+                logger.error(traceback.format_exc())
+                return JsonResponse({"message": "Error al procesar la solicitud", "status": 500}, status=500)
+                
+        except json.JSONDecodeError:
+            return JsonResponse({"message": "JSON inválido", "status": 400}, status=400)
+        except Exception as e:
+            logger.error(f"Error en createOrderPagoMovilR4: {str(e)}")
+            return JsonResponse({"message": "Error en el servidor", "status": 500}, status=500)
+    
+    return JsonResponse({"message": "Método no permitido", "status": 405}, status=405)
+
+
+@login_required(login_url="/inicia-sesion/")
+def verificarPagoR4(request):
+    """
+    Endpoint para verificar si el pago fue confirmado por R4
+    """
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body) if request.body else {}
+            idCompra = data.get('idCompra')
+            
+            if not idCompra:
+                return JsonResponse({"message": "ID de compra requerido", "status": 422}, status=422)
+            
+            try:
+                compra = Compra.objects.get(Id=idCompra)
+            except Compra.DoesNotExist:
+                return JsonResponse({"message": "La compra no existe", "status": 422}, status=422)
+            
+            # Verificar que la compra pertenezca al usuario autenticado
+            if compra.idComprador and compra.idComprador.idCliente:
+                if compra.idComprador.idCliente.user != request.user:
+                    return JsonResponse({"message": "No tienes permiso para verificar esta compra", "status": 403}, status=403)
+            
+            # Verificar que la compra esté en estado Pendiente
+            if compra.Estado != Compra.EstadoCompra.Pendiente:
+                return JsonResponse({
+                    "message": "La compra ya fue procesada",
+                    "status": 200,
+                    "compra_estado": compra.Estado,
+                    "pago_confirmado": compra.Estado == Compra.EstadoCompra.Pagado
+                }, status=200)
+            
+            # Verificar que sea método PagoMovil
+            if compra.MetodoPago != Compra.MetodoPagoOpciones.PagoMovil:
+                return JsonResponse({"message": "Esta compra no es de pago móvil", "status": 422}, status=422)
+            
+            # Buscar transacciones de pago móvil relacionadas con esta compra
+            from pagos_banco.models import TransaccionPagoMovil
+            
+            # Buscar por idCompra directamente
+            transacciones = TransaccionPagoMovil.objects.filter(idCompra=compra)
+            
+            # Si no hay transacciones vinculadas, buscar por cédula y monto
+            if not transacciones.exists() and compra.idComprador:
+                cedula = compra.idComprador.Cedula
+                monto = float(compra.TotalPagado) if compra.TotalPagado else None
+                
+                if cedula and monto:
+                    transacciones = TransaccionPagoMovil.objects.filter(
+                        id_cliente=cedula,
+                        monto_notificado__gte=monto - 0.01,
+                        monto_notificado__lte=monto + 0.01,
+                        status='CONFIRMADO'
+                    ).order_by('-timestamp_notificacion')
+            
+            # Verificar si hay alguna transacción confirmada
+            transaccion_confirmada = transacciones.filter(status='CONFIRMADO').first()
+            
+            if transaccion_confirmada:
+                # Actualizar compra a Pagado
+                country_time_zone = pytz.timezone('America/Caracas')
+                country_time = datetime.now(country_time_zone)
+                
+                compra.Estado = Compra.EstadoCompra.Pagado
+                compra.FechaEstado = country_time
+                compra.Referencia = transaccion_confirmada.referencia
+                compra.save()
+                
+                # Vincular la transacción con la compra si no está vinculada
+                if not transaccion_confirmada.idCompra:
+                    transaccion_confirmada.idCompra = compra
+                    transaccion_confirmada.save()
+                
+                return JsonResponse({
+                    "message": "Pago confirmado exitosamente",
+                    "status": 200,
+                    "pago_confirmado": True,
+                    "referencia": transaccion_confirmada.referencia,
+                    "fecha_confirmacion": transaccion_confirmada.timestamp_notificacion.isoformat() if transaccion_confirmada.timestamp_notificacion else None
+                }, status=200)
+            else:
+                # Verificar si hay transacciones pendientes o consultadas
+                transaccion_pendiente = transacciones.filter(status__in=['PENDIENTE', 'CONSULTADO']).first()
+                
+                if transaccion_pendiente:
+                    return JsonResponse({
+                        "message": "Esperando confirmación del banco",
+                        "status": 200,
+                        "pago_confirmado": False,
+                        "estado_transaccion": transaccion_pendiente.status
+                    }, status=200)
+                else:
+                    return JsonResponse({
+                        "message": "No se ha encontrado ninguna transacción. Realiza el pago móvil y vuelve a verificar.",
+                        "status": 200,
+                        "pago_confirmado": False
+                    }, status=200)
+                    
+        except json.JSONDecodeError:
+            return JsonResponse({"message": "JSON inválido", "status": 400}, status=400)
+        except Exception as e:
+            logger.error(f"Error en verificarPagoR4: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return JsonResponse({"message": "Error en el servidor", "status": 500}, status=500)
+    
+    return JsonResponse({"message": "Método no permitido", "status": 405}, status=405)
+
+
 # endregion
 @login_required(login_url="/Login/")
 def deleteComprobantes(request):

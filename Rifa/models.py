@@ -153,6 +153,7 @@ class Compra(models.Model):
         Tranferencia = 3
         Zelle = 4
         Efectivo = 5
+        PagoMovil = 6
 
         
     Id = models.BigAutoField(primary_key=True)
