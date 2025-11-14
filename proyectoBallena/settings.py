@@ -297,25 +297,44 @@ LOGGING = {
     },
     'handlers': {
         # Handler for all log messages
-        'file_all': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.TimedRotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, f"logs/debug/{LOG_FILENAME}.log"),
-            'when': 'D',
-            'backupCount': 100,
-            'formatter': 'standard',
-            'delay': True,  # Delay file opening until first log
-        },
+        # En Windows, usar RotatingFileHandler en lugar de TimedRotatingFileHandler para evitar PermissionError
+        'file_all': (
+            {
+                'level': 'DEBUG',
+                'class': 'logging.handlers.RotatingFileHandler',
+                'filename': os.path.join(BASE_DIR, f"logs/debug/{LOG_FILENAME}.log"),
+                'maxBytes': 10 * 1024 * 1024,  # 10MB
+                'backupCount': 5,
+                'formatter': 'standard',
+            } if os.name == 'nt' else {
+                'level': 'DEBUG',
+                'class': 'logging.handlers.TimedRotatingFileHandler',
+                'filename': os.path.join(BASE_DIR, f"logs/debug/{LOG_FILENAME}.log"),
+                'when': 'D',
+                'backupCount': 100,
+                'formatter': 'standard',
+                'delay': True,
+            }
+        ),
         # Handler for warnings and errors
-        'file_warnings_errors': {
-            'level': 'WARNING',
-            'class': 'logging.handlers.TimedRotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, f"logs/warning/{LOG_FILENAME}.log"),
-            'when': 'D',
-            'backupCount': 100,
-            'formatter': 'standard',
-            'delay': True,  # Delay file opening until first log
-        },
+        'file_warnings_errors': (
+            {
+                'level': 'WARNING',
+                'class': 'logging.handlers.RotatingFileHandler',
+                'filename': os.path.join(BASE_DIR, f"logs/warning/{LOG_FILENAME}.log"),
+                'maxBytes': 10 * 1024 * 1024,  # 10MB
+                'backupCount': 5,
+                'formatter': 'standard',
+            } if os.name == 'nt' else {
+                'level': 'WARNING',
+                'class': 'logging.handlers.TimedRotatingFileHandler',
+                'filename': os.path.join(BASE_DIR, f"logs/warning/{LOG_FILENAME}.log"),
+                'when': 'D',
+                'backupCount': 100,
+                'formatter': 'standard',
+                'delay': True,
+            }
+        ),
         'console': {
             'class': 'logging.StreamHandler',
             'formatter': 'standard',
