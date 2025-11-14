@@ -1768,20 +1768,34 @@ function onChange(e) {
       console.log('data', data)
       console.log('response', response)
       if(response?.numeros?.length > 0){
-        let numeros = response.numeros.map((el, index) => {
+        const maxVisible = 10
+        const numeros = response.numeros
+        const numerosVisibles = numeros.slice(0, maxVisible)
+        const numerosRestantes = numeros.length - maxVisible
+        
+        let numerosHTML = numerosVisibles.map((el, index) => {
           return `
-            <div class="flex flex-row justify-center items-center border border-[var(--color-fixed-white-primary)] p-2 rounded-lg">
+            <div class="flex flex-row justify-center items-center border border-[var(--color-fixed-white-primary)] p-2 rounded-lg min-w-[60px]">
               <span class="text-[var(--color-fixed-white-primary)] label-medium-regular">${el}</span>
             </div>
           `
         }).join('')
+        
+        if (numerosRestantes > 0) {
+          numerosHTML += `
+            <div class="flex flex-row justify-center items-center border border-[var(--color-fixed-white-primary)] p-2 rounded-lg min-w-[60px] bg-[rgba(255,255,255,0.1)]">
+              <span class="text-[var(--color-fixed-white-primary)] label-medium-regular">+${numerosRestantes}</span>
+            </div>
+          `
+        }
+        
         document.getElementById("finalNumerosContenedor").innerHTML = `
-          <div class="flex justify-center gap-3 w-full">
-            ${numeros}
+          <div class="flex flex-wrap justify-center gap-3 w-full">
+            ${numerosHTML}
           </div>
+          ${numerosRestantes > 0 ? `<p class="body-small-regular text-[var(--color-fixed-white-primary)] text-center mt-3">Ver todos tus ${numeros.length} números en tu perfil</p>` : ''}
         `
       }
-      //grid grid-cols-[repeat(auto-fit,minmax(45px,1fr))] gap-3 w-full
       
       if(response?.status !== 200){
         throw new Error(response?.message || "Error de servidor")
@@ -2018,19 +2032,34 @@ function onChange(e) {
           // Obtener números de la compra confirmada
           const numeros = data.numeros || []
           
-          // Mostrar números en el contenedor
+          // Mostrar números en el contenedor (máximo 10 visibles, luego +n)
           const finalNumerosContenedor = document.getElementById('finalNumerosContenedor')
           if (numeros.length > 0 && finalNumerosContenedor) {
-            const numerosHTML = numeros.map(num => `
-              <div class="flex justify-center items-center border border-[var(--color-fixed-white-primary)] p-2 rounded-lg">
+            const maxVisible = 10
+            const numerosVisibles = numeros.slice(0, maxVisible)
+            const numerosRestantes = numeros.length - maxVisible
+            
+            const numerosHTML = numerosVisibles.map(num => `
+              <div class="flex justify-center items-center border border-[var(--color-fixed-white-primary)] p-2 rounded-lg min-w-[60px]">
                 <span class="text-[var(--color-fixed-white-primary)] label-medium-semibold">${num}</span>
               </div>
             `).join('')
             
+            let numerosRestantesHTML = ''
+            if (numerosRestantes > 0) {
+              numerosRestantesHTML = `
+                <div class="flex justify-center items-center border border-[var(--color-fixed-white-primary)] p-2 rounded-lg min-w-[60px] bg-[rgba(255,255,255,0.1)]">
+                  <span class="text-[var(--color-fixed-white-primary)] label-medium-semibold">+${numerosRestantes}</span>
+                </div>
+              `
+            }
+            
             finalNumerosContenedor.innerHTML = `
-              <div class="grid grid-cols-[repeat(auto-fit,minmax(60px,1fr))] gap-3 w-full">
+              <div class="flex flex-wrap justify-center gap-3 w-full">
                 ${numerosHTML}
+                ${numerosRestantesHTML}
               </div>
+              ${numerosRestantes > 0 ? `<p class="body-small-regular text-[var(--color-fixed-white-primary)] text-center mt-3">Ver todos tus ${numeros.length} números en tu perfil</p>` : ''}
             `
           }
           
