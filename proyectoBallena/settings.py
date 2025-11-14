@@ -276,6 +276,8 @@ API_KEY_CHINCHIN=os.environ.get('API_KEY_CHINCHIN')
 
 # Banco R4 Conecta
 BANCO_UUID_TOKEN = '16354fd1-afdd-4d32-8f1c-331bc39ac824'
+# RIF del comercio para validación en R4notifica (sin prefijo J-)
+R4_COMERCIO_RIF = '506638452'
 
 #Logging
 LOG_DIRS = ['debug', 'warning']
