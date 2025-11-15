@@ -35,25 +35,25 @@ class ConsultaView(View):
             query_string = request.META.get('QUERY_STRING', '')
             
             print("\n" + "="*100)
-            print("🔵 CONSULTA R4 - REPORTE EXHAUSTIVO PARA EL BANCO")
+            print("[CONSULTA R4] REPORTE EXHAUSTIVO PARA EL BANCO")
             print("="*100)
-            print(f"🌐 URL COMPLETA: {url_completa}")
-            print(f"📍 PATH: {path_info}")
-            print(f"🔍 QUERY STRING: {query_string if query_string else '(vacío)'}")
-            print(f"📡 MÉTODO HTTP: {metodo}")
-            print(f"🌍 IP REMOTA: {request.META.get('REMOTE_ADDR')}")
-            print(f"🌍 IP REAL (X-Forwarded-For): {request.META.get('HTTP_X_FORWARDED_FOR', 'No presente')}")
-            print(f"📋 TODOS LOS HEADERS:")
+            print(f"[URL COMPLETA] {url_completa}")
+            print(f"[PATH] {path_info}")
+            print(f"[QUERY STRING] {query_string if query_string else '(vacio)'}")
+            print(f"[METODO HTTP] {metodo}")
+            print(f"[IP REMOTA] {request.META.get('REMOTE_ADDR')}")
+            print(f"[IP REAL (X-Forwarded-For)] {request.META.get('HTTP_X_FORWARDED_FOR', 'No presente')}")
+            print(f"[TODOS LOS HEADERS]")
             for key, value in request.headers.items():
                 print(f"   {key}: {value}")
-            print(f"📦 BODY RAW (bytes): {request.body}")
-            print(f"📦 BODY RAW (string): {body_raw}")
-            print(f"📦 BODY LENGTH: {len(request.body) if request.body else 0} bytes")
+            print(f"[BODY RAW (bytes)] {request.body}")
+            print(f"[BODY RAW (string)] {body_raw}")
+            print(f"[BODY LENGTH] {len(request.body) if request.body else 0} bytes")
             
             data = json.loads(request.body)
-            print(f"📊 JSON PARSEADO COMPLETO:")
+            print(f"[JSON PARSEADO COMPLETO]")
             print(json.dumps(data, indent=2, ensure_ascii=False))
-            print(f"🔍 ANÁLISIS DE CAMPOS:")
+            print(f"[ANALISIS DE CAMPOS]")
             
             id_cliente = data.get('IdCliente')
             monto = data.get('Monto')
@@ -62,9 +62,9 @@ class ConsultaView(View):
             print(f"   IdCliente: {repr(id_cliente)} (tipo: {type(id_cliente).__name__}, presente: {id_cliente is not None})")
             print(f"   Monto: {repr(monto)} (tipo: {type(monto).__name__}, presente: {monto is not None})")
             print(f"   TelefonoComercio: {repr(telefono_comercio)} (tipo: {type(telefono_comercio).__name__}, presente: {telefono_comercio is not None})")
-            print(f"📝 TODAS LAS CLAVES EN EL JSON: {list(data.keys())}")
-            print(f"📝 TOTAL DE CAMPOS: {len(data)}")
-            print(f"⏰ TIMESTAMP: {timezone.now().isoformat()}")
+            print(f"[TODAS LAS CLAVES EN EL JSON] {list(data.keys())}")
+            print(f"[TOTAL DE CAMPOS] {len(data)}")
+            print(f"[TIMESTAMP] {timezone.now().isoformat()}")
             print("="*100 + "\n")
             
             # Logging también
@@ -88,8 +88,8 @@ class ConsultaView(View):
                 rif_comercio_nuestro = str(settings.R4_COMERCIO_RIF).strip()
                 
                 if rif_comercio_recibido != rif_comercio_nuestro:
-                    logger.warning(f"Consulta R4: ✗ RECHAZADO - IdCliente {id_cliente} no coincide con nuestro RIF {rif_comercio_nuestro}")
-                    print(f"❌ VALIDACIÓN FALLIDA: IdCliente {id_cliente} no coincide con nuestro RIF {rif_comercio_nuestro}")
+                    logger.warning(f"Consulta R4: [RECHAZADO] IdCliente {id_cliente} no coincide con nuestro RIF {rif_comercio_nuestro}")
+                    print(f"[VALIDACION FALLIDA] IdCliente {id_cliente} no coincide con nuestro RIF {rif_comercio_nuestro}")
                     pago_valido = False
                 else:
                     # 2. BUSCAR compras pendientes de PagoMovil por MONTO
@@ -107,22 +107,22 @@ class ConsultaView(View):
                         pago_valido = True
                         compra = compras_pendientes.first()
                         cliente_nombre = compra.idComprador.Nombre if compra.idComprador else "N/A"
-                        logger.info(f"Consulta R4: ✓ ACEPTADO - RIF {id_cliente} válido, Compra #{compra.Id} pendiente, Monto {monto}, Cliente: {cliente_nombre}")
-                        print(f"✅ PAGO ACEPTADO - Compra #{compra.Id} pendiente por monto {monto}")
+                        logger.info(f"Consulta R4: [ACEPTADO] RIF {id_cliente} valido, Compra #{compra.Id} pendiente, Monto {monto}, Cliente: {cliente_nombre}")
+                        print(f"[PAGO ACEPTADO] Compra #{compra.Id} pendiente por monto {monto}")
                     else:
-                        logger.warning(f"Consulta R4: ✗ RECHAZADO - No hay compras pendientes por monto {monto} para RIF {id_cliente}")
-                        print(f"❌ NO HAY COMPRAS PENDIENTES para monto {monto}")
+                        logger.warning(f"Consulta R4: [RECHAZADO] No hay compras pendientes por monto {monto} para RIF {id_cliente}")
+                        print(f"[NO HAY COMPRAS PENDIENTES] para monto {monto}")
                         pago_valido = False
                     
             except ValueError as e:
-                logger.error(f"Consulta R4: ✗ ERROR - Monto inválido: {str(e)}")
-                print(f"❌ ERROR: Monto inválido - {str(e)}")
+                logger.error(f"Consulta R4: [ERROR] Monto invalido: {str(e)}")
+                print(f"[ERROR] Monto invalido - {str(e)}")
                 pago_valido = False
             except Exception as e:
-                logger.error(f"Consulta R4: ✗ ERROR - {str(e)}")
+                logger.error(f"Consulta R4: [ERROR] {str(e)}")
                 import traceback
                 logger.error(traceback.format_exc())
-                print(f"❌ ERROR: {str(e)}")
+                print(f"[ERROR] {str(e)}")
                 pago_valido = False
             
             # --- Fin Lógica de Negocio ---
@@ -172,25 +172,25 @@ class NotificaView(View):
             query_string = request.META.get('QUERY_STRING', '')
             
             print("\n" + "="*100)
-            print("🟢 NOTIFICA R4 - REPORTE EXHAUSTIVO PARA EL BANCO")
+            print("[NOTIFICA R4] REPORTE EXHAUSTIVO PARA EL BANCO")
             print("="*100)
-            print(f"🌐 URL COMPLETA: {url_completa}")
-            print(f"📍 PATH: {path_info}")
-            print(f"🔍 QUERY STRING: {query_string if query_string else '(vacío)'}")
-            print(f"📡 MÉTODO HTTP: {metodo}")
-            print(f"🌍 IP REMOTA: {request.META.get('REMOTE_ADDR')}")
-            print(f"🌍 IP REAL (X-Forwarded-For): {request.META.get('HTTP_X_FORWARDED_FOR', 'No presente')}")
-            print(f"📋 TODOS LOS HEADERS:")
+            print(f"[URL COMPLETA] {url_completa}")
+            print(f"[PATH] {path_info}")
+            print(f"[QUERY STRING] {query_string if query_string else '(vacio)'}")
+            print(f"[METODO HTTP] {metodo}")
+            print(f"[IP REMOTA] {request.META.get('REMOTE_ADDR')}")
+            print(f"[IP REAL (X-Forwarded-For)] {request.META.get('HTTP_X_FORWARDED_FOR', 'No presente')}")
+            print(f"[TODOS LOS HEADERS]")
             for key, value in request.headers.items():
                 print(f"   {key}: {value}")
-            print(f"📦 BODY RAW (bytes): {request.body}")
-            print(f"📦 BODY RAW (string): {body_raw}")
-            print(f"📦 BODY LENGTH: {len(request.body) if request.body else 0} bytes")
+            print(f"[BODY RAW (bytes)] {request.body}")
+            print(f"[BODY RAW (string)] {body_raw}")
+            print(f"[BODY LENGTH] {len(request.body) if request.body else 0} bytes")
             
             data = json.loads(request.body)
-            print(f"📊 JSON PARSEADO COMPLETO:")
+            print(f"[JSON PARSEADO COMPLETO]")
             print(json.dumps(data, indent=2, ensure_ascii=False))
-            print(f"🔍 ANÁLISIS DE CAMPOS:")
+            print(f"[ANALISIS DE CAMPOS]")
             
             # Campos según documentación R4notifica
             id_comercio = data.get('IdComercio')  # RIF del comercio (requerido)
@@ -212,9 +212,9 @@ class NotificaView(View):
             print(f"   FechaHora: {repr(fecha_hora)} (tipo: {type(fecha_hora).__name__}, presente: {fecha_hora is not None})")
             print(f"   Referencia: {repr(referencia)} (tipo: {type(referencia).__name__}, presente: {referencia is not None})")
             print(f"   CodigoRed: {repr(codigo_red)} (tipo: {type(codigo_red).__name__}, presente: {codigo_red is not None})")
-            print(f"📝 TODAS LAS CLAVES EN EL JSON: {list(data.keys())}")
-            print(f"📝 TOTAL DE CAMPOS: {len(data)}")
-            print(f"⏰ TIMESTAMP: {timezone.now().isoformat()}")
+            print(f"[TODAS LAS CLAVES EN EL JSON] {list(data.keys())}")
+            print(f"[TOTAL DE CAMPOS] {len(data)}")
+            print(f"[TIMESTAMP] {timezone.now().isoformat()}")
             print("="*100 + "\n")
             
             # Logging también
@@ -237,17 +237,17 @@ class NotificaView(View):
                 rif_comercio_nuestro = str(settings.R4_COMERCIO_RIF).strip()
                 
                 if rif_comercio_recibido != rif_comercio_nuestro:
-                    logger.warning(f"Notifica R4: ✗ RECHAZADO - IdComercio {id_comercio} no coincide con nuestro RIF {rif_comercio_nuestro}")
-                    print(f"❌ VALIDACIÓN FALLIDA: IdComercio {id_comercio} no coincide con nuestro RIF {rif_comercio_nuestro}")
+                    logger.warning(f"Notifica R4: [RECHAZADO] IdComercio {id_comercio} no coincide con nuestro RIF {rif_comercio_nuestro}")
+                    print(f"[VALIDACION FALLIDA] IdComercio {id_comercio} no coincide con nuestro RIF {rif_comercio_nuestro}")
                     return JsonResponse({"abono": False})
                 
-                logger.info(f"Notifica R4: ✓ IdComercio válido: {id_comercio}")
-                print(f"✅ IdComercio válido: {id_comercio}")
+                logger.info(f"Notifica R4: [OK] IdComercio valido: {id_comercio}")
+                print(f"[OK] IdComercio valido: {id_comercio}")
                 
                 # 2. VALIDAR campos requeridos
                 if not monto or not referencia or not banco_emisor:
-                    logger.warning(f"Notifica R4: ✗ RECHAZADO - Campos requeridos faltantes: Monto={monto}, Referencia={referencia}, BancoEmisor={banco_emisor}")
-                    print(f"❌ VALIDACIÓN FALLIDA: Campos requeridos faltantes")
+                    logger.warning(f"Notifica R4: [RECHAZADO] Campos requeridos faltantes: Monto={monto}, Referencia={referencia}, BancoEmisor={banco_emisor}")
+                    print(f"[VALIDACION FALLIDA] Campos requeridos faltantes")
                     return JsonResponse({"abono": False})
                 
                 # 3. BUSCAR compras pendientes por MONTO y TELÉFONO (para mayor precisión)
@@ -274,25 +274,25 @@ class NotificaView(View):
                     
                     if compras_con_telefono.exists():
                         compra = compras_con_telefono.first()
-                        logger.info(f"Notifica R4: ✓ Compra encontrada por monto Y teléfono: #{compra.Id}, Tel: {telefono_emisor}")
-                        print(f"✅ Compra encontrada por monto Y teléfono: #{compra.Id}")
+                        logger.info(f"Notifica R4: [OK] Compra encontrada por monto Y telefono: #{compra.Id}, Tel: {telefono_emisor}")
+                        print(f"[OK] Compra encontrada por monto Y telefono: #{compra.Id}")
                     else:
                         # Si no hay coincidencia exacta, buscar solo por monto
                         compra = compras_pendientes.order_by('-FechaCompra').first()
                         if compra:
-                            logger.warning(f"Notifica R4: ⚠ Compra encontrada solo por monto (teléfono no coincide): #{compra.Id}, Tel esperado: {telefono_emisor}, Tel compra: {compra.idComprador.NumeroTlf if compra.idComprador else 'N/A'}")
-                            print(f"⚠ Compra encontrada solo por monto (teléfono no coincide)")
+                            logger.warning(f"Notifica R4: [ADVERTENCIA] Compra encontrada solo por monto (telefono no coincide): #{compra.Id}, Tel esperado: {telefono_emisor}, Tel compra: {compra.idComprador.NumeroTlf if compra.idComprador else 'N/A'}")
+                            print(f"[ADVERTENCIA] Compra encontrada solo por monto (telefono no coincide)")
                 else:
                     # Si no hay teléfono, buscar solo por monto
                     compra = compras_pendientes.order_by('-FechaCompra').first()
                 
                 if not compra:
-                    logger.warning(f"Notifica R4: ✗ RECHAZADO - No se encontró compra pendiente para monto {monto}, teléfono {telefono_emisor}")
-                    print(f"❌ VALIDACIÓN FALLIDA: No se encontró compra pendiente para monto {monto}, teléfono {telefono_emisor}")
+                    logger.warning(f"Notifica R4: [RECHAZADO] No se encontro compra pendiente para monto {monto}, telefono {telefono_emisor}")
+                    print(f"[VALIDACION FALLIDA] No se encontro compra pendiente para monto {monto}, telefono {telefono_emisor}")
                     return JsonResponse({"abono": False})
                 
-                logger.info(f"Notifica R4: ✓ Compra encontrada: #{compra.Id}, Cliente: {compra.idComprador.Nombre if compra.idComprador else 'N/A'}")
-                print(f"✅ Compra encontrada: #{compra.Id}")
+                logger.info(f"Notifica R4: [OK] Compra encontrada: #{compra.Id}, Cliente: {compra.idComprador.Nombre if compra.idComprador else 'N/A'}")
+                print(f"[OK] Compra encontrada: #{compra.Id}")
                 
                 # 4. VALIDAR referencia, banco y monto (según documentación)
                 # La referencia debe ser única y válida
@@ -300,8 +300,8 @@ class NotificaView(View):
                     # Verificar si ya existe una compra con esta referencia (evitar duplicados)
                     compra_existente_ref = Compra.objects.filter(Referencia=referencia, Estado=Compra.EstadoCompra.Pagado).exclude(Id=compra.Id).first()
                     if compra_existente_ref:
-                        logger.warning(f"Notifica R4: ✗ RECHAZADO - Referencia {referencia} ya fue usada en compra #{compra_existente_ref.Id}")
-                        print(f"❌ VALIDACIÓN FALLIDA: Referencia {referencia} ya fue usada")
+                        logger.warning(f"Notifica R4: [RECHAZADO] Referencia {referencia} ya fue usada en compra #{compra_existente_ref.Id}")
+                        print(f"[VALIDACION FALLIDA] Referencia {referencia} ya fue usada")
                         return JsonResponse({"abono": False})
                 
                 # 5. Si todas las validaciones pasan, actualizar compra a Pagado
@@ -313,18 +313,18 @@ class NotificaView(View):
                 abono_valido = True
                 
                 cliente_nombre = compra.idComprador.Nombre if compra.idComprador else "N/A"
-                logger.info(f"Notifica R4: ✓ COMPRA #{compra.Id} PAGADA - Cliente: {cliente_nombre}, Monto: {monto}, Ref: {referencia}")
-                print(f"✅ COMPRA #{compra.Id} MARCADA COMO PAGADA - Cliente: {cliente_nombre}")
+                logger.info(f"Notifica R4: [PAGADA] COMPRA #{compra.Id} PAGADA - Cliente: {cliente_nombre}, Monto: {monto}, Ref: {referencia}")
+                print(f"[PAGADA] COMPRA #{compra.Id} MARCADA COMO PAGADA - Cliente: {cliente_nombre}")
                 
             except ValueError as e:
-                logger.error(f"Notifica R4: ✗ ERROR - Monto inválido: {str(e)}")
-                print(f"❌ ERROR: Monto inválido - {str(e)}")
+                logger.error(f"Notifica R4: [ERROR] Monto invalido: {str(e)}")
+                print(f"[ERROR] Monto invalido - {str(e)}")
                 return JsonResponse({"abono": False})
             except Exception as e:
-                logger.error(f"Notifica R4: ✗ ERROR inesperado: {str(e)}")
+                logger.error(f"Notifica R4: [ERROR] inesperado: {str(e)}")
                 import traceback
                 logger.error(traceback.format_exc())
-                print(f"❌ ERROR inesperado: {str(e)}")
+                print(f"[ERROR] inesperado: {str(e)}")
                 return JsonResponse({"abono": False})
             
             # Actualizar o crear transacción
@@ -371,9 +371,9 @@ class NotificaView(View):
                         if compra_actualizada and compra:
                             transaccion.idCompra = compra
                             transaccion.save()
-                        logger.info(f"Notifica R4: Nueva transacción {transaccion.id} creada")
+                        logger.info(f"Notifica R4: Nueva transaccion {transaccion.id} creada")
                 except Exception as e:
-                    logger.error(f"Notifica R4: ✗ Error al actualizar/crear transacción: {str(e)}")
+                    logger.error(f"Notifica R4: [ERROR] Error al actualizar/crear transaccion: {str(e)}")
                     import traceback
                     logger.error(traceback.format_exc())
                     # No retornar error aquí, ya validamos el pago
