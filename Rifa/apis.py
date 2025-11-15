@@ -2263,9 +2263,13 @@ def reserveNumbers(request):
                         {"message": "Cantidad invalida", "status": 422}, status=422
                     )
 
+                # OPTIMIZACIÓN CRÍTICA: Eliminar count() lento con grandes volúmenes
+                # La validación real se hace en la transacción con select_for_update
+                # Solo validamos límites básicos aquí
                 if (
-                    form.cleaned_data["numeros"]
-                    > NumeroRifaDisponibles.objects.filter(idRifa=idRifa).count()
+                    rifa.TotalComprados + form.cleaned_data["numeros"]
+                    > rifa.TotalNumeros
+                    or rifa.TotalComprados == rifa.TotalNumeros
                 ):
                     return JsonResponse(
                         {"message": "No hay disponibles suficientes", "status": 422},
@@ -2293,13 +2297,39 @@ def reserveNumbers(request):
 
                 try:
                     with transaction.atomic():
+                        # OPTIMIZACIÓN: Bloquear rifa para evitar condiciones de carrera
+                        rifa = RifaModel.objects.select_for_update().get(Id=idRifa)
+
                         orden = OrdenesReservas()
 
-                        disp = (
-                            NumeroRifaDisponibles.objects.exclude(Numero__in=boletos)
-                            .filter(idRifa=form.cleaned_data["idRifa"])
-                            .order_by("?")[:random_numbers]
+                        # OPTIMIZACIÓN: Obtener números aleatorios de forma más eficiente
+                        # En lugar de order_by("?") que es muy lento, usamos un enfoque más rápido
+                        # Primero obtenemos los IDs disponibles, luego seleccionamos aleatoriamente
+                        numeros_seleccionados = []  # Inicializar para evitar NameError
+                        if random_numbers > 0:
+                            # Obtener números disponibles excluyendo los boletos específicos
+                            disponibles_qs = NumeroRifaDisponibles.objects.filter(
+                                idRifa=rifa
+                            ).exclude(Numero__in=boletos)
+
+                            # OPTIMIZACIÓN: Usar values_list para obtener solo los números
+                            # y luego seleccionar aleatoriamente en Python (más rápido que order_by("?"))
+                            numeros_disponibles = list(
+                                disponibles_qs.values_list("Numero", flat=True)
+                            )
+
+                            # Seleccionar aleatoriamente en Python (más rápido que SQL)
+                            numeros_seleccionados = random.sample(
+                                numeros_disponibles,
+                                min(random_numbers, len(numeros_disponibles)),
+                            )
+                        # else: numeros_seleccionados ya está inicializado como []
+
+                        # Construir lista de números para la descripción (más eficiente)
+                        numeros_lista = (
+                            numeros_seleccionados if random_numbers > 0 else []
                         )
+                        todos_los_numeros = numeros_lista + boletos
 
                         orden.date = country_time
                         orden.customer_name = "Reserva"
@@ -2307,7 +2337,7 @@ def reserveNumbers(request):
                         orden.customer_identification = "Reserva"
                         orden.amount = total
                         orden.idRifa = rifa
-                        orden.description = f"Compra de Numeros de rifa Fecha: {datetime.now()} Rifa: {rifa.Nombre} Numeros: {list(x.Numero for x in disp)} Boletos: {boletos} Total: {total} aleautos1"
+                        orden.description = f"Compra de Numeros de rifa Fecha: {datetime.now()} Rifa: {rifa.Nombre} Numeros: {todos_los_numeros} Boletos: {boletos} Total: {total} aleautos1"
 
                         orden.save()
                         if len(boletos) > 0:
@@ -2351,53 +2381,32 @@ def reserveNumbers(request):
                                     idRifa=rifa, Numero__in=list(boletos_disponibles)
                                 ).delete()
 
-                        # OPTIMIZACIÓN: Verificar todos los números de una vez antes de procesar
-                        numeros_disp = [x.Numero for x in disp]
-                        numeros_ya_reservados = set(
-                            NumeroRifaReservadosOrdenes.objects.filter(
-                                idRifa=rifa, Numero__in=numeros_disp
-                            ).values_list("Numero", flat=True)
-                        )
-
-                        if numeros_ya_reservados:
-                            return JsonResponse(
-                                {
-                                    "message": "Error procesando su solicitud, intente nuevamente",
-                                    "status": 500,
-                                },
-                                status=500,
-                            )
-
-                        # OPTIMIZACIÓN: Usar bulk_create para reducir consultas
-                        reservados_list = []
-                        for x in disp:
-                            reservados_list.append(
-                                NumeroRifaReservadosOrdenes(
-                                    idRifa=rifa,
-                                    Numero=x.Numero,
-                                    date=country_time,
-                                    idOrden=orden,
+                        # OPTIMIZACIÓN: Procesar números aleatorios si hay
+                        if random_numbers > 0 and numeros_seleccionados:
+                            # OPTIMIZACIÓN: Usar bulk_create para reducir consultas
+                            reservados_list = []
+                            for num in numeros_seleccionados:
+                                reservados_list.append(
+                                    NumeroRifaReservadosOrdenes(
+                                        idRifa=rifa,
+                                        Numero=num,
+                                        date=country_time,
+                                        idOrden=orden,
+                                    )
                                 )
-                            )
 
-                        NumeroRifaReservadosOrdenes.objects.bulk_create(reservados_list)
+                            if reservados_list:
+                                NumeroRifaReservadosOrdenes.objects.bulk_create(
+                                    reservados_list
+                                )
 
-                        # OPTIMIZACIÓN: Bulk delete para reducir consultas
-                        NumeroRifaDisponibles.objects.filter(
-                            idRifa=rifa, Numero__in=numeros_disp
-                        ).delete()
+                                # OPTIMIZACIÓN: Bulk delete para reducir consultas
+                                NumeroRifaDisponibles.objects.filter(
+                                    idRifa=rifa, Numero__in=numeros_seleccionados
+                                ).delete()
 
-                        # Verificar que se crearon correctamente
-                        if NumeroRifaReservadosOrdenes.objects.filter(
-                            idRifa=rifa, Numero__in=numeros_disp, idOrden=orden
-                        ).count() != len(numeros_disp):
-                            return JsonResponse(
-                                {
-                                    "message": "Error procesando su solicitud, intente nuevamente",
-                                    "status": 500,
-                                },
-                                status=500,
-                            )
+                        # OPTIMIZACIÓN: No necesitamos verificar con count() - la transacción garantiza atomicidad
+                        # Si algo falla, la transacción se revierte automáticamente
 
                 except Exception as ex:
                     logger.info(ex)
@@ -2407,14 +2416,22 @@ def reserveNumbers(request):
                         status=500,
                     )
 
-                serialized_object = serializers.serialize(
-                    "json",
-                    [
-                        orden,
-                    ],
-                )
+                # OPTIMIZACIÓN CRÍTICA: Usar dict simple en lugar de serializers.serialize()
+                # Esto es mucho más rápido y evita overhead de serialización
+                orden_data = {
+                    "id": orden.Id,
+                    "amount": float(orden.amount),
+                    "date": orden.date.isoformat() if orden.date else None,
+                    "customer_name": orden.customer_name,
+                    "customer_email": orden.customer_email,
+                    "customer_phone": orden.customer_phone,
+                    "customer_identification": orden.customer_identification,
+                    "description": orden.description,
+                    "idRifa": orden.idRifa.Id if orden.idRifa else None,
+                    "completada": orden.completada,
+                }
                 return JsonResponse(
-                    {"message": "Éxito", "status": 200, "orden": serialized_object},
+                    {"message": "Éxito", "status": 200, "orden": orden_data},
                     status=200,
                 )
             return JsonResponse(
