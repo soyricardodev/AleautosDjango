@@ -1385,13 +1385,12 @@ def ComprarRifa(request):
                 idOrden = form.cleaned_data['idOrden']
 
                 try:
-                    try:
-                        print(country_time-timedelta(minutes=10))
+                    print(country_time-timedelta(minutes=10))
 
-                        ordenes= OrdenesReservas.objects.filter(date__gte=country_time-timedelta(minutes=10))
-                        orden = ordenes.get(Id=idOrden)
-                    except:
-                        return JsonResponse({"message": "Error, la orden no existe", "status": 400}, status=422)
+                    ordenes= OrdenesReservas.objects.filter(date__gte=country_time-timedelta(minutes=10))
+                    orden = ordenes.get(Id=idOrden)
+                except:
+                    return JsonResponse({"message": "Error, la orden no existe", "status": 400}, status=422)
                 
                 
                 # if orden is more than 10 min error
@@ -1511,12 +1510,12 @@ def ComprarRifa(request):
       
                     numeros_apartados = [x.Numero for x in disp]
                     return JsonResponse({"message": "Éxito", "status": 200, "numeros": numeros_apartados}, status=200)
-            except Exception as ex:
-                logger.info(ex)
-                print(ex)
-                return JsonResponse({"message": "Error en el servidor", "status": 500 , "err":f"{ex}"}, status=500)
-        else:
-            return JsonResponse({"errors": form.errors.as_json(), "message": "error de validacion", "status": 422}, status=422)
+                except Exception as ex:
+                    logger.info(ex)
+                    print(ex)
+                    return JsonResponse({"message": "Error en el servidor", "status": 500 , "err":f"{ex}"}, status=500)
+            else:
+                return JsonResponse({"errors": form.errors.as_json(), "message": "error de validacion", "status": 422}, status=422)
     except Exception as e:
         logger.error(f"Error en ComprarRifa: {str(e)}")
         # CRÍTICO: Cerrar conexiones en caso de error
