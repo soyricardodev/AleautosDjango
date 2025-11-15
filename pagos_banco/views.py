@@ -302,27 +302,30 @@ class NotificaView(View):
                     return JsonResponse({"abono": False})
                 
                 # Buscar compras pendientes por monto
-                compras_pendientes = Compra.objects.filter(
+                # CRÍTICO: Limitar resultados y evaluar QuerySet una sola vez para evitar fugas de conexiones
+                compras_pendientes_qs = Compra.objects.filter(
                     Estado=Compra.EstadoCompra.Pendiente,
                     MetodoPago=Compra.MetodoPagoOpciones.PagoMovil
                 ).filter(
                     Q(TotalPagado__gte=monto_decimal - 0.01) & 
                     Q(TotalPagado__lte=monto_decimal + 0.01)
-                ).select_related('idComprador').order_by('-FechaCompra')
+                ).select_related('idComprador').order_by('-FechaCompra')[:50]  # Limitar a 50 para evitar cargar demasiados
+                
+                # Evaluar QuerySet una sola vez para evitar múltiples conexiones
+                compras_pendientes = list(compras_pendientes_qs)
                 
                 # Buscar compra que coincida por monto Y teléfono
                 compra = None
-                compras_coincidentes = []
                 
+                # Iterar sobre la lista en memoria (no sobre QuerySet)
                 for compra_candidata in compras_pendientes:
                     if compra_candidata.idComprador and compra_candidata.idComprador.NumeroTlf:
                         telefono_compra_normalizado = normalizar_telefono(compra_candidata.idComprador.NumeroTlf)
                         if comparar_telefonos(telefono_banco_normalizado, telefono_compra_normalizado):
-                            compras_coincidentes.append(compra_candidata)
+                            compra = compra_candidata
+                            break  # Encontrar la primera coincidencia (ya está ordenada por fecha descendente)
                 
-                # Si hay múltiples compras con el mismo monto y teléfono, tomar la más reciente
-                if compras_coincidentes:
-                    compra = compras_coincidentes[0]  # Ya están ordenadas por FechaCompra descendente
+                if compra:
                     logger.info(f"Notifica R4: [OK] Compra encontrada por monto Y telefono: #{compra.Id}, Tel banco: {telefono_emisor}, Tel compra: {compra.idComprador.NumeroTlf}")
                     print(f"[OK] Compra encontrada por monto Y telefono: #{compra.Id}")
                 else:
@@ -331,8 +334,8 @@ class NotificaView(View):
                     logger.error(f"Notifica R4: [RECHAZADO] No se encontro compra pendiente con monto {monto} Y telefono {telefono_emisor}. El teléfono debe coincidir exactamente.")
                     print(f"[VALIDACION FALLIDA] No se encontro compra con monto {monto} Y telefono {telefono_emisor}")
                     
-                    # Log adicional para debugging: mostrar qué compras pendientes hay
-                    if compras_pendientes.exists():
+                    # Log adicional para debugging: mostrar qué compras pendientes hay (ya están en memoria)
+                    if compras_pendientes:
                         logger.warning(f"Notifica R4: [DEBUG] Compras pendientes encontradas por monto {monto}:")
                         for compra_debug in compras_pendientes[:5]:  # Mostrar máximo 5
                             tel_compra = compra_debug.idComprador.NumeroTlf if compra_debug.idComprador else 'N/A'

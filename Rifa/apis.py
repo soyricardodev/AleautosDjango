@@ -2356,11 +2356,15 @@ def marcarComprasExpiradas():
         tiempo_limite = timezone.now() - timedelta(minutes=5)
         
         # Buscar compras pendientes de PagoMovil con más de 5 minutos
-        compras_expiradas = Compra.objects.filter(
+        # OPTIMIZACIÓN: Limitar resultados y usar select_related para evitar múltiples consultas
+        compras_expiradas_qs = Compra.objects.filter(
             Estado=Compra.EstadoCompra.Pendiente,
             MetodoPago=Compra.MetodoPagoOpciones.PagoMovil,
             FechaCompra__lt=tiempo_limite
-        )
+        ).select_related('idRifa')[:100]  # Limitar a 100 para evitar sobrecarga
+        
+        # Evaluar QuerySet una sola vez
+        compras_expiradas = list(compras_expiradas_qs)
         
         for compra in compras_expiradas:
             try:
@@ -2373,30 +2377,37 @@ def marcarComprasExpiradas():
                     compra.save()
                     
                     # Buscar la orden asociada para liberar números
-                    numeros_compra = NumerosCompra.objects.filter(idCompra=compra)
-                    numeros_list = [nc.Numero for nc in numeros_compra]
+                    # OPTIMIZACIÓN: Usar values_list para obtener solo los números necesarios
+                    numeros_list = list(NumerosCompra.objects.filter(idCompra=compra).values_list('Numero', flat=True))
                     
                     orden = None
                     if numeros_list:
-                        numeros_reservados = NumeroRifaReservadosOrdenes.objects.filter(
+                        # Obtener la primera orden de reserva (si existe)
+                        numeros_reservados_obj = NumeroRifaReservadosOrdenes.objects.filter(
                             idRifa=compra.idRifa,
                             Numero__in=numeros_list
-                        ).first()
+                        ).select_related('idOrden').first()
                         
-                        if numeros_reservados:
-                            orden = numeros_reservados.idOrden
+                        if numeros_reservados_obj:
+                            orden = numeros_reservados_obj.idOrden
                     
                     # Liberar números reservados
                     if orden:
-                        numeros_reservados = NumeroRifaReservadosOrdenes.objects.filter(idOrden=orden)
-                        for num_reservado in numeros_reservados:
-                            # Liberar el número a disponibles
-                            NumeroRifaDisponibles.objects.create(
-                                Numero=num_reservado.Numero,
-                                idRifa=compra.idRifa
-                            )
+                        # OPTIMIZACIÓN: Obtener todos los números reservados de una vez
+                        numeros_reservados_list = list(NumeroRifaReservadosOrdenes.objects.filter(
+                            idOrden=orden
+                        ).values_list('Numero', flat=True))
+                        
+                        # Crear todos los números disponibles en bulk
+                        if numeros_reservados_list:
+                            numeros_disponibles = [
+                                NumeroRifaDisponibles(Numero=num, idRifa=compra.idRifa)
+                                for num in numeros_reservados_list
+                            ]
+                            NumeroRifaDisponibles.objects.bulk_create(numeros_disponibles, ignore_conflicts=True)
+                        
                         # Eliminar las reservas
-                        numeros_reservados.delete()
+                        NumeroRifaReservadosOrdenes.objects.filter(idOrden=orden).delete()
                     
                     logger.info(f"Compra {compra.Id} marcada como expirada automáticamente")
             except Exception as e:
@@ -2418,12 +2429,13 @@ def compra_status(request, id):
     Retorna el estado actual de la compra para verificación automática.
     """
     try:
-        # Marcar compras expiradas antes de verificar el estado
-        marcarComprasExpiradas()
+        # OPTIMIZACIÓN: No llamar marcarComprasExpiradas() en cada request
+        # Esto debe ejecutarse en un cron job, no en cada polling request
+        # marcarComprasExpiradas()  # COMENTADO para evitar sobrecarga de conexiones
         
-        # Validar que la compra existe
+        # Validar que la compra existe con select_related para evitar consultas adicionales
         try:
-            compra = Compra.objects.get(Id=id)
+            compra = Compra.objects.select_related('idComprador', 'idComprador__idCliente', 'idComprador__idCliente__user').get(Id=id)
         except Compra.DoesNotExist:
             return JsonResponse({
                 "message": "La compra no existe",
@@ -2469,11 +2481,10 @@ def compra_status(request, id):
         logger.info(f"compra_status DEBUG - Estado convertido: {estado_compra}, Pagado={estado_pagado}, Pendiente={estado_pendiente}, Rechazado={estado_rechazado}")
         logger.info(f"compra_status DEBUG - Comparación Pagado: {estado_compra} == {estado_pagado} = {estado_compra == estado_pagado}")
         
-        # Buscar transacciones vinculadas a esta compra
-        transacciones = TransaccionPagoMovil.objects.filter(idCompra=compra).order_by('-timestamp_consulta', '-timestamp_notificacion')
+        # OPTIMIZACIÓN: Obtener transacción en una sola consulta, no usar .exists() y .first() por separado
+        transaccion = TransaccionPagoMovil.objects.filter(idCompra=compra).order_by('-timestamp_consulta', '-timestamp_notificacion').first()
         estado_transaccion = None
-        if transacciones.exists():
-            transaccion = transacciones.first()
+        if transaccion:
             estado_transaccion = transaccion.status
             logger.info(f"compra_status DEBUG - Transacción encontrada: ID={transaccion.id}, Status={transaccion.status}, idCompra={transaccion.idCompra_id}")
         else:
@@ -2493,25 +2504,23 @@ def compra_status(request, id):
         # Si la compra está pendiente, buscar transacciones vinculadas DIRECTAMENTE
         elif estado_compra == estado_pendiente:
             logger.info(f"compra_status DEBUG - Compra {compra.Id} está PENDIENTE")
-            if transacciones.exists():
-                # Hay transacciones vinculadas a esta compra específica
-                transaccion_mas_reciente = transacciones.first()
-                estado_transaccion = transaccion_mas_reciente.status
+            if transaccion:  # Usar la transacción ya obtenida, no hacer consulta adicional
+                estado_transaccion = transaccion.status
                 
-                if transaccion_mas_reciente.status == 'CONFIRMADO':
+                if transaccion.status == 'CONFIRMADO':
                     # Si hay una transacción confirmada vinculada, la compra debería estar pagada
                     # Pero si la compra sigue pendiente, algo está mal, mantener esperando_pago
                     estado_descriptivo = "esperando_pago"
                     logger.warning(f"compra_status DEBUG - Compra {compra.Id} está PENDIENTE pero tiene transacción CONFIRMADO - INCONSISTENCIA")
-                elif transaccion_mas_reciente.status == 'CONSULTADO':
+                elif transaccion.status == 'CONSULTADO':
                     estado_descriptivo = "validando_pago"
                     logger.info(f"compra_status DEBUG - Compra {compra.Id} tiene transacción CONSULTADO, estado_descriptivo = validando_pago")
-                elif transaccion_mas_reciente.status == 'RECHAZADO':
+                elif transaccion.status == 'RECHAZADO':
                     estado_descriptivo = "pago_rechazado"
                     logger.info(f"compra_status DEBUG - Compra {compra.Id} tiene transacción RECHAZADO")
                 else:
                     estado_descriptivo = "esperando_pago"
-                    logger.info(f"compra_status DEBUG - Compra {compra.Id} tiene transacción con status {transaccion_mas_reciente.status}, estado_descriptivo = esperando_pago")
+                    logger.info(f"compra_status DEBUG - Compra {compra.Id} tiene transacción con status {transaccion.status}, estado_descriptivo = esperando_pago")
             else:
                 # No hay transacciones vinculadas, definitivamente está esperando pago
                 estado_descriptivo = "esperando_pago"
