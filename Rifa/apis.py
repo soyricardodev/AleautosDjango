@@ -82,13 +82,20 @@ def changeExtension(request):
 def SaveSettings(request):
     if request.method == 'POST':
         data = json.load(request)
-        settings = Settings.objects.all()
-        settings.update(valor=None)
+        # Solo resetear los settings que están siendo actualizados
         for x in data.keys():
             setting = Settings.objects.filter(code=x).first()
             if setting is not None:
-                setting.valor = data[x]
+                # Si el valor viene vacío o es None, establecerlo como None
+                setting.valor = data[x] if data[x] and str(data[x]).strip() else None
                 setting.save()
+            else:
+                # Si el setting no existe, crearlo
+                Settings.objects.create(
+                    code=x,
+                    descripcion=f"Configuración para {x}",
+                    valor=data[x] if data[x] and str(data[x]).strip() else None
+                )
         return JsonResponse({"result": 'Success', "message": "Preferencias actualizadas correctamente"})
     return JsonResponse({"result": 'Error', "message": "Metodo no soportado"}, status=404)
 
