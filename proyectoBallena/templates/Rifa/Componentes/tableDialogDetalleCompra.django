@@ -160,8 +160,29 @@
       </div>
       <div id="detalle-content-tab-comprobante"
         class="detalle-content-tab hidden flex-col gap-7 w-full h-full justify-center items-center">
-        {% if Compra.Estado != 5%}
-        <img src="{{Compra.Comprobante.url}}" alt="Comprobante" class="h-full">
+        {% if Compra.Estado != 5 %}
+          {% if Compra.Comprobante %}
+            <img src="{{Compra.Comprobante.url}}" alt="Comprobante" class="h-full">
+          {% else %}
+            <div class="flex flex-col gap-4 items-center justify-center p-8">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="var(--color-icon-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <p class="body-medium-regular text-color-secondary text-center">
+                {% if Compra.MetodoPago == 6 %}
+                  Este pago fue procesado automáticamente por el banco R4.<br>
+                  No requiere comprobante físico.
+                {% else %}
+                  No hay comprobante disponible para esta compra.
+                {% endif %}
+              </p>
+              {% if Compra.Referencia %}
+                <p class="body-small-regular text-color-secondary">
+                  Referencia: <span class="text-color-primary">{{ Compra.Referencia }}</span>
+                </p>
+              {% endif %}
+            </div>
+          {% endif %}
         {% endif %}
       </div>
     </div>
@@ -192,7 +213,7 @@
       {% endif %}
     </div>
     <div class="flex flex-row gap-4 w-full lg:w-auto">
-      {% if Compra.Estado != 5%}
+      {% if Compra.Estado != 5 and Compra.Comprobante %}
       <a class="button button-blanked button-small w-full lg:w-auto" href="{{Compra.Comprobante.url}}"
         download="{{Compra.Comprobante.name}}">
         <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">

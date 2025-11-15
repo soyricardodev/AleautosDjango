@@ -11,8 +11,10 @@ from .decorators import validar_token_banco, validar_ip_banco
 from .models import TransaccionPagoMovil
 
 # Importar modelos de Rifa
-from Rifa.models import Cliente, Compra
+from Rifa.models import Cliente, Compra, NumerosCompra, NumeroRifaComprados, Rifa
 from django.conf import settings
+from django.db.models import F
+from django.db import transaction
 
 logger = logging.getLogger('ballena')
 
@@ -305,12 +307,50 @@ class NotificaView(View):
                         return JsonResponse({"abono": False})
                 
                 # 5. Si todas las validaciones pasan, actualizar compra a Pagado
-                compra.Estado = Compra.EstadoCompra.Pagado
-                compra.FechaEstado = timezone.now()
-                compra.Referencia = referencia
-                compra.save()
-                compra_actualizada = True
-                abono_valido = True
+                with transaction.atomic():
+                    compra.Estado = Compra.EstadoCompra.Pagado
+                    compra.FechaEstado = timezone.now()
+                    compra.Referencia = referencia
+                    compra.save()
+                    compra_actualizada = True
+                    abono_valido = True
+                    
+                    # Actualizar TotalComprados y crear NumeroRifaComprados
+                    # Obtener los números de la compra
+                    numeros_compra = NumerosCompra.objects.filter(idCompra=compra)
+                    
+                    # Verificar si ya están en NumeroRifaComprados
+                    rifa = compra.idRifa
+                    numeros_ya_comprados = NumeroRifaComprados.objects.filter(
+                        idRifa=rifa,
+                        Numero__in=[nc.Numero for nc in numeros_compra]
+                    ).values_list('Numero', flat=True)
+                    
+                    # Crear registros solo para números que no están ya comprados
+                    numeros_a_agregar = []
+                    for num_compra in numeros_compra:
+                        if num_compra.Numero not in numeros_ya_comprados:
+                            NumeroRifaComprados.objects.create(
+                                idRifa=rifa,
+                                Numero=num_compra.Numero
+                            )
+                            numeros_a_agregar.append(num_compra.Numero)
+                    
+                    # Actualizar TotalComprados solo si agregamos números nuevos
+                    if numeros_a_agregar:
+                        rifa.TotalComprados = F('TotalComprados') + len(numeros_a_agregar)
+                        rifa.save()
+                        logger.info(f"Notifica R4: Actualizados {len(numeros_a_agregar)} numeros en TotalComprados para rifa {rifa.Id}")
+                    
+                    # Liberar números reservados si existen
+                    from Rifa.models import NumeroRifaReservadosOrdenes, NumeroRifaDisponibles
+                    numeros_reservados = NumeroRifaReservadosOrdenes.objects.filter(
+                        idRifa=rifa,
+                        Numero__in=[nc.Numero for nc in numeros_compra]
+                    )
+                    if numeros_reservados.exists():
+                        numeros_reservados.delete()
+                        logger.info(f"Notifica R4: Numeros reservados liberados para compra {compra.Id}")
                 
                 cliente_nombre = compra.idComprador.Nombre if compra.idComprador else "N/A"
                 logger.info(f"Notifica R4: [PAGADA] COMPRA #{compra.Id} PAGADA - Cliente: {cliente_nombre}, Monto: {monto}, Ref: {referencia}")

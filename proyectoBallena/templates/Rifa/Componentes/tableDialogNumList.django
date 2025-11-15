@@ -162,6 +162,7 @@
       onclick="ReenviarComprobante('{{Compra.Id}}')">
       <span>Reenviar comprobante</span>
     </button>
+    {% if Compra.Comprobante %}
     <a class="button button-outline button-small w-full lg:w-auto" href="{{Compra.Comprobante.url}}"
       download="{{Compra.Comprobante.name}}">
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -176,6 +177,7 @@
       </svg>
       <span>Comprobante</span>
     </a>
+    {% endif %}
     {% endif %}
     {% if Compra.Estado|reversoEstado != 'Pagado' and Compra.Estado|reversoEstado != 'Pendiente' %}
     <button class="button button-outline button-small w-full lg:w-auto" type="button" onclick="closeDialog2()">

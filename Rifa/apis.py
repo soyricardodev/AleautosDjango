@@ -31,6 +31,7 @@ from django.template.loader import render_to_string
 import boto3
 from django.contrib.auth.decorators import login_required, permission_required
 import pytz
+from django.utils import timezone as django_timezone
 from django.db.models.functions import Cast
 from django.db.models import IntegerField
 from django.db.models import F
@@ -909,10 +910,37 @@ def aprobarCompra(request):
   
                 CompraObj.FechaEstado=country_time
                 CompraObj.save()
+                
                 # array numbers
                 arr = [x['Numero'] for x in NumerosCompra.objects.filter(
                     idCompra=CompraObj).values('Numero')]
                 logger.info(arr)
+                
+                # Actualizar TotalComprados y crear NumeroRifaComprados si no existen
+                rifa = CompraObj.idRifa
+                numeros_compra = NumerosCompra.objects.filter(idCompra=CompraObj)
+                
+                # Verificar si ya están en NumeroRifaComprados
+                numeros_ya_comprados = NumeroRifaComprados.objects.filter(
+                    idRifa=rifa,
+                    Numero__in=arr
+                ).values_list('Numero', flat=True)
+                
+                # Crear registros solo para números que no están ya comprados
+                numeros_a_agregar = []
+                for num in arr:
+                    if num not in numeros_ya_comprados:
+                        NumeroRifaComprados.objects.create(
+                            idRifa=rifa,
+                            Numero=num
+                        )
+                        numeros_a_agregar.append(num)
+                
+                # Actualizar TotalComprados solo si agregamos números nuevos
+                if numeros_a_agregar:
+                    rifa.TotalComprados = F('TotalComprados') + len(numeros_a_agregar)
+                    rifa.save()
+                    logger.info(f"Aprobacion manual: Actualizados {len(numeros_a_agregar)} numeros en TotalComprados para rifa {rifa.Id}")
                 logAprobado=LoggerAprobadoRechazo.objects.create(date=datetime.now(), description=f"Compra Aprobada {CompraObj.Id}", evento="Aprobada", idCompra=CompraObj)
                 logAprobado.save()
                 context = {
@@ -2228,6 +2256,73 @@ def rechazarCompraTimeout(request, id):
         }, status=500)
 
 
+def marcarComprasExpiradas():
+    """
+    Marca compras pendientes de PagoMovil que tienen más de 5 minutos como expiradas.
+    Libera los números reservados asociados.
+    """
+    try:
+        from django.utils import timezone
+        
+        # Calcular el tiempo límite (5 minutos atrás)
+        tiempo_limite = timezone.now() - timedelta(minutes=5)
+        
+        # Buscar compras pendientes de PagoMovil con más de 5 minutos
+        compras_expiradas = Compra.objects.filter(
+            Estado=Compra.EstadoCompra.Pendiente,
+            MetodoPago=Compra.MetodoPagoOpciones.PagoMovil,
+            FechaCompra__lt=tiempo_limite
+        )
+        
+        for compra in compras_expiradas:
+            try:
+                with transaction.atomic():
+                    # Marcar como caducado
+                    compra.Estado = Compra.EstadoCompra.Caducado
+                    country_time_zone = pytz.timezone('America/Caracas')
+                    country_time = datetime.now(country_time_zone)
+                    compra.FechaEstado = country_time
+                    compra.save()
+                    
+                    # Buscar la orden asociada para liberar números
+                    numeros_compra = NumerosCompra.objects.filter(idCompra=compra)
+                    numeros_list = [nc.Numero for nc in numeros_compra]
+                    
+                    orden = None
+                    if numeros_list:
+                        numeros_reservados = NumeroRifaReservadosOrdenes.objects.filter(
+                            idRifa=compra.idRifa,
+                            Numero__in=numeros_list
+                        ).first()
+                        
+                        if numeros_reservados:
+                            orden = numeros_reservados.idOrden
+                    
+                    # Liberar números reservados
+                    if orden:
+                        numeros_reservados = NumeroRifaReservadosOrdenes.objects.filter(idOrden=orden)
+                        for num_reservado in numeros_reservados:
+                            # Liberar el número a disponibles
+                            NumeroRifaDisponibles.objects.create(
+                                Numero=num_reservado.Numero,
+                                idRifa=compra.idRifa
+                            )
+                        # Eliminar las reservas
+                        numeros_reservados.delete()
+                    
+                    logger.info(f"Compra {compra.Id} marcada como expirada automáticamente")
+            except Exception as e:
+                logger.error(f"Error al marcar compra {compra.Id} como expirada: {str(e)}")
+                continue
+        
+        return compras_expiradas.count()
+    except Exception as e:
+        logger.error(f"Error en marcarComprasExpiradas: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return 0
+
+
 @login_required(login_url="/inicia-sesion/")
 def compra_status(request, id):
     """
@@ -2235,6 +2330,9 @@ def compra_status(request, id):
     Retorna el estado actual de la compra para verificación automática.
     """
     try:
+        # Marcar compras expiradas antes de verificar el estado
+        marcarComprasExpiradas()
+        
         # Validar que la compra existe
         try:
             compra = Compra.objects.get(Id=id)

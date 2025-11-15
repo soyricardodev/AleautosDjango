@@ -55,7 +55,9 @@ def reversoMetodoPago(metodo):
     if metodo == 4:
         return "Zelle"   
     if metodo == 5:
-        return "Zinli"   
+        return "Zinli"
+    if metodo == 6:
+        return "Pago Móvil R4"   
 
 @register.filter(name='reversoEstado')
 def reversoEstado(estado):
