@@ -9,6 +9,7 @@ import time
 import urllib.request as request
 import uuid
 import requests as RR
+import requests
 from django import template
 from django.http import HttpResponse, JsonResponse
 from django.template import loader
@@ -1868,68 +1869,71 @@ def reserveNumbers(request):
       return JsonResponse({"message": "Error interno del servidor", "status": 500}, status=500)
   
 def updateOrder(request):
-  if request.method == "POST":
-    form = UpdateOrderForm(request.POST)
-    logger.info(f"Campos {request.POST}")
-    logger.info(f"nombre {request.POST.get('nombre')}")
-    logger.info(f"Formulario válido {form.is_valid()}")
-    logger.info(f"Formulario válido {form.errors}")
-    if form.is_valid():
-        idRifa = form.cleaned_data['idRifa']
+    # CRÍTICO: Cerrar conexiones de BD en caso de error para evitar acumulación
+    try:
+        if request.method == "POST":
+            form = UpdateOrderForm(request.POST)
+            logger.info(f"Campos {request.POST}")
+            logger.info(f"nombre {request.POST.get('nombre')}")
+            logger.info(f"Formulario válido {form.is_valid()}")
+            logger.info(f"Formulario válido {form.errors}")
+            if form.is_valid():
+                idRifa = form.cleaned_data['idRifa']
+                try:
+                    rifa = RifaModel.objects.get(Id=idRifa)
+                except:
+                    return HttpResponse("Error, la rifa a la que intenta comprar no existe", status=400)
+                # valida estado y publicacion
+                if rifa.Estado == False or rifa.Eliminada == True:
+                    return JsonResponse({"message": "Rifa no disponible", "status": 422}, status=422)
+                # valida rifa fecha
+                country_time_zone = pytz.timezone('America/Caracas')
+                country_time = datetime.now(country_time_zone)
+                if rifa.FechaSorteo != None:
+                    if country_time >= rifa.FechaSorteo:
+                        if rifa.Extension==False:
+                            return JsonResponse({"message": "Rifa expirada", "status": 422}, status=422)
+
+                try:
+                    with transaction.atomic():
+                        orden = OrdenesReservas.objects.filter(Id=form.cleaned_data['idOrden'])
+                        if orden.count() == 0:
+                            return JsonResponse({"message": "Error, la orden no existe", "status": 422}, status=422)
+                        
+                        orden = orden.first()
+
+                        if orden.date <= country_time - timedelta(minutes=10):
+                            return JsonResponse({"message": "Error, la orden ha expirado vuelva a intentarlo", "status": 422}, status=422)
+
+                        orden.customer_name = form.cleaned_data['nombre']
+                        orden.customer_phone = form.cleaned_data['numeroTlf']
+                        orden.customer_email = form.cleaned_data['correo']
+                        orden.customer_identification =form.cleaned_data['cedula']
+
+                        orden.save()
+
+                except Exception as ex:
+                    logger.info(ex)
+                    print (ex)
+                    return JsonResponse({"message": "Ops! Vuelve a intentarlo", "status": 500}, status=500)
+
+                serialized_object = serializers.serialize('json', [orden,])
+                return JsonResponse({"message": "Éxito", "status": 200, "orden":serialized_object}, status=200)
+            else:
+                return JsonResponse({"errors": form.errors.as_json(), "message": "error de validacion", "status": 422}, status=422)
+    except Exception as e:
+        logger.error(f"Error en updateOrder: {str(e)}")
+        # CRÍTICO: Cerrar conexiones en caso de error
         try:
-            rifa = RifaModel.objects.get(Id=idRifa)
+            from django.db import connections
+            for alias in connections:
+                try:
+                    connections[alias].close()
+                except:
+                    pass
         except:
-            return HttpResponse("Error, la rifa a la que intenta comprar no existe", status=400)
-        # valida estado y publicacion
-        if rifa.Estado == False or rifa.Eliminada == True:
-            return JsonResponse({"message": "Rifa no disponible", "status": 422}, status=422)
-        # valida rifa fecha
-        country_time_zone = pytz.timezone('America/Caracas')
-        country_time = datetime.now(country_time_zone)
-        if rifa.FechaSorteo != None:
-         if country_time >= rifa.FechaSorteo:
-          if rifa.Extension==False:
-            return JsonResponse({"message": "Rifa expirada", "status": 422}, status=422)
-
-        try:
-            with transaction.atomic():
-                orden = OrdenesReservas.objects.filter(Id=form.cleaned_data['idOrden'])
-                if orden.count() == 0:
-                    return JsonResponse({"message": "Error, la orden no existe", "status": 422}, status=422)
-                
-                orden = orden.first()
-
-                if orden.date <= country_time - timedelta(minutes=10):
-                    return JsonResponse({"message": "Error, la orden ha expirado vuelva a intentarlo", "status": 422}, status=422)
-
-                orden.customer_name = form.cleaned_data['nombre']
-                orden.customer_phone = form.cleaned_data['numeroTlf']
-                orden.customer_email = form.cleaned_data['correo']
-                orden.customer_identification =form.cleaned_data['cedula']
-
-                orden.save()
-
-        except Exception as ex:
-                logger.info(ex)
-                print (ex)
-                return JsonResponse({"message": "Ops! Vuelve a intentarlo", "status": 500}, status=500)
-
-        serialized_object = serializers.serialize('json', [orden,])
-        return JsonResponse({"message": "Éxito", "status": 200, "orden":serialized_object}, status=200)
-      return JsonResponse({"errors": form.errors.as_json(), "message": "error de validacion", "status": 422}, status=422)
-  except Exception as e:
-      logger.error(f"Error en updateOrder: {str(e)}")
-      # CRÍTICO: Cerrar conexiones en caso de error
-      try:
-          from django.db import connections
-          for alias in connections:
-              try:
-                  connections[alias].close()
-              except:
-                  pass
-      except:
-          pass
-      return JsonResponse({"message": "Error interno del servidor", "status": 500}, status=500)
+            pass
+        return JsonResponse({"message": "Error interno del servidor", "status": 500}, status=500)
   
 def createOrder(request):
   # CRÍTICO: Cerrar conexiones de BD en caso de error para evitar acumulación
@@ -2065,206 +2069,219 @@ def createOrderPagoMovilR4(request):
     # CRÍTICO: Cerrar conexiones de BD en caso de error para evitar acumulación
     try:
         if request.method == "POST":
-        try:
-            # Verificar que el usuario tenga un cliente asociado
-            if not request.user.is_authenticated or not hasattr(request.user, 'cliente'):
-                return JsonResponse({"message": "Debes tener una cuenta de cliente para pagar con pago móvil", "status": 403}, status=403)
-            
-            cliente = request.user.cliente
-            data = json.loads(request.body) if request.body else {}
-            
-            idRifa = data.get('idRifa')
-            cantidad = data.get('cantidad', 1)
-            numeros_seleccionados = data.get('numeros', [])  # Lista de números específicos si los hay
-            
-            if not idRifa:
-                return JsonResponse({"message": "ID de rifa requerido", "status": 422}, status=422)
-            
             try:
-                rifa = RifaModel.objects.get(Id=idRifa)
-            except RifaModel.DoesNotExist:
-                return JsonResponse({"message": "La rifa no existe", "status": 422}, status=422)
-            
-            # Validar estado y publicación
-            if rifa.Estado == False or rifa.Eliminada == True:
-                return JsonResponse({"message": "Rifa no disponible", "status": 422}, status=422)
-            
-            # Validar fecha
-            country_time_zone = pytz.timezone('America/Caracas')
-            country_time = datetime.now(country_time_zone)
-            if rifa.FechaSorteo != None:
-                if country_time >= rifa.FechaSorteo:
-                    if rifa.Extension == False:
-                        return JsonResponse({"message": "Rifa expirada", "status": 422}, status=422)
-            
-            # Validar cantidad
-            if cantidad < rifa.MinCompra or cantidad > rifa.MaxCompra:
-                return JsonResponse({"message": "Cantidad inválida", "status": 422}, status=422)
-            
-            # Validar disponibilidad
-            disponibles = NumeroRifaDisponibles.objects.filter(idRifa=idRifa).count()
-            if cantidad > disponibles:
-                return JsonResponse({"message": "No hay disponibles suficientes", "status": 422}, status=422)
-            
-            # Calcular total
-            total = rifa.Precio * cantidad
-            totalAlt = rifa.PrecioAlt * cantidad if hasattr(rifa, 'PrecioAlt') and rifa.PrecioAlt else None
-            
-            # Obtener datos del cliente
-            nombre = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
-            correo = request.user.email
-            cedula = cliente.cedula
-            telefono = cliente.telefono
-            
-            try:
-                with transaction.atomic():
-                    # Crear orden
-                    orden = OrdenesReservas()
-                    orden.date = country_time
-                    orden.amount = total
-                    orden.customer_name = nombre
-                    orden.customer_phone = telefono
-                    orden.customer_email = correo
-                    orden.customer_identification = cedula
-                    orden.idRifa = rifa
-                    # Guardar la orden primero para tener el ID
-                    orden.save()
-                    
-                    # Reservar números
-                    numeros_reservados = []
-                    # OPTIMIZACIÓN: Verificar disponibilidad de números específicos de una vez
-                    if numeros_seleccionados and len(numeros_seleccionados) > 0:
-                        # Verificar todos los números específicos de una vez
-                        disponibles_especificos = set(NumeroRifaDisponibles.objects.filter(
-                            idRifa=rifa, Numero__in=numeros_seleccionados).values_list('Numero', flat=True))
+                # Verificar que el usuario tenga un cliente asociado
+                if not request.user.is_authenticated or not hasattr(request.user, 'cliente'):
+                    return JsonResponse({"message": "Debes tener una cuenta de cliente para pagar con pago móvil", "status": 403}, status=403)
+                
+                cliente = request.user.cliente
+                data = json.loads(request.body) if request.body else {}
+                
+                idRifa = data.get('idRifa')
+                cantidad = data.get('cantidad', 1)
+                numeros_seleccionados = data.get('numeros', [])  # Lista de números específicos si los hay
+                
+                if not idRifa:
+                    return JsonResponse({"message": "ID de rifa requerido", "status": 422}, status=422)
+                
+                try:
+                    rifa = RifaModel.objects.get(Id=idRifa)
+                except RifaModel.DoesNotExist:
+                    return JsonResponse({"message": "La rifa no existe", "status": 422}, status=422)
+                
+                # Validar estado y publicación
+                if rifa.Estado == False or rifa.Eliminada == True:
+                    return JsonResponse({"message": "Rifa no disponible", "status": 422}, status=422)
+                
+                # Validar fecha
+                country_time_zone = pytz.timezone('America/Caracas')
+                country_time = datetime.now(country_time_zone)
+                if rifa.FechaSorteo != None:
+                    if country_time >= rifa.FechaSorteo:
+                        if rifa.Extension == False:
+                            return JsonResponse({"message": "Rifa expirada", "status": 422}, status=422)
+                
+                # Validar cantidad
+                if cantidad < rifa.MinCompra or cantidad > rifa.MaxCompra:
+                    return JsonResponse({"message": "Cantidad inválida", "status": 422}, status=422)
+                
+                # Validar disponibilidad
+                disponibles = NumeroRifaDisponibles.objects.filter(idRifa=idRifa).count()
+                if cantidad > disponibles:
+                    return JsonResponse({"message": "No hay disponibles suficientes", "status": 422}, status=422)
+                
+                # Calcular total
+                total = rifa.Precio * cantidad
+                totalAlt = rifa.PrecioAlt * cantidad if hasattr(rifa, 'PrecioAlt') and rifa.PrecioAlt else None
+                
+                # Obtener datos del cliente
+                nombre = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+                correo = request.user.email
+                cedula = cliente.cedula
+                telefono = cliente.telefono
+                
+                try:
+                    with transaction.atomic():
+                        # Crear orden
+                        orden = OrdenesReservas()
+                        orden.date = country_time
+                        orden.amount = total
+                        orden.customer_name = nombre
+                        orden.customer_phone = telefono
+                        orden.customer_email = correo
+                        orden.customer_identification = cedula
+                        orden.idRifa = rifa
+                        # Guardar la orden primero para tener el ID
+                        orden.save()
                         
-                        # Reservar números específicos disponibles
-                        reservados_list = []
-                        for num in numeros_seleccionados:
-                            if num in disponibles_especificos:
-                                reservados_list.append(
-                                    NumeroRifaReservadosOrdenes(
-                                        idRifa=rifa, Numero=num, date=country_time, idOrden=orden))
-                                numeros_reservados.append(num)
-                        
-                        if reservados_list:
-                            NumeroRifaReservadosOrdenes.objects.bulk_create(reservados_list)
-                            NumeroRifaDisponibles.objects.filter(
-                                idRifa=rifa, Numero__in=numeros_reservados).delete()
-                        
-                        # Si faltan números, reservar aleatorios
-                        faltantes = cantidad - len(numeros_reservados)
-                        if faltantes > 0:
+                        # Reservar números
+                        numeros_reservados = []
+                        # OPTIMIZACIÓN: Verificar disponibilidad de números específicos de una vez
+                        if numeros_seleccionados and len(numeros_seleccionados) > 0:
+                            # Verificar todos los números específicos de una vez
+                            disponibles_especificos = set(NumeroRifaDisponibles.objects.filter(
+                                idRifa=rifa, Numero__in=numeros_seleccionados).values_list('Numero', flat=True))
+                            
+                            # Reservar números específicos disponibles
+                            reservados_list = []
+                            for num in numeros_seleccionados:
+                                if num in disponibles_especificos:
+                                    reservados_list.append(
+                                        NumeroRifaReservadosOrdenes(
+                                            idRifa=rifa, Numero=num, date=country_time, idOrden=orden))
+                                    numeros_reservados.append(num)
+                            
+                            if reservados_list:
+                                NumeroRifaReservadosOrdenes.objects.bulk_create(reservados_list)
+                                NumeroRifaDisponibles.objects.filter(
+                                    idRifa=rifa, Numero__in=numeros_reservados).delete()
+                            
+                            # Si faltan números, reservar aleatorios
+                            faltantes = cantidad - len(numeros_reservados)
+                            if faltantes > 0:
+                                disp = NumeroRifaDisponibles.objects.filter(
+                                    idRifa=rifa).order_by('?')[:faltantes]
+                                numeros_aleatorios = [x.Numero for x in disp]
+                                reservados_aleatorios = []
+                                for x in disp:
+                                    reservados_aleatorios.append(
+                                        NumeroRifaReservadosOrdenes(
+                                            idRifa=rifa, Numero=x.Numero, date=country_time, idOrden=orden))
+                                    numeros_reservados.append(x.Numero)
+                                
+                                if reservados_aleatorios:
+                                    NumeroRifaReservadosOrdenes.objects.bulk_create(reservados_aleatorios)
+                                    NumeroRifaDisponibles.objects.filter(
+                                        idRifa=rifa, Numero__in=numeros_aleatorios).delete()
+                        else:
+                            # Reservar números aleatorios
                             disp = NumeroRifaDisponibles.objects.filter(
-                                idRifa=rifa).order_by('?')[:faltantes]
+                                idRifa=rifa).order_by('?')[:cantidad]
                             numeros_aleatorios = [x.Numero for x in disp]
-                            reservados_aleatorios = []
+                            reservados_list = []
                             for x in disp:
-                                reservados_aleatorios.append(
+                                reservados_list.append(
                                     NumeroRifaReservadosOrdenes(
                                         idRifa=rifa, Numero=x.Numero, date=country_time, idOrden=orden))
                                 numeros_reservados.append(x.Numero)
                             
-                            if reservados_aleatorios:
-                                NumeroRifaReservadosOrdenes.objects.bulk_create(reservados_aleatorios)
+                            if reservados_list:
+                                NumeroRifaReservadosOrdenes.objects.bulk_create(reservados_list)
                                 NumeroRifaDisponibles.objects.filter(
                                     idRifa=rifa, Numero__in=numeros_aleatorios).delete()
-                    else:
-                        # Reservar números aleatorios
-                        disp = NumeroRifaDisponibles.objects.filter(
-                            idRifa=rifa).order_by('?')[:cantidad]
-                        numeros_aleatorios = [x.Numero for x in disp]
-                        reservados_list = []
-                        for x in disp:
-                            reservados_list.append(
-                                NumeroRifaReservadosOrdenes(
-                                    idRifa=rifa, Numero=x.Numero, date=country_time, idOrden=orden))
-                            numeros_reservados.append(x.Numero)
                         
-                        if reservados_list:
-                            NumeroRifaReservadosOrdenes.objects.bulk_create(reservados_list)
-                            NumeroRifaDisponibles.objects.filter(
-                                idRifa=rifa, Numero__in=numeros_aleatorios).delete()
+                        # Actualizar la descripción de la orden con los números reservados
+                        orden.description = f"Compra de Numeros de rifa Fecha: {datetime.now()} Rifa: {rifa.Nombre} Numeros: {numeros_reservados} Total: {total} aleautos1"
+                        orden.save()
+                        
+                        # Obtener o crear comprador
+                        comprador_existente = Comprador.objects.filter(idCliente=cliente).first()
+                        if comprador_existente:
+                            comprador = comprador_existente
+                            comprador.Nombre = nombre
+                            comprador.Correo = correo
+                            comprador.NumeroTlf = telefono
+                            comprador.Cedula = cedula
+                            comprador.save()
+                        else:
+                            comprador = Comprador()
+                            comprador.Nombre = nombre
+                            comprador.Correo = correo
+                            comprador.NumeroTlf = telefono
+                            comprador.Cedula = cedula
+                            comprador.idCliente = cliente
+                            comprador.save()
+                        
+                        # Crear compra con estado Pendiente y método PagoMovil
+                        compra = Compra()
+                        compra.idComprador = comprador
+                        compra.idRifa = rifa
+                        compra.TasaBS = Tasas.objects.latest('id').tasa if Tasas.objects.exists() else None
+                        compra.MetodoPago = Compra.MetodoPagoOpciones.PagoMovil
+                        compra.Estado = Compra.EstadoCompra.Pendiente
+                        compra.NumeroBoletos = cantidad
+                        compra.TotalPagado = total
+                        compra.TotalPagadoAlt = totalAlt
+                        compra.FechaCompra = country_time
+                        compra.FechaEstado = country_time
+                        compra.author = request.user
+                        compra.save()
+                        
+                        # Crear números de compra
+                        for num in numeros_reservados:
+                            NumerosCompra.objects.create(
+                                idCompra=compra,
+                                Numero=num
+                            )
+                        
+                        serialized_orden = serializers.serialize('json', [orden,])
+                        serialized_compra = serializers.serialize('json', [compra,])
+                        
+                        return JsonResponse({
+                            "message": "Orden creada exitosamente",
+                            "status": 200,
+                            "orden": serialized_orden,
+                            "compra": serialized_compra,
+                            "numeros": numeros_reservados,
+                            "monto": float(total)
+                        }, status=200)
+                        
+                except Exception as ex:
+                    logger.error(f"Error en createOrderPagoMovilR4: {str(ex)}")
+                    import traceback
+                    logger.error(traceback.format_exc())
+                    return JsonResponse({"message": "Error al procesar la solicitud", "status": 500}, status=500)
                     
-                    # Actualizar la descripción de la orden con los números reservados
-                    orden.description = f"Compra de Numeros de rifa Fecha: {datetime.now()} Rifa: {rifa.Nombre} Numeros: {numeros_reservados} Total: {total} aleautos1"
-                    orden.save()
-                    
-                    # Obtener o crear comprador
-                    comprador_existente = Comprador.objects.filter(idCliente=cliente).first()
-                    if comprador_existente:
-                        comprador = comprador_existente
-                        comprador.Nombre = nombre
-                        comprador.Correo = correo
-                        comprador.NumeroTlf = telefono
-                        comprador.Cedula = cedula
-                        comprador.save()
-                    else:
-                        comprador = Comprador()
-                        comprador.Nombre = nombre
-                        comprador.Correo = correo
-                        comprador.NumeroTlf = telefono
-                        comprador.Cedula = cedula
-                        comprador.idCliente = cliente
-                        comprador.save()
-                    
-                    # Crear compra con estado Pendiente y método PagoMovil
-                    compra = Compra()
-                    compra.idComprador = comprador
-                    compra.idRifa = rifa
-                    compra.TasaBS = Tasas.objects.latest('id').tasa if Tasas.objects.exists() else None
-                    compra.MetodoPago = Compra.MetodoPagoOpciones.PagoMovil
-                    compra.Estado = Compra.EstadoCompra.Pendiente
-                    compra.NumeroBoletos = cantidad
-                    compra.TotalPagado = total
-                    compra.TotalPagadoAlt = totalAlt
-                    compra.FechaCompra = country_time
-                    compra.FechaEstado = country_time
-                    compra.author = request.user
-                    compra.save()
-                    
-                    # Crear números de compra
-                    for num in numeros_reservados:
-                        NumerosCompra.objects.create(
-                            idCompra=compra,
-                            Numero=num
-                        )
-                    
-                    serialized_orden = serializers.serialize('json', [orden,])
-                    serialized_compra = serializers.serialize('json', [compra,])
-                    
-                    return JsonResponse({
-                        "message": "Orden creada exitosamente",
-                        "status": 200,
-                        "orden": serialized_orden,
-                        "compra": serialized_compra,
-                        "numeros": numeros_reservados,
-                        "monto": float(total)
-                    }, status=200)
-                    
-            except Exception as ex:
-                logger.error(f"Error en createOrderPagoMovilR4: {str(ex)}")
-                import traceback
-                logger.error(traceback.format_exc())
-                return JsonResponse({"message": "Error al procesar la solicitud", "status": 500}, status=500)
-                
-        except json.JSONDecodeError:
-            return JsonResponse({"message": "JSON inválido", "status": 400}, status=400)
-        except Exception as e:
-            logger.error(f"Error en createOrderPagoMovilR4: {str(e)}")
-            # CRÍTICO: Cerrar conexiones en caso de error
-            try:
-                from django.db import connections
-                for alias in connections:
-                    try:
-                        connections[alias].close()
-                    except:
-                        pass
-            except:
-                pass
-            return JsonResponse({"message": "Error en el servidor", "status": 500}, status=500)
-    
-    return JsonResponse({"message": "Método no permitido", "status": 405}, status=405)
+            except json.JSONDecodeError:
+                return JsonResponse({"message": "JSON inválido", "status": 400}, status=400)
+            except Exception as e:
+                logger.error(f"Error en createOrderPagoMovilR4: {str(e)}")
+                # CRÍTICO: Cerrar conexiones en caso de error
+                try:
+                    from django.db import connections
+                    for alias in connections:
+                        try:
+                            connections[alias].close()
+                        except:
+                            pass
+                except:
+                    pass
+                return JsonResponse({"message": "Error en el servidor", "status": 500}, status=500)
+        else:
+            return JsonResponse({"message": "Método no permitido", "status": 405}, status=405)
+    except Exception as e:
+        logger.error(f"Error en createOrderPagoMovilR4: {str(e)}")
+        # CRÍTICO: Cerrar conexiones en caso de error
+        try:
+            from django.db import connections
+            for alias in connections:
+                try:
+                    connections[alias].close()
+                except:
+                    pass
+        except:
+            pass
+        return JsonResponse({"message": "Error interno del servidor", "status": 500}, status=500)
 
 
 @login_required(login_url="/inicia-sesion/")
