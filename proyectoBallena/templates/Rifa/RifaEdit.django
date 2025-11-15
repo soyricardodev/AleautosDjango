@@ -221,21 +221,21 @@
 					<div id="default-preview"
 					class="flex-col items-center justify-center gap-5 hidden">
 						<img src="{% static 'img/img_container.png' %}" alt="" class="border border-dashed border-color-primary radius-rounded w-[150px] h-[150px]">
-						<span class="body-medium-regular text-color-secondary text-center">Establece la imagen de principal para la rifa (solo PNG, JPG o JPEG).</span>
+						<span class="body-medium-regular text-color-secondary text-center">Establece la imagen de principal para la rifa (PNG, JPG, JPEG o GIF).</span>
 						{% if form.Banner.errors %}
 							<span class="pl-4 label-small-regular text-color-error">
 								{{ form.Banner.errors }}
 							</span>
 						{% endif %}
 					</div>
-					<input id="dropzone-file" onchange="loadFile(event)" type="file" accept="image/*"
+					<input id="dropzone-file" onchange="loadFile(event)" type="file" accept="image/png,image/jpeg,image/jpg,image/gif"
 						class="hidden" name="Banner" />
 					{% else %}
 						<img id="preview" class="hidden w-full h-full border border-dashed border-color-primary radius-rounded object-cover object-center">
 						<div id="default-preview"
 						class="flex flex-col items-center justify-center gap-5">
 							<img src="{% static 'img/img_container.png' %}" alt="" class="border border-dashed border-color-primary radius-rounded w-[150px] h-[150px]">
-							<span class="body-medium-regular text-color-secondary text-center">Establece la imagen de principal para la rifa (solo PNG, JPG o JPEG).</span>
+							<span class="body-medium-regular text-color-secondary text-center">Establece la imagen de principal para la rifa (PNG, JPG, JPEG o GIF).</span>
 							{% if form.Banner.errors %}
 								<span class="pl-4 label-small-regular text-color-error">
 									{{ form.Banner.errors }}
@@ -523,7 +523,7 @@
 					</div>
 				</div>
 
-				<input id="premioImagen[${contador}]" name="PremioImagen[]" class="hidden" type="file" onchange="loadPremio(event, '${contador}')">
+				<input id="premioImagen[${contador}]" name="PremioImagen[]" class="hidden" type="file" accept="image/png,image/jpeg,image/jpg,image/gif" onchange="loadPremio(event, '${contador}')">
 			</div>`
 		contenedorPremiosInputs.appendChild(contenedorPremio)
 		console.log(premios)
