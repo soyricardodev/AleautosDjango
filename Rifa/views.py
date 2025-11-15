@@ -234,7 +234,7 @@ def registro_cliente(request):
                     user = User.objects.create_user(
                         username=form.cleaned_data['correo'],  # Usar correo como username
                         email=form.cleaned_data['correo'],
-                        password=form.cleaned_data['password1'],
+                        password=form.cleaned_data['password'],
                         first_name=form.cleaned_data['nombre'].split()[0] if form.cleaned_data['nombre'].split() else '',
                         last_name=' '.join(form.cleaned_data['nombre'].split()[1:]) if len(form.cleaned_data['nombre'].split()) > 1 else ''
                     )
@@ -243,8 +243,7 @@ def registro_cliente(request):
                     cliente = Cliente.objects.create(
                         user=user,
                         cedula=form.cleaned_data['cedula'],
-                        telefono=form.cleaned_data['telefono'],
-                        direccion=form.cleaned_data.get('direccion', '')
+                        telefono=form.cleaned_data['telefono']
                     )
                     
                     # Auto-login

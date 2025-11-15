@@ -103,39 +103,44 @@ class RegistroClienteForm(forms.Form):
         max_length=150,
         required=True,
         label='Nombre completo',
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ingresa tu nombre completo'})
+        widget=forms.TextInput(attrs={
+            'class': 'input w-full text-color-primary',
+            'placeholder': 'Ingresa tu nombre completo'
+        })
     )
     cedula = forms.CharField(
         max_length=20,
         required=True,
         label='Cédula',
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ingresa tu cédula'})
+        widget=forms.TextInput(attrs={
+            'class': 'input w-full text-color-primary',
+            'placeholder': 'Ingresa tu cédula'
+        })
     )
     correo = forms.EmailField(
         required=True,
         label='Correo electrónico',
-        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'correo@ejemplo.com'})
+        widget=forms.EmailInput(attrs={
+            'class': 'input w-full text-color-primary',
+            'placeholder': 'correo@ejemplo.com'
+        })
     )
     telefono = forms.CharField(
         max_length=15,
         required=True,
         label='Teléfono',
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '0412-1234567'})
+        widget=forms.TextInput(attrs={
+            'class': 'input w-full text-color-primary',
+            'placeholder': '0412-1234567'
+        })
     )
-    direccion = forms.CharField(
-        required=False,
-        label='Dirección (opcional)',
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Tu dirección'})
-    )
-    password1 = forms.CharField(
+    password = forms.CharField(
         required=True,
         label='Contraseña',
-        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Mínimo 8 caracteres'})
-    )
-    password2 = forms.CharField(
-        required=True,
-        label='Confirmar contraseña',
-        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Repite tu contraseña'})
+        widget=forms.PasswordInput(attrs={
+            'class': 'input w-full text-color-primary',
+            'placeholder': 'Mínimo 8 caracteres'
+        })
     )
 
     def clean_cedula(self):
@@ -150,24 +155,27 @@ class RegistroClienteForm(forms.Form):
             raise forms.ValidationError('Este correo electrónico ya está registrado.')
         return correo
 
-    def clean_password2(self):
-        password1 = self.cleaned_data.get('password1')
-        password2 = self.cleaned_data.get('password2')
-        if password1 and password2 and password1 != password2:
-            raise forms.ValidationError('Las contraseñas no coinciden.')
-        if password1 and len(password1) < 8:
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        if password and len(password) < 8:
             raise forms.ValidationError('La contraseña debe tener al menos 8 caracteres.')
-        return password2
+        return password
 
 
 class LoginClienteForm(forms.Form):
     usuario = forms.CharField(
         required=True,
         label='Cédula o Correo',
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Cédula o correo electrónico'})
+        widget=forms.TextInput(attrs={
+            'class': 'input w-full text-color-primary',
+            'placeholder': 'Cédula o correo electrónico'
+        })
     )
     password = forms.CharField(
         required=True,
         label='Contraseña',
-        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Tu contraseña'})
+        widget=forms.PasswordInput(attrs={
+            'class': 'input w-full text-color-primary',
+            'placeholder': 'Tu contraseña'
+        })
     )
