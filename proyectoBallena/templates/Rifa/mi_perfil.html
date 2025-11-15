@@ -39,19 +39,18 @@
 
 <body>
   <div class="antialiased flex flex-col min-h-screen bg-[var(--color-surface-dim)]">
-    <header class="px-4 lg:px-0 py-4">
+    <header class="px-4 lg:px-0 py-4" style="padding-left: 16px; padding-right: 16px;">
       <div class="max-w-[1128px] mx-auto flex justify-between items-center">
         <a href="{% url 'index' %}">
           <img id="logoNormal" src="{% static 'img/logo-login-alt.png' %}" alt="Logo"
-            class="hidden w-[138px] h-8" />
-          <img id="logoNegativo" src="{% static 'img/logo-login.png' %}" alt="Logo" class="w-[138px] h-8" />
+            class="w-[138px] h-8" />
         </a>
         <div class="flex gap-3 items-center">
           <a href="{% url 'index' %}" class="button-outline button-small lg:button-medium">
             <span class="hidden lg:inline">Volver al inicio</span>
             <span class="lg:hidden">Inicio</span>
           </a>
-          <a href="{% url 'cerrar_sesion_cliente' %}" class="button-outline button-small lg:button-medium">
+          <a href="{% url 'cerrar_sesion_cliente' %}" class="button-outline button-small lg:button-medium hidden">
             <span class="hidden lg:inline">Cerrar sesión</span>
             <span class="lg:hidden">Salir</span>
           </a>
