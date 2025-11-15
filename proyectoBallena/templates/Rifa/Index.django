@@ -290,13 +290,13 @@
     }
     /* Ocultar sección del contador de cuenta regresiva */
     #regresive-count {
-      display: none !important;
+      /*display: none !important;*/
     }
     /* Ocultar el div que contiene el contador y el texto "Aún tienes oportunidad de ganar" */
     /* Compatible con navegadores modernos que soportan :has() */
     @supports selector(:has(*)) {
       div:has(#regresive-count) {
-        display: none !important;
+        /*display: none !important;*/
       }
     }
   </style>
