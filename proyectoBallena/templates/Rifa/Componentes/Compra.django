@@ -115,6 +115,11 @@
 <!--Modal Compra-->
 <dialog id="Compra" class="w-screen h-[100dvh] m-0 md:m-auto max-h-screen max-w-full md:max-w-[560px] md:h-auto md:max-h-[750px] bg-[var(--color-container-neutral-bright)] md:radius-rounded text-color-primary">
   <section id="paginaSeleccionaBoletos" class="flex flex-col p-4 md:p-10 gap-6 md:gap-8 h-full">
+    <!-- OPTIMIZACIÓN: Indicador de carga mientras se valida disponibilidad -->
+    <div id="loadingValidacion" class="hidden flex flex-col items-center justify-center gap-4 py-8">
+      <i class="fa-solid fa-spinner fa-spin text-4xl text-[var(--color-icon-brand)]"></i>
+      <p class="body-medium-regular text-color-secondary">Validando disponibilidad...</p>
+    </div>
     <div class="border-b border-color-primary pb-6 gap-4 flex flex-row">
       <img src="{{RifaC.Banner.url}}" alt="Rifa" class="w-[72px] h-[72px] rounded-xl object-cover">
       <div class="flex flex-col gap-1">
@@ -153,6 +158,11 @@
     </div>
   </section>
   <section id="paginaEligeBoletos" class="flex flex-col p-4 md:p-10 gap-6 md:gap-8 h-full">
+    <!-- OPTIMIZACIÓN: Indicador de carga mientras se valida disponibilidad -->
+    <div id="loadingValidacionSelect" class="hidden flex flex-col items-center justify-center gap-4 py-8">
+      <i class="fa-solid fa-spinner fa-spin text-4xl text-[var(--color-icon-brand)]"></i>
+      <p class="body-medium-regular text-color-secondary">Validando disponibilidad...</p>
+    </div>
     <div class="flex flex-row justify-start gap-8 items-center md:items-start">
       <h3 class="heading-small-medium text-color-primary grow text-center">Selecciona los boletos</h3>
     </div>
@@ -1087,6 +1097,12 @@
   let zeroFill = RangoFinal.toString().length
   let availableNumbers = []
   let selectedNumbers = []
+  // OPTIMIZACIÓN: Cache para validación precargada
+  let preloadedValidation = {
+    isValid: false,
+    isPreloading: false,
+    cachedTicketCount: null
+  }
   let bankList = [
   {% for item in bancos %}
   { "{{item.code}}": "{{item.name}}" },
@@ -1488,7 +1504,12 @@ function onChange(e) {
     });
   }
 
-  async function checkNumbers() {
+  async function checkNumbers(useCache = false) {
+    // OPTIMIZACIÓN: Usar cache si está disponible y el ticketCount coincide
+    if (useCache && preloadedValidation.isValid && preloadedValidation.cachedTicketCount === ticketCount) {
+      return true
+    }
+    
     const url = `{% url 'ConsultaListaV3' %}`
     data.Numbers = ticketCount
 
@@ -1512,6 +1533,13 @@ function onChange(e) {
             data.data,
             'warning')
           returnValue = false
+          // Actualizar cache
+          preloadedValidation.isValid = false
+          preloadedValidation.cachedTicketCount = null
+        } else {
+          // Actualizar cache si la validación fue exitosa
+          preloadedValidation.isValid = true
+          preloadedValidation.cachedTicketCount = ticketCount
         }
       })
       .catch(error => {
@@ -1522,8 +1550,31 @@ function onChange(e) {
           "Ocurrio un error durante la consulta, intente nuevamente",
           'error')
         returnValue = false
+        // Actualizar cache
+        preloadedValidation.isValid = false
+        preloadedValidation.cachedTicketCount = null
       });
     return returnValue
+  }
+  
+  // OPTIMIZACIÓN: Precargar validación con valor mínimo cuando se carga la página
+  async function preloadValidation() {
+    if (preloadedValidation.isPreloading) return
+    
+    preloadedValidation.isPreloading = true
+    const originalTicketCount = ticketCount
+    
+    // Validar con el valor mínimo por defecto
+    ticketCount = RifaMin
+    try {
+      await checkNumbers(false)
+      console.log('Validación precargada exitosa para', ticketCount, 'tickets')
+    } catch (error) {
+      console.log('Error en precarga de validación:', error)
+    } finally {
+      ticketCount = originalTicketCount
+      preloadedValidation.isPreloading = false
+    }
   }
   async function checkNumber(num) {
     const url = `{% url 'ConsultaNumero' %}`
@@ -1627,7 +1678,7 @@ function onChange(e) {
       });
     return returnValue
   }
-  const getTicketNumbers = async ()=>{
+  const getTicketNumbers = async (usePreloaded = false)=>{
     if(aleatorio){
       ticketCount = +inputNumbers.value
     }else{
@@ -1635,24 +1686,25 @@ function onChange(e) {
     }
     if (ticketCount > totalDispobiles) {
       showToast(`No hay suficientes tickets disponibles para tu compra, puedes comprar un máximo de ${totalDispobiles} tickets`)
-      return
+      throw new Error('Cantidad excede disponibilidad')
     }
     if (ticketCount < RifaMin) {
       showToast(`La cantidad mínima es de ${RifaMin} ticket(s)`)
       inputNumbers.classList.add("NumeroError")
-      return
+      throw new Error('Cantidad menor al mínimo')
     }
     if (ticketCount > RifaMax) {
       showToast(`La cantidad máxima es de ${RifaMax} ticket(s)`)
       inputNumbers.classList.add("NumeroError")
-      return
+      throw new Error('Cantidad mayor al máximo')
     }
-    setLoading()
-    let valor = await checkNumbers()
-    stopLoading()
+    
+    // OPTIMIZACIÓN: Usar validación precargada si está disponible y el ticketCount coincide
+    let valor = await checkNumbers(usePreloaded && preloadedValidation.cachedTicketCount === ticketCount)
 
-    if (valor == false)
-      return
+    if (valor == false) {
+      throw new Error('Validación fallida')
+    }
     document.getElementById("ticketsSeleccionados").innerText = ticketCount
     document.getElementById("totalPagar").innerText = ticketCount * RifaPrecio
     {% comment %} document.getElementById("MontoEki").innerText = ` (${ticketCount * RifaPrecio} $)` {% endcomment %}
@@ -1704,12 +1756,50 @@ function onChange(e) {
     document.getElementById("paginaSeleccionaBoletos").classList.add('flex')
     document.getElementById("paginaEligeBoletos").classList.remove('flex')
     document.getElementById("paginaEligeBoletos").classList.add('hidden')
-    await getTicketNumbers()
-    resetModal()
-    checkZelleVisibility()
     
+    // OPTIMIZACIÓN: Pre-llenar input con valor mínimo si está vacío
+    if (!inputNumbers.value || inputNumbers.value < RifaMin) {
+      inputNumbers.value = RifaMin
+      ticketCount = RifaMin
+    }
+    
+    // OPTIMIZACIÓN: Abrir diálogo inmediatamente para feedback visual
     const dialog = document.getElementById("Compra")
     dialog.showModal()
+    
+    // OPTIMIZACIÓN: Si la validación está precargada y el ticketCount coincide, usar cache
+    const canUsePreloaded = preloadedValidation.isValid && 
+                           preloadedValidation.cachedTicketCount === ticketCount &&
+                           !preloadedValidation.isPreloading
+    
+    if (!canUsePreloaded) {
+      // Mostrar estado de carga dentro del diálogo
+      const loadingIndicator = document.getElementById("loadingValidacionAleatorio")
+      if (loadingIndicator) {
+        loadingIndicator.classList.remove('hidden')
+      }
+    }
+    
+    // Validar en segundo plano después de abrir el diálogo
+    try {
+      await getTicketNumbers(canUsePreloaded)
+      resetModal()
+      checkZelleVisibility()
+    } catch (error) {
+      console.error('Error validando tickets:', error)
+      dialog.close()
+      Swal.fire({
+        title: 'Error',
+        text: 'Ocurrió un error al validar la disponibilidad. Por favor intenta de nuevo.',
+        icon: 'error'
+      })
+    } finally {
+      // Ocultar indicador de carga
+      const loadingIndicator = document.getElementById("loadingValidacionAleatorio")
+      if (loadingIndicator) {
+        loadingIndicator.classList.add('hidden')
+      }
+    }
   }
   const showDialogSelect = async function () {
     aleatorio = false
@@ -1717,12 +1807,36 @@ function onChange(e) {
     document.getElementById("paginaSeleccionaBoletos").classList.add('hidden')
     document.getElementById("paginaEligeBoletos").classList.remove('hidden')
     document.getElementById("paginaEligeBoletos").classList.add('flex')
-    await getTicketNumbers()
-    resetModal()
-    checkZelleVisibility()
     
+    // OPTIMIZACIÓN: Abrir diálogo inmediatamente para feedback visual
     const dialog = document.getElementById("Compra")
     dialog.showModal()
+    
+    // Mostrar estado de carga dentro del diálogo
+    const loadingIndicator = document.getElementById("loadingValidacionSelect")
+    if (loadingIndicator) {
+      loadingIndicator.classList.remove('hidden')
+    }
+    
+    // Validar en segundo plano después de abrir el diálogo
+    try {
+      await getTicketNumbers()
+      resetModal()
+      checkZelleVisibility()
+    } catch (error) {
+      console.error('Error validando tickets:', error)
+      dialog.close()
+      Swal.fire({
+        title: 'Error',
+        text: 'Ocurrió un error al validar la disponibilidad. Por favor intenta de nuevo.',
+        icon: 'error'
+      })
+    } finally {
+      // Ocultar indicador de carga
+      if (loadingIndicator) {
+        loadingIndicator.classList.add('hidden')
+      }
+    }
   }
 
   const checkMinCompra = () => {
@@ -2565,8 +2679,59 @@ function onChange(e) {
     // Pre-llenar datos del cliente
     prellenarDatosCliente();
 
-    btComp?.addEventListener("click", showDialog)
-    btCompAlt?.addEventListener("click", showDialog)
+    // OPTIMIZACIÓN: Agregar feedback visual en botones al hacer clic
+    btComp?.addEventListener("click", async function() {
+      // Deshabilitar botón y mostrar spinner
+      if (btComp) {
+        const originalHTML = btComp.innerHTML
+        btComp.disabled = true
+        btComp.style.opacity = '0.6'
+        btComp.style.pointerEvents = 'none'
+        btComp.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i><span>Cargando...</span>'
+        
+        try {
+          await showDialog()
+        } finally {
+          // Restaurar botón después de un breve delay para permitir que el diálogo se abra
+          setTimeout(() => {
+            if (btComp) {
+              btComp.disabled = false
+              btComp.style.opacity = '1'
+              btComp.style.pointerEvents = 'auto'
+              btComp.innerHTML = originalHTML
+            }
+          }, 300)
+        }
+      } else {
+        await showDialog()
+      }
+    })
+    btCompAlt?.addEventListener("click", async function() {
+      // Deshabilitar botón y mostrar spinner
+      if (btCompAlt) {
+        const originalHTML = btCompAlt.innerHTML
+        btCompAlt.disabled = true
+        btCompAlt.style.opacity = '0.6'
+        btCompAlt.style.pointerEvents = 'none'
+        btCompAlt.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i><span>Cargando...</span>'
+        
+        try {
+          await showDialog()
+        } finally {
+          // Restaurar botón después de un breve delay para permitir que el diálogo se abra
+          setTimeout(() => {
+            if (btCompAlt) {
+              btCompAlt.disabled = false
+              btCompAlt.style.opacity = '1'
+              btCompAlt.style.pointerEvents = 'auto'
+              btCompAlt.innerHTML = originalHTML
+            }
+          }, 300)
+        }
+      } else {
+        await showDialog()
+      }
+    })
     btCompSelect?.addEventListener("click", showVerificador)
     btCompSelectAlt?.addEventListener("click", showVerificador)
     btFinalizar.addEventListener("click", finalizar)
@@ -2669,7 +2834,15 @@ function onChange(e) {
 
 
 
+    // OPTIMIZACIÓN: Pre-llenar input con valor mínimo y precargar validación
     inputNumbers.value = RifaMin
+    ticketCount = RifaMin
+    
+    // Precargar validación en background cuando se carga la página
+    // Esto permite que el diálogo se abra instantáneamente
+    setTimeout(() => {
+      preloadValidation()
+    }, 500) // Esperar 500ms para no bloquear la carga inicial
 
     closeModalButtons.forEach((elem)=>{
       elem.addEventListener("click", function() {

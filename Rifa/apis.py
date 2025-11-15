@@ -710,8 +710,19 @@ def ConsultaRifabyDisponiplesListaV3(request):
     rifa = data["Rifa"]
     if nums is None or rifa is None:
         return HttpResponse(status=400)
-    rifaC = RifaModel.objects.get(Id=rifa)
-    # si numero esta en el minimo maximo, y disponibles
+
+    # OPTIMIZACIÓN: Obtener la rifa UNA sola vez
+    try:
+        rifaC = RifaModel.objects.get(Id=rifa)
+    except RifaModel.DoesNotExist:
+        return JsonResponse(
+            {
+                "result": False,
+                "data": "La rifa no existe",
+            }
+        )
+
+    # Validar min/max compra
     if nums > rifaC.MaxCompra:
         return JsonResponse(
             {
@@ -726,7 +737,11 @@ def ConsultaRifabyDisponiplesListaV3(request):
                 "data": "El numero de numeros a comprar es menor rango permitido",
             }
         )
-    if nums > NumeroRifaDisponibles.objects.filter(idRifa=rifa).count():
+
+    # OPTIMIZACIÓN: Calcular count() UNA sola vez y reutilizar
+    disponibles_count = NumeroRifaDisponibles.objects.filter(idRifa=rifa).count()
+
+    if nums > disponibles_count:
         return JsonResponse(
             {
                 "result": False,
@@ -734,9 +749,7 @@ def ConsultaRifabyDisponiplesListaV3(request):
             }
         )
 
-    consultaNum = NumeroRifaDisponibles.objects.filter(idRifa=rifa)
-    rifaC = RifaModel.objects.get(Id=rifa)
-
+    # Validar total comprados vs total números
     if (
         rifaC.TotalComprados + nums > rifaC.TotalNumeros
         or rifaC.TotalComprados == rifaC.TotalNumeros
@@ -748,7 +761,8 @@ def ConsultaRifabyDisponiplesListaV3(request):
             }
         )
 
-    if consultaNum.count() == 0 or consultaNum.count() < nums:
+    # Validar que hay suficientes disponibles (usando el count ya calculado)
+    if disponibles_count == 0 or disponibles_count < nums:
         return JsonResponse(
             {
                 "result": False,
