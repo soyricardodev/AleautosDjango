@@ -29,157 +29,170 @@
       } else {
         document.documentElement.classList.remove('dark');
         document?.getElementById('logoNormal')?.classList.add('hidden');
-        document?.getElementById('logoNegativo')?.classList.add('hidden');
+        document?.getElementById('logoNegativo')?.classList.remove('hidden');
       }
     }
     initTheme();
   </script>
-  <script src="{% static 'fontawesomefree/js/all.js' %}" defer></script>
+  <script src="{% static 'fontawesomefree/js/all.min.js' %}" defer></script>
 </head>
 
 <body>
   <div class="antialiased flex flex-col min-h-screen bg-[var(--color-surface-dim)]">
-    <header class="px-5 lg:px-0 py-4">
+    <header class="px-4 lg:px-0 py-4">
       <div class="max-w-[1128px] mx-auto flex justify-between items-center">
         <a href="{% url 'index' %}">
           <img id="logoNormal" src="{% static 'img/logo-login-alt.png' %}" alt="Logo"
             class="hidden w-[138px] h-8" />
           <img id="logoNegativo" src="{% static 'img/logo-login.png' %}" alt="Logo" class="w-[138px] h-8" />
         </a>
-        <div class="flex gap-4 items-center">
-          <a href="{% url 'index' %}" class="button-outline button-medium">
-            <span>Volver al inicio</span>
+        <div class="flex gap-3 items-center">
+          <a href="{% url 'index' %}" class="button-outline button-small lg:button-medium">
+            <span class="hidden lg:inline">Volver al inicio</span>
+            <span class="lg:hidden">Inicio</span>
           </a>
-          <a href="{% url 'cerrar_sesion_cliente' %}" class="button-outline button-medium">
-            <span>Cerrar sesión</span>
+          <a href="{% url 'cerrar_sesion_cliente' %}" class="button-outline button-small lg:button-medium">
+            <span class="hidden lg:inline">Cerrar sesión</span>
+            <span class="lg:hidden">Salir</span>
           </a>
         </div>
       </div>
     </header>
 
-    <main class="max-w-[1128px] mx-auto px-5 lg:px-0 py-8 lg:py-16 grow">
-      <div class="flex flex-col gap-8">
-        <!-- Información del cliente -->
-        <section class="bg-[var(--color-container-neutral-bright)] rounded-lg p-6 lg:p-8">
-          <h1 class="heading-large-extrabold text-color-primary mb-6">Mi Perfil</h1>
-          <div class="grid gap-4">
-            <div>
-              <label class="label-medium-medium text-color-secondary">Nombre completo</label>
-              <p class="body-medium-regular text-color-primary">{{ cliente.user.get_full_name|default:cliente.user.username }}</p>
-            </div>
-            <div>
-              <label class="label-medium-medium text-color-secondary">Cédula</label>
-              <p class="body-medium-regular text-color-primary">{{ cliente.cedula }}</p>
-            </div>
-            <div>
-              <label class="label-medium-medium text-color-secondary">Correo electrónico</label>
-              <p class="body-medium-regular text-color-primary">{{ cliente.user.email }}</p>
-            </div>
-            {% if cliente.telefono %}
-            <div>
-              <label class="label-medium-medium text-color-secondary">Teléfono</label>
-              <p class="body-medium-regular text-color-primary">{{ cliente.telefono }}</p>
-            </div>
-            {% endif %}
-          </div>
-        </section>
+    <main class="flex items-center justify-center grow px-4 py-6 lg:py-12">
+      <div class="w-full max-w-[800px]">
+        <div class="bg-[var(--color-container-neutral-bright)] rounded-lg shadow-lg p-6 lg:p-10">
+          <!-- Título -->
+          <h1 class="heading-large-extrabold text-color-primary text-center mb-2">Mi Perfil</h1>
+          <p class="body-small-regular text-color-secondary text-center mb-8">
+            Gestiona tu información y revisa tus boletos
+          </p>
 
-        <!-- Rifa activa -->
-        {% if rifa_activa %}
-        <section class="bg-[var(--color-container-neutral-bright)] rounded-lg p-6 lg:p-8">
-          <div class="flex flex-col lg:flex-row gap-6 items-start">
-            {% if rifa_activa.Banner %}
-            <div class="w-full lg:w-[300px] flex-shrink-0">
-              <img src="{{ rifa_activa.Banner.url }}" alt="{{ rifa_activa.Nombre }}" 
-                class="w-full h-[200px] lg:h-[250px] object-cover rounded-lg" />
-            </div>
-            {% endif %}
-            <div class="flex-1">
-              <h2 class="heading-medium-extrabold text-color-primary mb-2">{{ rifa_activa.Nombre }}</h2>
-              <p class="body-small-regular text-color-secondary mb-4">
-                {% if rifa_activa.FechaSorteo %}
-                  Sorteo: {{ rifa_activa.FechaSorteo|date:"d/m/Y" }}
+          <div class="flex flex-col gap-6 lg:gap-8">
+            <!-- Información del cliente -->
+            <section class="border border-[var(--color-border-primary)] rounded-lg p-5 lg:p-6">
+              <h2 class="heading-medium-extrabold text-color-primary mb-5">Información Personal</h2>
+              <div class="grid gap-4 lg:gap-5">
+                <div class="flex flex-col gap-2">
+                  <label class="label-medium-medium text-color-secondary">Nombre completo</label>
+                  <p class="body-medium-regular text-color-primary">{{ cliente.user.get_full_name|default:cliente.user.username }}</p>
+                </div>
+                <div class="flex flex-col gap-2">
+                  <label class="label-medium-medium text-color-secondary">Cédula</label>
+                  <p class="body-medium-regular text-color-primary">{{ cliente.cedula }}</p>
+                </div>
+                <div class="flex flex-col gap-2">
+                  <label class="label-medium-medium text-color-secondary">Correo electrónico</label>
+                  <p class="body-medium-regular text-color-primary">{{ cliente.user.email }}</p>
+                </div>
+                {% if cliente.telefono %}
+                <div class="flex flex-col gap-2">
+                  <label class="label-medium-medium text-color-secondary">Teléfono</label>
+                  <p class="body-medium-regular text-color-primary">{{ cliente.telefono }}</p>
+                </div>
                 {% endif %}
+              </div>
+            </section>
+
+            <!-- Rifa activa -->
+            {% if rifa_activa %}
+            <section class="border border-[var(--color-border-primary)] rounded-lg p-5 lg:p-6">
+              <h2 class="heading-medium-extrabold text-color-primary mb-5">Rifa Activa</h2>
+              <div class="flex flex-col lg:flex-row gap-5 lg:gap-6 items-start">
+                {% if rifa_activa.Banner %}
+                <div class="w-full lg:w-[280px] flex-shrink-0">
+                  <img src="{{ rifa_activa.Banner.url }}" alt="{{ rifa_activa.Nombre }}" 
+                    class="w-full h-[180px] lg:h-[220px] object-cover rounded-lg" />
+                </div>
+                {% endif %}
+                <div class="flex-1 w-full">
+                  <h3 class="heading-small-extrabold text-color-primary mb-2">{{ rifa_activa.Nombre }}</h3>
+                  {% if rifa_activa.FechaSorteo %}
+                  <p class="body-small-regular text-color-secondary mb-4">
+                    Sorteo: {{ rifa_activa.FechaSorteo|date:"d/m/Y" }}
+                  </p>
+                  {% endif %}
+                  <div class="flex flex-wrap gap-4 lg:gap-6">
+                    <div>
+                      <label class="label-small-regular text-color-secondary block mb-1">Total de números</label>
+                      <p class="body-medium-semibold text-color-primary">{{ total_numeros }}</p>
+                    </div>
+                    <div>
+                      <label class="label-small-regular text-color-secondary block mb-1">Compras realizadas</label>
+                      <p class="body-medium-semibold text-color-primary">{{ total_compras }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+            {% endif %}
+
+            <!-- Todos los números -->
+            {% if todos_los_numeros %}
+            <section class="border border-[var(--color-border-primary)] rounded-lg p-5 lg:p-6">
+              <h2 class="heading-medium-extrabold text-color-primary mb-3">Mis Números Ganadores</h2>
+              <p class="body-small-regular text-color-secondary mb-5">
+                Estos son todos los números que tienes para participar en el sorteo de esta rifa.
               </p>
-              <div class="flex flex-wrap gap-4">
-                <div>
-                  <label class="label-small-regular text-color-secondary">Total de números</label>
-                  <p class="body-medium-semibold text-color-primary">{{ total_numeros }}</p>
+              <div class="grid grid-cols-[repeat(auto-fill,minmax(55px,1fr))] gap-2 lg:gap-3 max-h-[400px] overflow-y-auto">
+                {% for numero in todos_los_numeros %}
+                <div class="flex justify-center items-center border border-[var(--color-border-brand)] p-2.5 lg:p-3 rounded-lg bg-[var(--color-components-suggestion-cards-container)]">
+                  <span class="label-small-semibold lg:label-medium-semibold text-color-brand">{{ numero }}</span>
                 </div>
-                <div>
-                  <label class="label-small-regular text-color-secondary">Compras realizadas</label>
-                  <p class="body-medium-semibold text-color-primary">{{ total_compras }}</p>
-                </div>
+                {% endfor %}
               </div>
-            </div>
-          </div>
-        </section>
-        {% endif %}
+            </section>
+            {% endif %}
 
-        <!-- Todos los números -->
-        {% if todos_los_numeros %}
-        <section class="bg-[var(--color-container-neutral-bright)] rounded-lg p-6 lg:p-8">
-          <h2 class="heading-medium-extrabold text-color-primary mb-4">Mis Números Ganadores</h2>
-          <p class="body-small-regular text-color-secondary mb-6">
-            Estos son todos los números que tienes para participar en el sorteo de esta rifa.
-          </p>
-          <div class="grid grid-cols-[repeat(auto-fill,minmax(60px,1fr))] gap-3">
-            {% for numero in todos_los_numeros %}
-            <div class="flex justify-center items-center border border-[var(--color-border-brand)] p-3 rounded-lg bg-[var(--color-components-suggestion-cards-container)]">
-              <span class="label-medium-semibold text-color-brand">{{ numero }}</span>
-            </div>
-            {% endfor %}
-          </div>
-        </section>
-        {% endif %}
-
-        <!-- Historial de compras -->
-        {% if compras_pagadas %}
-        <section class="bg-[var(--color-container-neutral-bright)] rounded-lg p-6 lg:p-8">
-          <h2 class="heading-medium-extrabold text-color-primary mb-4">Historial de Compras</h2>
-          <div class="flex flex-col gap-4">
-            {% for compra_info in compras_pagadas %}
-            <div class="border border-[var(--color-border-primary)] rounded-lg p-4">
-              <div class="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
-                <div class="flex-1">
-                  <div class="flex flex-wrap gap-4 mb-3">
-                    <div>
-                      <label class="label-small-regular text-color-secondary">Compra #{{ compra_info.compra.Id }}</label>
-                      <p class="body-small-semibold text-color-primary">{{ compra_info.fecha|date:"d/m/Y H:i" }}</p>
+            <!-- Historial de compras -->
+            {% if compras_pagadas %}
+            <section class="border border-[var(--color-border-primary)] rounded-lg p-5 lg:p-6">
+              <h2 class="heading-medium-extrabold text-color-primary mb-5">Historial de Compras</h2>
+              <div class="flex flex-col gap-4">
+                {% for compra_info in compras_pagadas %}
+                <div class="border border-[var(--color-border-primary)] rounded-lg p-4 lg:p-5 bg-[var(--color-surface-neutral-bright)]">
+                  <div class="flex flex-col gap-4">
+                    <div class="flex flex-wrap gap-4 lg:gap-6">
+                      <div>
+                        <label class="label-small-regular text-color-secondary block mb-1">Compra #{{ compra_info.compra.Id }}</label>
+                        <p class="body-small-semibold text-color-primary">{{ compra_info.fecha|date:"d/m/Y H:i" }}</p>
+                      </div>
+                      <div>
+                        <label class="label-small-regular text-color-secondary block mb-1">Monto</label>
+                        <p class="body-small-semibold text-color-primary">Bs. {{ compra_info.monto|floatformat:2 }}</p>
+                      </div>
+                      <div>
+                        <label class="label-small-regular text-color-secondary block mb-1">Boletos</label>
+                        <p class="body-small-semibold text-color-primary">{{ compra_info.cantidad }}</p>
+                      </div>
                     </div>
                     <div>
-                      <label class="label-small-regular text-color-secondary">Monto</label>
-                      <p class="body-small-semibold text-color-primary">Bs. {{ compra_info.monto|floatformat:2 }}</p>
-                    </div>
-                    <div>
-                      <label class="label-small-regular text-color-secondary">Boletos</label>
-                      <p class="body-small-semibold text-color-primary">{{ compra_info.cantidad }}</p>
+                      <label class="label-small-regular text-color-secondary block mb-2">Números comprados</label>
+                      <div class="grid grid-cols-[repeat(auto-fill,minmax(45px,1fr))] gap-2">
+                        {% for numero in compra_info.numeros %}
+                        <div class="flex justify-center items-center border border-[var(--color-border-brand)] p-2 rounded bg-[var(--color-components-suggestion-cards-container)]">
+                          <span class="label-small-semibold text-color-brand">{{ numero }}</span>
+                        </div>
+                        {% endfor %}
+                      </div>
                     </div>
                   </div>
-                  <div class="grid grid-cols-[repeat(auto-fill,minmax(50px,1fr))] gap-2">
-                    {% for numero in compra_info.numeros %}
-                    <div class="flex justify-center items-center border border-[var(--color-border-brand)] p-2 rounded bg-[var(--color-components-suggestion-cards-container)]">
-                      <span class="label-small-semibold text-color-brand">{{ numero }}</span>
-                    </div>
-                    {% endfor %}
-                  </div>
                 </div>
+                {% endfor %}
               </div>
-            </div>
-            {% endfor %}
+            </section>
+            {% else %}
+            <section class="border border-[var(--color-border-primary)] rounded-lg p-5 lg:p-6 text-center">
+              <p class="body-medium-regular text-color-secondary">
+                Aún no has realizado ninguna compra. <a href="{% url 'index' %}" class="text-color-brand hover:underline font-medium">¡Compra tus boletos ahora!</a>
+              </p>
+            </section>
+            {% endif %}
           </div>
-        </section>
-        {% else %}
-        <section class="bg-[var(--color-container-neutral-bright)] rounded-lg p-6 lg:p-8 text-center">
-          <p class="body-medium-regular text-color-secondary">
-            Aún no has realizado ninguna compra. <a href="{% url 'index' %}" class="text-color-brand underline">¡Compra tus boletos ahora!</a>
-          </p>
-        </section>
-        {% endif %}
+        </div>
       </div>
     </main>
   </div>
 </body>
 
 </html>
-

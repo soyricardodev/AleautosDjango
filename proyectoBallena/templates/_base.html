@@ -86,7 +86,7 @@
                     <i class="fa-solid fa-ticket w-5"></i>
                     <span class="body-medium-regular">Ver mis tickets</span>
                   </a>
-                  <a href="{% url 'cerrar_sesion_cliente' %}" class="hidden flex items-center gap-3 px-4 py-2 text-color-primary hover:bg-[var(--color-container-neutral-dim)] transition-colors" style="display: none !important;">
+                  <a href="{% url 'cerrar_sesion_cliente' %}" class="hidden items-center gap-3 px-4 py-2 text-color-primary hover:bg-[var(--color-container-neutral-dim)] transition-colors" style="display: none !important;">
                     <i class="fa-solid fa-sign-out-alt w-5"></i>
                     <span class="body-medium-regular">Cerrar sesión</span>
                   </a>
@@ -94,9 +94,9 @@
               </div>
             </div>
             {% else %}
-            <!-- Usuario no autenticado - Mostrar botón de registro -->
-            <a href="{% url 'registro_cliente' %}" class="button-outline button-medium !border-[var(--color-fixed-white-primary)] !text-[var(--color-fixed-white-primary)] hover:!bg-white/10">
-              <span>Registrarse</span>
+            <!-- Usuario no autenticado - Mostrar botón de inicio de sesión -->
+            <a href="{% url 'inicio_sesion_cliente' %}" class="button button-happy-primary button-medium">
+              <span>Iniciar sesión</span>
             </a>
             {% endif %}
             <div class="w-1 h-8 border-l-2 border-[var(--color-fixed-white-border)]"></div>
