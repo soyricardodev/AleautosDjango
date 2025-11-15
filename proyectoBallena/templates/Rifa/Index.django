@@ -69,7 +69,7 @@
               <h4 class="heading-small-bold text-[var(--color-fixed-black-primary)]">Aún tienes oportunidad de ganar</h4>
               <div class="flex flex-row gap-5">
                 <img src=" {% static 'img/despega.gif' %}" alt="cohete" class="w-[36px] h-[36px] lg:w-[48px] lg:h-[48px]" />
-                <span id="regresive-count" class="heading-large-bold text-[var(--color-fixed-black-primary)]"></span>
+                <span id="regresive-count" class="heading-large-bold text-[var(--color-fixed-black-primary)]" style="display: none !important;">{{time_remaining}}</span>
               </div>
 
             </div>
