@@ -1324,8 +1324,9 @@ function onChange(e) {
   }
 
   function closeDialog() {
+    // OPTIMIZACIÓN: Removido detenerPolling() ya que no existe (polling fue eliminado)
     // Detener polling si está activo
-    detenerPolling()
+    // detenerPolling() // Función no existe, polling fue removido
     const dialog = document.getElementById("Compra")
     dialog.close()
   }
@@ -1557,24 +1558,24 @@ function onChange(e) {
     return returnValue
   }
   
-  // OPTIMIZACIÓN: Precargar validación con valor mínimo cuando se carga la página
+  // TEMPORALMENTE DESHABILITADO: Precarga de validación causa timeout
+  // TODO: Re-habilitar cuando se optimice ConsultaRifabyDisponiplesListaV3
   async function preloadValidation() {
-    if (preloadedValidation.isPreloading) return
-    
-    preloadedValidation.isPreloading = true
-    const originalTicketCount = ticketCount
-    
-    // Validar con el valor mínimo por defecto
-    ticketCount = RifaMin
-    try {
-      await checkNumbers(false)
-      console.log('Validación precargada exitosa para', ticketCount, 'tickets')
-    } catch (error) {
-      console.log('Error en precarga de validación:', error)
-    } finally {
-      ticketCount = originalTicketCount
-      preloadedValidation.isPreloading = false
-    }
+    // TEMPORALMENTE: No hacer precarga para evitar timeouts con millones de registros
+    // if (preloadedValidation.isPreloading) return
+    // preloadedValidation.isPreloading = true
+    // const originalTicketCount = ticketCount
+    // ticketCount = RifaMin
+    // try {
+    //   await checkNumbers(false)
+    //   console.log('Validación precargada exitosa para', ticketCount, 'tickets')
+    // } catch (error) {
+    //   console.log('Error en precarga de validación:', error)
+    // } finally {
+    //   ticketCount = originalTicketCount
+    //   preloadedValidation.isPreloading = false
+    // }
+    console.log('Precarga de validación temporalmente deshabilitada - evitando timeout')
   }
   async function checkNumber(num) {
     const url = `{% url 'ConsultaNumero' %}`
@@ -1699,12 +1700,17 @@ function onChange(e) {
       throw new Error('Cantidad mayor al máximo')
     }
     
-    // OPTIMIZACIÓN: Usar validación precargada si está disponible y el ticketCount coincide
-    let valor = await checkNumbers(usePreloaded && preloadedValidation.cachedTicketCount === ticketCount)
-
-    if (valor == false) {
-      throw new Error('Validación fallida')
-    }
+    // TEMPORALMENTE DESHABILITADO: checkNumbers() causa timeout con millones de registros
+    // La validación real se hace en reserveNumbers/createOrder
+    // TODO: Re-habilitar cuando se optimice ConsultaRifabyDisponiplesListaV3
+    // let valor = await checkNumbers(usePreloaded && preloadedValidation.cachedTicketCount === ticketCount)
+    // if (valor == false) {
+    //   throw new Error('Validación fallida')
+    // }
+    
+    // TEMPORALMENTE: Saltar validación, confiar en que hay números disponibles
+    // La validación real se hará cuando se intente reservar
+    console.log('Validación temporalmente deshabilitada - se validará al reservar números')
     document.getElementById("ticketsSeleccionados").innerText = ticketCount
     document.getElementById("totalPagar").innerText = ticketCount * RifaPrecio
     {% comment %} document.getElementById("MontoEki").innerText = ` (${ticketCount * RifaPrecio} $)` {% endcomment %}
@@ -1767,38 +1773,17 @@ function onChange(e) {
     const dialog = document.getElementById("Compra")
     dialog.showModal()
     
-    // OPTIMIZACIÓN: Si la validación está precargada y el ticketCount coincide, usar cache
-    const canUsePreloaded = preloadedValidation.isValid && 
-                           preloadedValidation.cachedTicketCount === ticketCount &&
-                           !preloadedValidation.isPreloading
-    
-    if (!canUsePreloaded) {
-      // Mostrar estado de carga dentro del diálogo
-      const loadingIndicator = document.getElementById("loadingValidacionAleatorio")
-      if (loadingIndicator) {
-        loadingIndicator.classList.remove('hidden')
-      }
-    }
-    
-    // Validar en segundo plano después de abrir el diálogo
+    // TEMPORALMENTE: No hacer validación para evitar timeout con millones de registros
+    // La validación real se hará cuando se intente reservar números
     try {
-      await getTicketNumbers(canUsePreloaded)
-      resetModal()
+      // Actualizar UI directamente sin validación
+      document.getElementById("ticketsSeleccionados").innerText = ticketCount
+      document.getElementById("totalPagar").innerText = ticketCount * RifaPrecio
       checkZelleVisibility()
+      resetModal()
     } catch (error) {
-      console.error('Error validando tickets:', error)
-      dialog.close()
-      Swal.fire({
-        title: 'Error',
-        text: 'Ocurrió un error al validar la disponibilidad. Por favor intenta de nuevo.',
-        icon: 'error'
-      })
-    } finally {
-      // Ocultar indicador de carga
-      const loadingIndicator = document.getElementById("loadingValidacionAleatorio")
-      if (loadingIndicator) {
-        loadingIndicator.classList.add('hidden')
-      }
+      console.error('Error actualizando UI:', error)
+      // No cerrar el diálogo, solo loguear el error
     }
   }
   const showDialogSelect = async function () {
@@ -1812,30 +1797,17 @@ function onChange(e) {
     const dialog = document.getElementById("Compra")
     dialog.showModal()
     
-    // Mostrar estado de carga dentro del diálogo
-    const loadingIndicator = document.getElementById("loadingValidacionSelect")
-    if (loadingIndicator) {
-      loadingIndicator.classList.remove('hidden')
-    }
-    
-    // Validar en segundo plano después de abrir el diálogo
+    // TEMPORALMENTE: No hacer validación para evitar timeout con millones de registros
+    // La validación real se hará cuando se intente reservar números
     try {
-      await getTicketNumbers()
-      resetModal()
+      // Actualizar UI directamente sin validación
+      document.getElementById("ticketsSeleccionados").innerText = ticketCount
+      document.getElementById("totalPagar").innerText = ticketCount * RifaPrecio
       checkZelleVisibility()
+      resetModal()
     } catch (error) {
-      console.error('Error validando tickets:', error)
-      dialog.close()
-      Swal.fire({
-        title: 'Error',
-        text: 'Ocurrió un error al validar la disponibilidad. Por favor intenta de nuevo.',
-        icon: 'error'
-      })
-    } finally {
-      // Ocultar indicador de carga
-      if (loadingIndicator) {
-        loadingIndicator.classList.add('hidden')
-      }
+      console.error('Error actualizando UI:', error)
+      // No cerrar el diálogo, solo loguear el error
     }
   }
 
@@ -2564,9 +2536,11 @@ function onChange(e) {
         })
     });
   }
-  const reservarNumeros = (e) => {
+  const reservarNumeros = async (e) => {
     e?.preventDefault()
     console.log(formularioComprador)
+    
+    // OPTIMIZACIÓN: Mostrar loading global
     setLoading()
     $("#Compra").fadeOut("fast", function () {});
 
@@ -2582,29 +2556,30 @@ function onChange(e) {
     formBody.append('csrfmiddlewaretoken', getCookie('csrftoken'))
 
     console.log('url', url)
-    console.log('formData, name', formBody.get('nombre'))
     console.log('formData, tickets', formBody.get('numeros'))
     console.log('formData, boletos', formBody.get('boletos'))
-    //post form
-    let tasaBs = fetch(url, {
-      method: 'POST',
-      body: formBody,
-
-    })
-    .then(data => data.json())
-    .then(response => {
-      console.log('data', data)
-      console.log('response', response)
+    
+    try {
+      // OPTIMIZACIÓN: Usar async/await para mejor manejo de errores
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formBody,
+      })
       
-      if(response?.status !== 200){
-        throw new Error(response?.message || "Error de servidor")
+      const data = await response.json()
+      console.log('response', data)
+      
+      if(data?.status !== 200){
+        throw new Error(data?.message || "Error de servidor")
       }
       
       stopLoading()
       $("#Compra").fadeIn("fast", function () {
       })
-      console.log(data)
-      Orden=JSON.parse(response?.orden)[0]
+      
+      Orden = JSON.parse(data?.orden)[0]
+      
+      // OPTIMIZACIÓN: Transición más suave
       if(aleatorio){
         $("#paginaSeleccionaBoletos").fadeOut("slow", function () {
           $("#paginaFacturacion").fadeIn("fast", function () {
@@ -2616,22 +2591,39 @@ function onChange(e) {
           }).css('display', 'flex');
         });
       }
-    })
-    .catch(error => {
+    } catch (error) {
       const dialog = document.getElementById("Compra")
       dialog.close()
       stopLoading()
       console.log(error)
+      
+      // OPTIMIZACIÓN: Restaurar botones en caso de error
+      const botonAleatorio = document.getElementById('paginaSeleccionaBoletosSiguiente')
+      const botonSelect = document.getElementById('paginaEligeBoletosSiguiente')
+      
+      if (botonAleatorio) {
+        botonAleatorio.disabled = false
+        botonAleatorio.style.opacity = '1'
+        botonAleatorio.style.pointerEvents = 'auto'
+        botonAleatorio.innerHTML = '<i class="fa-solid fa-credit-card mr-2 text-[var(--color-icon-secondary)]"></i><span>Ir a pagar</span>'
+      }
+      
+      if (botonSelect) {
+        botonSelect.disabled = false
+        botonSelect.style.opacity = '1'
+        botonSelect.style.pointerEvents = 'auto'
+        botonSelect.innerHTML = '<span>Ir a pagar</span>'
+      }
+      
       Swal.fire(
-        'Ocurrio un problema',
+        'Ocurrió un problema',
         error.message,
         'warning').then(function () {
           dialog.showModal()
-
           $("#Compra").fadeIn("fast", function () {
           })
         })
-    });
+    }
   }
 
   const validarArchivo=()=> {
@@ -2783,17 +2775,87 @@ function onChange(e) {
     btRemove.addEventListener("click", removeLastRow)
     btAdd.addEventListener("click", function () { increaseTickets() })
     buttonVolverPaginaFacturacion.addEventListener("click", ()=>{ regresarNumerosModal() })
+    // OPTIMIZACIÓN: Mejorar botones "Ir a pagar" con feedback visual
     paginaSeleccionaBoletosSiguiente.addEventListener("click", async (event)=>{
-      await getTicketNumbers()
-      reservarNumeros(event)
+      event.preventDefault()
+      
+      // Deshabilitar botón y mostrar spinner
+      const boton = paginaSeleccionaBoletosSiguiente
+      const originalHTML = boton.innerHTML
+      boton.disabled = true
+      boton.style.opacity = '0.6'
+      boton.style.pointerEvents = 'none'
+      boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i><span>Procesando...</span>'
+      
+      try {
+        // TEMPORALMENTE: No llamar a getTicketNumbers() (causa timeout)
+        // Actualizar ticketCount directamente
+        ticketCount = +inputNumbers.value
+        
+        // Validar cantidad básica
+        if (ticketCount < RifaMin || ticketCount > RifaMax) {
+          throw new Error(`La cantidad debe estar entre ${RifaMin} y ${RifaMax}`)
+        }
+        
+        // Actualizar UI
+        document.getElementById("ticketsSeleccionados").innerText = ticketCount
+        document.getElementById("totalPagar").innerText = ticketCount * RifaPrecio
+        checkZelleVisibility()
+        
+        // Reservar números directamente
+        await reservarNumeros(event)
+      } catch (error) {
+        console.error('Error al procesar:', error)
+        showToast(error.message || 'Error al procesar la solicitud')
+        // Restaurar botón en caso de error
+        boton.disabled = false
+        boton.style.opacity = '1'
+        boton.style.pointerEvents = 'auto'
+        boton.innerHTML = originalHTML
+      }
     })
     paginaEligeBoletosSiguiente.addEventListener("click", async (event)=>{
+      event.preventDefault()
+      
       if(selectedNumbers.length < RifaMin){
         showToast('Selecciona al menos ' + RifaMin + ' números')
         return
       }
-      await getTicketNumbers()
-      reservarNumeros(event)
+      
+      // Deshabilitar botón y mostrar spinner
+      const boton = paginaEligeBoletosSiguiente
+      const originalHTML = boton.innerHTML
+      boton.disabled = true
+      boton.style.opacity = '0.6'
+      boton.style.pointerEvents = 'none'
+      boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i><span>Procesando...</span>'
+      
+      try {
+        // TEMPORALMENTE: No llamar a getTicketNumbers() (causa timeout)
+        // Actualizar ticketCount directamente
+        ticketCount = selectedNumbers.length
+        
+        // Validar cantidad básica
+        if (ticketCount < RifaMin || ticketCount > RifaMax) {
+          throw new Error(`La cantidad debe estar entre ${RifaMin} y ${RifaMax}`)
+        }
+        
+        // Actualizar UI
+        document.getElementById("ticketsSeleccionados").innerText = ticketCount
+        document.getElementById("totalPagar").innerText = ticketCount * RifaPrecio
+        checkZelleVisibility()
+        
+        // Reservar números directamente
+        await reservarNumeros(event)
+      } catch (error) {
+        console.error('Error al procesar:', error)
+        showToast(error.message || 'Error al procesar la solicitud')
+        // Restaurar botón en caso de error
+        boton.disabled = false
+        boton.style.opacity = '1'
+        boton.style.pointerEvents = 'auto'
+        boton.innerHTML = originalHTML
+      }
     })
     
     document.getElementById("btContinuarCompra").addEventListener("click", crearOrden)
