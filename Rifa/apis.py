@@ -1392,125 +1392,125 @@ def ComprarRifa(request):
                         orden = ordenes.get(Id=idOrden)
                     except:
                         return JsonResponse({"message": "Error, la orden no existe", "status": 400}, status=422)
-                
-                
-                # if orden is more than 10 min error
-                if orden.date <= country_time-timedelta(minutes=10):
-                    return JsonResponse({"message": "Error, la orden ha expirado", "status": 422}, status=422)
-                
-                
+                    
+                    
+                    # if orden is more than 10 min error
+                    if orden.date <= country_time-timedelta(minutes=10):
+                        return JsonResponse({"message": "Error, la orden ha expirado", "status": 422}, status=422)
+                    
+                    
+                    
 
-
-                
-                rifa = RifaModel.objects.get(Id=orden.idRifa.Id)
-              
-                
-                #validate file size 4mb
-                if request.FILES['file'].size > 4194304 :
-                    return JsonResponse({"message": "Archivo muy grande", "status": 422}, status=422)
-                
-                if not request.FILES['file'].name.endswith('.pdf') and not request.FILES['file'].name.endswith('.jpg') and not request.FILES['file'].name.endswith('.png') and not request.FILES['file'].name.endswith('.jpeg'):
-                    return JsonResponse({"message": "Archivo no valido", "status": 422}, status=422)
-                
-                with transaction.atomic():  # create comprador
-                    # Verificar si hay un cliente autenticado vinculado a esta orden
-                    cliente = None
-                    if request.user.is_authenticated and hasattr(request.user, 'cliente'):
-                        cliente = request.user.cliente
-                        # Buscar si ya existe un Comprador para este cliente
-                        comprador_existente = Comprador.objects.filter(idCliente=cliente).first()
-                        if comprador_existente:
-                            comprador = comprador_existente
-                            # Actualizar datos si es necesario
-                            comprador.Nombre = orden.customer_name
-                            comprador.Correo = orden.customer_email
-                            comprador.NumeroTlf = orden.customer_phone
-                            comprador.Cedula = orden.customer_identification
-                            comprador.save()
+                    
+                    rifa = RifaModel.objects.get(Id=orden.idRifa.Id)
+                  
+                    
+                    #validate file size 4mb
+                    if request.FILES['file'].size > 4194304 :
+                        return JsonResponse({"message": "Archivo muy grande", "status": 422}, status=422)
+                    
+                    if not request.FILES['file'].name.endswith('.pdf') and not request.FILES['file'].name.endswith('.jpg') and not request.FILES['file'].name.endswith('.png') and not request.FILES['file'].name.endswith('.jpeg'):
+                        return JsonResponse({"message": "Archivo no valido", "status": 422}, status=422)
+                    
+                    with transaction.atomic():  # create comprador
+                        # Verificar si hay un cliente autenticado vinculado a esta orden
+                        cliente = None
+                        if request.user.is_authenticated and hasattr(request.user, 'cliente'):
+                            cliente = request.user.cliente
+                            # Buscar si ya existe un Comprador para este cliente
+                            comprador_existente = Comprador.objects.filter(idCliente=cliente).first()
+                            if comprador_existente:
+                                comprador = comprador_existente
+                                # Actualizar datos si es necesario
+                                comprador.Nombre = orden.customer_name
+                                comprador.Correo = orden.customer_email
+                                comprador.NumeroTlf = orden.customer_phone
+                                comprador.Cedula = orden.customer_identification
+                                comprador.save()
+                            else:
+                                comprador = Comprador()
+                                comprador.Nombre = orden.customer_name
+                                comprador.Correo = orden.customer_email
+                                comprador.NumeroTlf = orden.customer_phone
+                                comprador.Cedula = orden.customer_identification
+                                comprador.idCliente = cliente
+                                comprador.save()
                         else:
+                            # Crear comprador sin cliente (invitado)
                             comprador = Comprador()
                             comprador.Nombre = orden.customer_name
                             comprador.Correo = orden.customer_email
                             comprador.NumeroTlf = orden.customer_phone
                             comprador.Cedula = orden.customer_identification
-                            comprador.idCliente = cliente
                             comprador.save()
-                    else:
-                        # Crear comprador sin cliente (invitado)
-                        comprador = Comprador()
-                        comprador.Nombre = orden.customer_name
-                        comprador.Correo = orden.customer_email
-                        comprador.NumeroTlf = orden.customer_phone
-                        comprador.Cedula = orden.customer_identification
-                        comprador.save()
 
-                    # save file locally
+                        # save file locally
 
-                    # get random numbers from numerosbydisponibles
-                    disp = NumeroRifaReservadosOrdenes.objects.filter(
-                        idOrden=idOrden)
-                    totalNum=disp.count()
+                        # get random numbers from numerosbydisponibles
+                        disp = NumeroRifaReservadosOrdenes.objects.filter(
+                            idOrden=idOrden)
+                        totalNum=disp.count()
 
-                    numerosForm=form.cleaned_data['Cantidad'] 
-                    logger.info(form.cleaned_data['Cantidad'] )
-                    logger.info(totalNum)
-                    logger.info(numerosForm)
+                        numerosForm=form.cleaned_data['Cantidad'] 
+                        logger.info(form.cleaned_data['Cantidad'] )
+                        logger.info(totalNum)
+                        logger.info(numerosForm)
 
-                    if totalNum != numerosForm:
-                        return JsonResponse({"message": "Error en su solicitud por favor, recargue la pagina y vuelva a intentar", "status": 422}, status=422)
-                    # create compra
-                    compra = Compra()
-                    compra.idComprador = comprador
-                    compra.idRifa = RifaModel.objects.get(
-                        Id=rifa.Id)
-                    compra.Comprobante = request.FILES['file']
-                    # last tasa
-                    compra.TasaBS = Tasas.objects.latest('id').tasa
-                    compra.Referencia = form.cleaned_data['referencia']
-                    compra.MetodoPago = form.cleaned_data['tipoPago']
-                    compra.FechaCompra
-                    country_time_zone = pytz.timezone('America/Caracas')
-                    if(request.user.is_authenticated):
-                        compra.author=request.user
-                    country_time = datetime.now(country_time_zone)
-                    compra.FechaEstado=country_time
-                    compra.FechaCompra = country_time
-                    compra.NumeroBoletos = totalNum
-                    compra.TotalPagado = totalNum* \
-                        compra.idRifa.Precio
-                    compra.TotalPagadoAlt = totalNum* \
-                        compra.idRifa.PrecioAlt
-                    compra.save()
-                    logger.info(f"compra guardada as: {compra}")
+                        if totalNum != numerosForm:
+                            return JsonResponse({"message": "Error en su solicitud por favor, recargue la pagina y vuelva a intentar", "status": 422}, status=422)
+                        # create compra
+                        compra = Compra()
+                        compra.idComprador = comprador
+                        compra.idRifa = RifaModel.objects.get(
+                            Id=rifa.Id)
+                        compra.Comprobante = request.FILES['file']
+                        # last tasa
+                        compra.TasaBS = Tasas.objects.latest('id').tasa
+                        compra.Referencia = form.cleaned_data['referencia']
+                        compra.MetodoPago = form.cleaned_data['tipoPago']
+                        compra.FechaCompra
+                        country_time_zone = pytz.timezone('America/Caracas')
+                        if(request.user.is_authenticated):
+                            compra.author=request.user
+                        country_time = datetime.now(country_time_zone)
+                        compra.FechaEstado=country_time
+                        compra.FechaCompra = country_time
+                        compra.NumeroBoletos = totalNum
+                        compra.TotalPagado = totalNum* \
+                            compra.idRifa.Precio
+                        compra.TotalPagadoAlt = totalNum* \
+                            compra.idRifa.PrecioAlt
+                        compra.save()
+                        logger.info(f"compra guardada as: {compra}")
 
-                    # OPTIMIZACIÓN: Usar bulk_create para reducir consultas y evitar RifaModel.objects.get() en loop
-                    numeros_comprados_list = []
-                    numeros_compra_list = []
-                    numeros_a_eliminar = []
-                    for x in disp:
-                        numeros_comprados_list.append(
-                            NumeroRifaComprados(idRifa=rifa, Numero=x.Numero))
-                        numeros_compra_list.append(
-                            NumerosCompra(idCompra=compra, Numero=x.Numero))
-                        numeros_a_eliminar.append(x.Numero)
-                    
-                    # Bulk create para reducir consultas
-                    NumeroRifaComprados.objects.bulk_create(numeros_comprados_list)
-                    NumerosCompra.objects.bulk_create(numeros_compra_list)
-                    # Bulk delete para reducir consultas
-                    NumeroRifaReservadosOrdenes.objects.filter(
-                        idOrden=idOrden, Numero__in=numeros_a_eliminar).delete()
-                    rifa.TotalComprados = F("TotalComprados")  + \
-                        totalNum
-                    
-                    orden.completada=True
-                    orden.save()
-                    rifa.save()
-                 #   transaction.on_commit(lambda: validateCompra(compra))
-                    # transaction.on_commit(lambda: sendEmail.delay(comprador.Nombre, comprador.Correo, rifa.Id, compra.Id))
-      
-                    numeros_apartados = [x.Numero for x in disp]
-                    return JsonResponse({"message": "Éxito", "status": 200, "numeros": numeros_apartados}, status=200)
+                        # OPTIMIZACIÓN: Usar bulk_create para reducir consultas y evitar RifaModel.objects.get() en loop
+                        numeros_comprados_list = []
+                        numeros_compra_list = []
+                        numeros_a_eliminar = []
+                        for x in disp:
+                            numeros_comprados_list.append(
+                                NumeroRifaComprados(idRifa=rifa, Numero=x.Numero))
+                            numeros_compra_list.append(
+                                NumerosCompra(idCompra=compra, Numero=x.Numero))
+                            numeros_a_eliminar.append(x.Numero)
+                        
+                        # Bulk create para reducir consultas
+                        NumeroRifaComprados.objects.bulk_create(numeros_comprados_list)
+                        NumerosCompra.objects.bulk_create(numeros_compra_list)
+                        # Bulk delete para reducir consultas
+                        NumeroRifaReservadosOrdenes.objects.filter(
+                            idOrden=idOrden, Numero__in=numeros_a_eliminar).delete()
+                        rifa.TotalComprados = F("TotalComprados")  + \
+                            totalNum
+                        
+                        orden.completada=True
+                        orden.save()
+                        rifa.save()
+                     #   transaction.on_commit(lambda: validateCompra(compra))
+                        # transaction.on_commit(lambda: sendEmail.delay(comprador.Nombre, comprador.Correo, rifa.Id, compra.Id))
+          
+                        numeros_apartados = [x.Numero for x in disp]
+                        return JsonResponse({"message": "Éxito", "status": 200, "numeros": numeros_apartados}, status=200)
                 except Exception as ex:
                     logger.info(ex)
                     print(ex)
