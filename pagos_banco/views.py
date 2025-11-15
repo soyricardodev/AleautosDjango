@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.db.models import Q
 import json
 import logging
+import re
 
 from .decorators import validar_token_banco, validar_ip_banco
 from .models import TransaccionPagoMovil
@@ -17,6 +18,41 @@ from django.db.models import F
 from django.db import transaction
 
 logger = logging.getLogger('ballena')
+
+
+def normalizar_telefono(telefono):
+    """
+    Normaliza un número de teléfono para comparación:
+    - Quita espacios, guiones, paréntesis, etc.
+    - Solo deja números
+    - Convierte a string
+    """
+    if not telefono:
+        return None
+    # Convertir a string y quitar espacios
+    telefono_str = str(telefono).strip()
+    # Quitar todos los caracteres que no sean números
+    telefono_normalizado = re.sub(r'[^0-9]', '', telefono_str)
+    return telefono_normalizado if telefono_normalizado else None
+
+
+def comparar_telefonos(telefono1, telefono2):
+    """
+    Compara dos teléfonos normalizados.
+    Retorna True si coinciden, False en caso contrario.
+    """
+    tel1_norm = normalizar_telefono(telefono1)
+    tel2_norm = normalizar_telefono(telefono2)
+    
+    if not tel1_norm or not tel2_norm:
+        return False
+    
+    # Comparar los últimos 10 dígitos (para manejar códigos de país)
+    # Si tienen menos de 10 dígitos, comparar completos
+    if len(tel1_norm) >= 10 and len(tel2_norm) >= 10:
+        return tel1_norm[-10:] == tel2_norm[-10:]
+    else:
+        return tel1_norm == tel2_norm
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -252,45 +288,61 @@ class NotificaView(View):
                     print(f"[VALIDACION FALLIDA] Campos requeridos faltantes")
                     return JsonResponse({"abono": False})
                 
-                # 3. BUSCAR compras pendientes por MONTO y TELÉFONO (para mayor precisión)
+                # 3. BUSCAR compras pendientes por MONTO y TELÉFONO (OBLIGATORIO)
+                # CRÍTICO: Validar SIEMPRE por monto Y teléfono para evitar asignación incorrecta
                 monto_decimal = float(monto)
                 
-                # Normalizar teléfono: quitar espacios, guiones, etc.
-                telefono_normalizado = str(telefono_emisor).strip().replace('-', '').replace(' ', '') if telefono_emisor else None
+                # Normalizar teléfono del banco
+                telefono_banco_normalizado = normalizar_telefono(telefono_emisor)
                 
-                # Primero intentar buscar por monto Y teléfono (más preciso)
+                # VALIDACIÓN CRÍTICA: El teléfono es OBLIGATORIO para validar el pago
+                if not telefono_banco_normalizado:
+                    logger.error(f"Notifica R4: [RECHAZADO] Teléfono del emisor es obligatorio para validar el pago. Monto: {monto}")
+                    print(f"[VALIDACION FALLIDA] Teléfono del emisor es obligatorio")
+                    return JsonResponse({"abono": False})
+                
+                # Buscar compras pendientes por monto
                 compras_pendientes = Compra.objects.filter(
                     Estado=Compra.EstadoCompra.Pendiente,
                     MetodoPago=Compra.MetodoPagoOpciones.PagoMovil
                 ).filter(
                     Q(TotalPagado__gte=monto_decimal - 0.01) & 
                     Q(TotalPagado__lte=monto_decimal + 0.01)
-                )
+                ).select_related('idComprador').order_by('-FechaCompra')
                 
-                # Si tenemos teléfono, filtrar también por teléfono del comprador
-                if telefono_normalizado:
-                    # Buscar compras donde el teléfono del comprador coincida
-                    compras_con_telefono = compras_pendientes.filter(
-                        idComprador__NumeroTlf__icontains=telefono_normalizado
-                    ).order_by('-FechaCompra')
-                    
-                    if compras_con_telefono.exists():
-                        compra = compras_con_telefono.first()
-                        logger.info(f"Notifica R4: [OK] Compra encontrada por monto Y telefono: #{compra.Id}, Tel: {telefono_emisor}")
-                        print(f"[OK] Compra encontrada por monto Y telefono: #{compra.Id}")
-                    else:
-                        # Si no hay coincidencia exacta, buscar solo por monto
-                        compra = compras_pendientes.order_by('-FechaCompra').first()
-                        if compra:
-                            logger.warning(f"Notifica R4: [ADVERTENCIA] Compra encontrada solo por monto (telefono no coincide): #{compra.Id}, Tel esperado: {telefono_emisor}, Tel compra: {compra.idComprador.NumeroTlf if compra.idComprador else 'N/A'}")
-                            print(f"[ADVERTENCIA] Compra encontrada solo por monto (telefono no coincide)")
+                # Buscar compra que coincida por monto Y teléfono
+                compra = None
+                compras_coincidentes = []
+                
+                for compra_candidata in compras_pendientes:
+                    if compra_candidata.idComprador and compra_candidata.idComprador.NumeroTlf:
+                        telefono_compra_normalizado = normalizar_telefono(compra_candidata.idComprador.NumeroTlf)
+                        if comparar_telefonos(telefono_banco_normalizado, telefono_compra_normalizado):
+                            compras_coincidentes.append(compra_candidata)
+                
+                # Si hay múltiples compras con el mismo monto y teléfono, tomar la más reciente
+                if compras_coincidentes:
+                    compra = compras_coincidentes[0]  # Ya están ordenadas por FechaCompra descendente
+                    logger.info(f"Notifica R4: [OK] Compra encontrada por monto Y telefono: #{compra.Id}, Tel banco: {telefono_emisor}, Tel compra: {compra.idComprador.NumeroTlf}")
+                    print(f"[OK] Compra encontrada por monto Y telefono: #{compra.Id}")
                 else:
-                    # Si no hay teléfono, buscar solo por monto
-                    compra = compras_pendientes.order_by('-FechaCompra').first()
+                    # CRÍTICO: Si no hay coincidencia de teléfono, RECHAZAR el pago
+                    # Esto previene que un pago se asigne al usuario incorrecto
+                    logger.error(f"Notifica R4: [RECHAZADO] No se encontro compra pendiente con monto {monto} Y telefono {telefono_emisor}. El teléfono debe coincidir exactamente.")
+                    print(f"[VALIDACION FALLIDA] No se encontro compra con monto {monto} Y telefono {telefono_emisor}")
+                    
+                    # Log adicional para debugging: mostrar qué compras pendientes hay
+                    if compras_pendientes.exists():
+                        logger.warning(f"Notifica R4: [DEBUG] Compras pendientes encontradas por monto {monto}:")
+                        for compra_debug in compras_pendientes[:5]:  # Mostrar máximo 5
+                            tel_compra = compra_debug.idComprador.NumeroTlf if compra_debug.idComprador else 'N/A'
+                            logger.warning(f"  - Compra #{compra_debug.Id}: Teléfono {tel_compra} (no coincide con {telefono_emisor})")
+                    
+                    return JsonResponse({"abono": False})
                 
+                # Validación de seguridad: compra debe existir
                 if not compra:
-                    logger.warning(f"Notifica R4: [RECHAZADO] No se encontro compra pendiente para monto {monto}, telefono {telefono_emisor}")
-                    print(f"[VALIDACION FALLIDA] No se encontro compra pendiente para monto {monto}, telefono {telefono_emisor}")
+                    logger.error(f"Notifica R4: [ERROR CRÍTICO] Compra es None después de validación. Esto no debería ocurrir.")
                     return JsonResponse({"abono": False})
                 
                 logger.info(f"Notifica R4: [OK] Compra encontrada: #{compra.Id}, Cliente: {compra.idComprador.Nombre if compra.idComprador else 'N/A'}")
