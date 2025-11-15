@@ -108,6 +108,7 @@ def index(request):
         # Retornar una respuesta de error o redirigir
         return HttpResponse(f"Error cargando la página: {str(e)}", status=500)
 @login_required(login_url="/Login/")
+@permission_required('Rifa.view_compra', raise_exception=True)
 def Dashboard(request):
     template = loader.get_template("Rifa/Dashboard.django")
     Rifas=RifaModel.objects.filter(Estado=True).filter(Eliminada=False)
