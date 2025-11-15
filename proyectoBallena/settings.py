@@ -158,8 +158,12 @@ DATABASES = {
         'PASSWORD':os.environ.get('DB_PASSWORD'),
         'HOST':os.environ.get('DB_HOST'),
         'PORT':os.environ.get('DB_PORT'),
-        "CONN_MAX_AGE": int(os.environ.get('DB_CONN_MAX_AGE') or "500"),
-        "conn_max_age": int(os.environ.get('DB_CONN_MAX_AGE') or "500"),
+        # CRÍTICO: Reducir CONN_MAX_AGE para evitar acumulación de conexiones
+        # 0 = cerrar después de cada request, 60 = mantener máximo 60 segundos
+        "CONN_MAX_AGE": int(os.environ.get('DB_CONN_MAX_AGE') or "60"),
+        "OPTIONS": {
+            "connect_timeout": 10,
+        },
     }
 }
 
