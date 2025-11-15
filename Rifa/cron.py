@@ -17,21 +17,27 @@ logger = logging.getLogger('ballena')
 
 def horario():
   Logger.objects.create(date=datetime.now(), description=f"Ejecutando Cron 1")
-  response = requests.get('https://www.bcv.org.ve/', verify=False)
-  soup = BeautifulSoup(response.text, 'html.parser')
-  dolar=soup.find(id="dolar").text
-  #spli lines and remove white empty lines
-  dolar=dolar.splitlines()
-  dolar=list(filter(None, dolar))
-  dolar=dolar[1]
-  print(dolar)
-  Logger.objects.create(date=datetime.now(), description=f"Ejecutando Cron 2{dolar}")
+  # CRÍTICO: Usar sesión con context manager para cerrar conexión HTTP correctamente
+  with requests.Session() as session:
+    try:
+      response = session.get('https://www.bcv.org.ve/', verify=False, timeout=30)
+      response.raise_for_status()  # Lanzar excepción si hay error HTTP
+      soup = BeautifulSoup(response.text, 'html.parser')
+      dolar=soup.find(id="dolar").text
+      #spli lines and remove white empty lines
+      dolar=dolar.splitlines()
+      dolar=list(filter(None, dolar))
+      dolar=dolar[1]
+      print(dolar)
+      Logger.objects.create(date=datetime.now(), description=f"Ejecutando Cron 2{dolar}")
 
-  #tasa to float
-  dolar=float(dolar.replace(",","."))
+      #tasa to float
+      dolar=float(dolar.replace(",","."))
 
-  Tasas.objects.create(date=datetime.now(), tasa=dolar)
-
+      Tasas.objects.create(date=datetime.now(), tasa=dolar)
+    except Exception as e:
+      logger.error(f"Error en horario() al obtener tasa BCV: {str(e)}")
+      raise
   return
 def recuperaNumeros():
   country_time_zone = pytz.timezone('America/Caracas')

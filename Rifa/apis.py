@@ -865,8 +865,15 @@ def get_token():
         "platformId": settings.EKIIPAGO["platformId"],
         "password": settings.EKIIPAGO["password"]
     }
-    r = RR.post(url, data=data)
-    return r.json()["access_token"]
+    # CRÍTICO: Usar sesión con context manager para cerrar conexión HTTP correctamente
+    with requests.Session() as session:
+        try:
+            r = session.post(url, data=data, timeout=30)
+            r.raise_for_status()
+            return r.json()["access_token"]
+        except Exception as e:
+            logger.error(f"Error en get_token(): {str(e)}")
+            raise
 
 def ReenviarComprobante(request):
     if request.method == "POST":
@@ -1111,61 +1118,35 @@ def deleteComprobantes(request):
 
 def enviarWhatsapp(texto, numero):
     formatted_number = re.sub(r'[^0-9]', '', numero)
-    try:
-        '''
-        conn = http.client.HTTPConnection("http://api.message.sinvad.lat",80)
+    # CRÍTICO: Usar sesión con context manager para cerrar conexión HTTP correctamente
+    with requests.Session() as session:
+        try:
+            url="http://api.message.sinvad.lat/api/Message/AddMessagestoQueue"
+            payload = [
+                {
+                    "attachments": [],
+                    "subject": "",
+                    "to": [formatted_number],
+                    "message": texto,
+                    "typeMessage": 0
+                }
+            ]
 
-        payload = [
-            {
-                "attachments": [],
-                "subject": "",
-                "to": [numero],
-                "message": texto,
-                "typeMessage": 0
+            headers = {
+                'Content-Type': "application/json",
+                'Authorization': "E37C6F0847DB4E6205787C8AE89AC670540DD97A86DB53ACB4BC6BE961C76D70A5CC68055CF2E1CCD35C45197DA398425CACEBA217E0D1529AFE8AA8EE754A73",
+                'SiteAllowed': "NOURL",
+                'UserName': "JALEXZANDER",
+                "UserApp": "_LOGINVALUSER_",
+
             }
-        ]
 
-        headers = {
-            'Content-Type': "application/json",
-            'Authorization': "E37C6F0847DB4E6205787C8AE89AC670540DD97A86DB53ACB4BC6BE961C76D70A5CC68055CF2E1CCD35C45197DA398425CACEBA217E0D1529AFE8AA8EE754A73",
-            'SiteAllowed': "NOURL",
-            'UserName': "JALEXZANDER",
-            "UserApp": "_LOGINVALUSER_",
-
-        }
-
-        conn.request("POST", "/api/Message/AddMessagestoQueue", json.dumps(payload), headers)
-
-        res = conn.getresponse()
-        print(res)
-        data = res.read()
-        '''
-        url="http://api.message.sinvad.lat/api/Message/AddMessagestoQueue"
-        payload = [
-            {
-                "attachments": [],
-                "subject": "",
-                "to": [formatted_number],
-                "message": texto,
-                "typeMessage": 0
-            }
-        ]
-
-        headers = {
-            'Content-Type': "application/json",
-            'Authorization': "E37C6F0847DB4E6205787C8AE89AC670540DD97A86DB53ACB4BC6BE961C76D70A5CC68055CF2E1CCD35C45197DA398425CACEBA217E0D1529AFE8AA8EE754A73",
-            'SiteAllowed': "NOURL",
-            'UserName': "JALEXZANDER",
-            "UserApp": "_LOGINVALUSER_",
-
-        }
-
-        res=RR.post(url, headers=headers, json=payload)
-
-        logger.info(res.text)
-    except Exception as e:
-        logger.info(e)
-        return
+            res = session.post(url, headers=headers, json=payload, timeout=30)
+            res.raise_for_status()
+            logger.info(res.text)
+        except Exception as e:
+            logger.error(f"Error en enviarWhatsapp(): {str(e)}")
+            return
     return
 
 def generate_random_text(length): 
@@ -1393,22 +1374,24 @@ def jeje():
     Logger.objects.create(date=datetime.now(), description=f"Probando Celery {NONCE}", evento="Celery")
 
 def ComprarRifa(request):
-    if request.method == "POST":
-        # form uploadfile
-        form = SecondFileForm(request.POST, request.FILES)
-        country_time_zone = pytz.timezone('America/Caracas')
-        country_time = datetime.now(country_time_zone)
-        if form.is_valid():
-            idOrden = form.cleaned_data['idOrden']
+    # CRÍTICO: Cerrar conexiones de BD en caso de error para evitar acumulación
+    try:
+        if request.method == "POST":
+            # form uploadfile
+            form = SecondFileForm(request.POST, request.FILES)
+            country_time_zone = pytz.timezone('America/Caracas')
+            country_time = datetime.now(country_time_zone)
+            if form.is_valid():
+                idOrden = form.cleaned_data['idOrden']
 
-            try:
                 try:
-                    print(country_time-timedelta(minutes=10))
+                    try:
+                        print(country_time-timedelta(minutes=10))
 
-                    ordenes= OrdenesReservas.objects.filter(date__gte=country_time-timedelta(minutes=10))
-                    orden = ordenes.get(Id=idOrden)
-                except:
-                    return JsonResponse({"message": "Error, la orden no existe", "status": 400}, status=422)
+                        ordenes= OrdenesReservas.objects.filter(date__gte=country_time-timedelta(minutes=10))
+                        orden = ordenes.get(Id=idOrden)
+                    except:
+                        return JsonResponse({"message": "Error, la orden no existe", "status": 400}, status=422)
                 
                 
                 # if orden is more than 10 min error
@@ -1500,13 +1483,23 @@ def ComprarRifa(request):
                     compra.save()
                     logger.info(f"compra guardada as: {compra}")
 
+                    # OPTIMIZACIÓN: Usar bulk_create para reducir consultas y evitar RifaModel.objects.get() en loop
+                    numeros_comprados_list = []
+                    numeros_compra_list = []
+                    numeros_a_eliminar = []
                     for x in disp:
-                        NumeroRifaComprados.objects.create(
-                            idRifa=RifaModel.objects.get(Id=rifa.Id), Numero=x.Numero)
-                        NumerosCompra.objects.create(
-                            idCompra=compra, Numero=x.Numero)
-                        NumeroRifaReservadosOrdenes.objects.get(
-                            idOrden=idOrden, Numero=x.Numero).delete()
+                        numeros_comprados_list.append(
+                            NumeroRifaComprados(idRifa=rifa, Numero=x.Numero))
+                        numeros_compra_list.append(
+                            NumerosCompra(idCompra=compra, Numero=x.Numero))
+                        numeros_a_eliminar.append(x.Numero)
+                    
+                    # Bulk create para reducir consultas
+                    NumeroRifaComprados.objects.bulk_create(numeros_comprados_list)
+                    NumerosCompra.objects.bulk_create(numeros_compra_list)
+                    # Bulk delete para reducir consultas
+                    NumeroRifaReservadosOrdenes.objects.filter(
+                        idOrden=idOrden, Numero__in=numeros_a_eliminar).delete()
                     rifa.TotalComprados = F("TotalComprados")  + \
                         totalNum
                     
@@ -1524,6 +1517,19 @@ def ComprarRifa(request):
                 return JsonResponse({"message": "Error en el servidor", "status": 500 , "err":f"{ex}"}, status=500)
         else:
             return JsonResponse({"errors": form.errors.as_json(), "message": "error de validacion", "status": 422}, status=422)
+    except Exception as e:
+        logger.error(f"Error en ComprarRifa: {str(e)}")
+        # CRÍTICO: Cerrar conexiones en caso de error
+        try:
+            from django.db import connections
+            for alias in connections:
+                try:
+                    connections[alias].close()
+                except:
+                    pass
+        except:
+            pass
+        return JsonResponse({"message": "Error interno del servidor", "status": 500}, status=500)
 
 
 def sss(request):
@@ -1604,15 +1610,29 @@ def CheckPay(request):
 
 # method to pass auth token api to get data
 def get_data(url, token):
-    r = RR.get(url, headers={"Authorization": "Bearer " + token})
-    return r.json()
+    # CRÍTICO: Usar sesión con context manager para cerrar conexión HTTP correctamente
+    with requests.Session() as session:
+        try:
+            r = session.get(url, headers={"Authorization": "Bearer " + token}, timeout=30)
+            r.raise_for_status()
+            return r.json()
+        except Exception as e:
+            logger.error(f"Error en get_data(): {str(e)}")
+            raise
 
 # method to post data to auth api
 
 
 def post_data(url, data, token):
-    r = RR.post(url, data=data, headers={"Authorization": "Bearer " + token})
-    return r.json()
+    # CRÍTICO: Usar sesión con context manager para cerrar conexión HTTP correctamente
+    with requests.Session() as session:
+        try:
+            r = session.post(url, data=data, headers={"Authorization": "Bearer " + token}, timeout=30)
+            r.raise_for_status()
+            return r.json()
+        except Exception as e:
+            logger.error(f"Error en post_data(): {str(e)}")
+            raise
 
 
 def createOrderOld(request):
@@ -1727,95 +1747,125 @@ def createOrderOld(request):
     return HttpResponse("Error", status=400)
 
 def reserveNumbers(request):
-  if request.method == "POST":
-    form = ReserveForm(request.POST)
-    logger.info(f"Campos {request.POST}")
-    logger.info(f"Formulario válido {form.is_valid()}")
-    logger.info(f"Formulario válido {form.errors}")
-    if form.is_valid():
-        idRifa = form.cleaned_data['idRifa']
-        try:
-            rifa = RifaModel.objects.get(Id=idRifa)
-        except:
-            return HttpResponse("Error, la rifa a la que intenta comprar no existe", status=400)
-        
-        # valida estado y publicacion
-        if rifa.Estado == False or rifa.Eliminada == True:
-            return JsonResponse({"message": "Rifa no dispoible", "status": 422}, status=422)
-        
-        # valida rifa fecha
-        country_time_zone = pytz.timezone('America/Caracas')
-        country_time = datetime.now(country_time_zone)
+  # CRÍTICO: Cerrar conexiones de BD en caso de error para evitar acumulación
+  try:
+    if request.method == "POST":
+      form = ReserveForm(request.POST)
+      logger.info(f"Campos {request.POST}")
+      logger.info(f"Formulario válido {form.is_valid()}")
+      logger.info(f"Formulario válido {form.errors}")
+      if form.is_valid():
+          idRifa = form.cleaned_data['idRifa']
+          try:
+              rifa = RifaModel.objects.get(Id=idRifa)
+          except:
+              return HttpResponse("Error, la rifa a la que intenta comprar no existe", status=400)
+          
+          # valida estado y publicacion
+          if rifa.Estado == False or rifa.Eliminada == True:
+              return JsonResponse({"message": "Rifa no dispoible", "status": 422}, status=422)
+          
+          # valida rifa fecha
+          country_time_zone = pytz.timezone('America/Caracas')
+          country_time = datetime.now(country_time_zone)
 
-        if rifa.FechaSorteo != None:
-            if country_time >= rifa.FechaSorteo:
-                if rifa.Extension==False:
-                    return JsonResponse({"message": "Rifa expirada", "status": 422}, status=422)
-                
-        if form.cleaned_data['numeros'] < rifa.MinCompra or form.cleaned_data['numeros'] > rifa.MaxCompra:
-            return JsonResponse({"message": "Cantidad invalida", "status": 422}, status=422)
-        
-        if form.cleaned_data['numeros'] > NumeroRifaDisponibles.objects.filter(idRifa=idRifa).count():
-            return JsonResponse({"message": "No hay disponibles suficientes", "status": 422}, status=422)
+          if rifa.FechaSorteo != None:
+              if country_time >= rifa.FechaSorteo:
+                  if rifa.Extension==False:
+                      return JsonResponse({"message": "Rifa expirada", "status": 422}, status=422)
+                  
+          if form.cleaned_data['numeros'] < rifa.MinCompra or form.cleaned_data['numeros'] > rifa.MaxCompra:
+              return JsonResponse({"message": "Cantidad invalida", "status": 422}, status=422)
+          
+          if form.cleaned_data['numeros'] > NumeroRifaDisponibles.objects.filter(idRifa=idRifa).count():
+              return JsonResponse({"message": "No hay disponibles suficientes", "status": 422}, status=422)
 
-        total = rifa.Precio*form.cleaned_data['numeros']
-        boletos = form.cleaned_data['boletos'] or None
+          total = rifa.Precio*form.cleaned_data['numeros']
+          boletos = form.cleaned_data['boletos'] or None
 
-        if boletos != None:
-            boletos = boletos.split(",")
-        else:
-            boletos = []
+          if boletos != None:
+              boletos = boletos.split(",")
+          else:
+              boletos = []
 
-        random_numbers = form.cleaned_data['numeros'] - len(boletos)
+          random_numbers = form.cleaned_data['numeros'] - len(boletos)
 
-        if random_numbers < 0:
-            return JsonResponse({"message": "Error, numeros reservados mayor a la cantidad de boletos", "status": 422}, status=422)
-        
-        try:
-            with transaction.atomic():
-                orden = OrdenesReservas()
+          if random_numbers < 0:
+              return JsonResponse({"message": "Error, numeros reservados mayor a la cantidad de boletos", "status": 422}, status=422)
+          
+          try:
+              with transaction.atomic():
+                  orden = OrdenesReservas()
 
-                disp = NumeroRifaDisponibles.objects.exclude(Numero__in=boletos).filter(
-                idRifa=form.cleaned_data['idRifa']).order_by('?')[:random_numbers]
+                  disp = NumeroRifaDisponibles.objects.exclude(Numero__in=boletos).filter(
+                  idRifa=form.cleaned_data['idRifa']).order_by('?')[:random_numbers]
 
-                orden.date=country_time
-                orden.customer_name = 'Reserva'
-                orden.customer_phone = 'Reserva'
-                orden.customer_identification = 'Reserva'
-                orden.amount = total
-                orden.idRifa = rifa
-                orden.description = f"Compra de Numeros de rifa Fecha: {datetime.now()} Rifa: {rifa.Nombre} Numeros: {list(x.Numero for x in disp)} Boletos: {boletos} Total: {total} aleautos1"
+                  orden.date=country_time
+                  orden.customer_name = 'Reserva'
+                  orden.customer_phone = 'Reserva'
+                  orden.customer_identification = 'Reserva'
+                  orden.amount = total
+                  orden.idRifa = rifa
+                  orden.description = f"Compra de Numeros de rifa Fecha: {datetime.now()} Rifa: {rifa.Nombre} Numeros: {list(x.Numero for x in disp)} Boletos: {boletos} Total: {total} aleautos1"
 
-                orden.save()
-                if len(boletos) > 0:
-                    for x in boletos:
-                        if NumeroRifaDisponibles.objects.filter(idRifa=rifa, Numero=x).count() == 0:
-                            return JsonResponse({"message": "Error, numero no disponible", "status": 422}, status=422)
-                        NumeroRifaReservadosOrdenes.objects.create(
-                            idRifa=rifa, Numero=x, date=country_time, idOrden=orden)
-                        NumeroRifaDisponibles.objects.get(
-                            idRifa=rifa, Numero=x).delete()
-                        if NumeroRifaReservadosOrdenes.objects.filter(idRifa=rifa, Numero=x, idOrden=orden).count() == 0:
-                            return JsonResponse({"message": "Error procesando su solicitud, intente nuevamente", "status": 500}, status=500)
+                  orden.save()
+                  if len(boletos) > 0:
+                      for x in boletos:
+                          if NumeroRifaDisponibles.objects.filter(idRifa=rifa, Numero=x).count() == 0:
+                              return JsonResponse({"message": "Error, numero no disponible", "status": 422}, status=422)
+                          NumeroRifaReservadosOrdenes.objects.create(
+                              idRifa=rifa, Numero=x, date=country_time, idOrden=orden)
+                          NumeroRifaDisponibles.objects.get(
+                              idRifa=rifa, Numero=x).delete()
+                          if NumeroRifaReservadosOrdenes.objects.filter(idRifa=rifa, Numero=x, idOrden=orden).count() == 0:
+                              return JsonResponse({"message": "Error procesando su solicitud, intente nuevamente", "status": 500}, status=500)
 
-                for x in disp:
-                    if NumeroRifaReservadosOrdenes.objects.filter(idRifa=rifa, Numero=x.Numero).count() > 0:
-                        return JsonResponse({"message": "Error procesando su solicitud, intente nuevamente", "status": 500}, status=500)
-                    NumeroRifaReservadosOrdenes.objects.create(
-                        idRifa=rifa, Numero=x.Numero, date=country_time, idOrden=orden)
-                    NumeroRifaDisponibles.objects.get(
-                        idRifa=rifa, Numero=x.Numero).delete()
-                    if NumeroRifaReservadosOrdenes.objects.filter(idRifa=rifa, Numero=x.Numero, idOrden=orden).count() == 0:
-                        return JsonResponse({"message": "Error procesando su solicitud, intente nuevamente", "status": 500}, status=500)
+                  # OPTIMIZACIÓN: Verificar todos los números de una vez antes de procesar
+                  numeros_disp = [x.Numero for x in disp]
+                  numeros_ya_reservados = set(NumeroRifaReservadosOrdenes.objects.filter(
+                      idRifa=rifa, Numero__in=numeros_disp).values_list('Numero', flat=True))
+                  
+                  if numeros_ya_reservados:
+                      return JsonResponse({"message": "Error procesando su solicitud, intente nuevamente", "status": 500}, status=500)
+                  
+                  # OPTIMIZACIÓN: Usar bulk_create para reducir consultas
+                  reservados_list = []
+                  for x in disp:
+                      reservados_list.append(
+                          NumeroRifaReservadosOrdenes(
+                              idRifa=rifa, Numero=x.Numero, date=country_time, idOrden=orden))
+                  
+                  NumeroRifaReservadosOrdenes.objects.bulk_create(reservados_list)
+                  
+                  # OPTIMIZACIÓN: Bulk delete para reducir consultas
+                  NumeroRifaDisponibles.objects.filter(
+                      idRifa=rifa, Numero__in=numeros_disp).delete()
+                  
+                  # Verificar que se crearon correctamente
+                  if NumeroRifaReservadosOrdenes.objects.filter(idRifa=rifa, Numero__in=numeros_disp, idOrden=orden).count() != len(numeros_disp):
+                      return JsonResponse({"message": "Error procesando su solicitud, intente nuevamente", "status": 500}, status=500)
 
-        except Exception as ex:
-                logger.info(ex)
-                print (ex)
-                return JsonResponse({"message": "Ops! Vuelve a intentarlo", "status": 500}, status=500)
+          except Exception as ex:
+                  logger.info(ex)
+                  print (ex)
+                  return JsonResponse({"message": "Ops! Vuelve a intentarlo", "status": 500}, status=500)
 
-        serialized_object = serializers.serialize('json', [orden,])
-        return JsonResponse({"message": "Éxito", "status": 200, "orden":serialized_object}, status=200)
-    return JsonResponse({"errors": form.errors.as_json(), "message": "error de validacion", "status": 422}, status=422)
+          serialized_object = serializers.serialize('json', [orden,])
+          return JsonResponse({"message": "Éxito", "status": 200, "orden":serialized_object}, status=200)
+      return JsonResponse({"errors": form.errors.as_json(), "message": "error de validacion", "status": 422}, status=422)
+  except Exception as e:
+      logger.error(f"Error en reserveNumbers: {str(e)}")
+      # CRÍTICO: Cerrar conexiones en caso de error
+      try:
+          from django.db import connections
+          for alias in connections:
+              try:
+                  connections[alias].close()
+              except:
+                  pass
+      except:
+          pass
+      return JsonResponse({"message": "Error interno del servidor", "status": 500}, status=500)
   
 def updateOrder(request):
   if request.method == "POST":
@@ -1866,16 +1916,31 @@ def updateOrder(request):
 
         serialized_object = serializers.serialize('json', [orden,])
         return JsonResponse({"message": "Éxito", "status": 200, "orden":serialized_object}, status=200)
-    return JsonResponse({"errors": form.errors.as_json(), "message": "error de validacion", "status": 422}, status=422)
+      return JsonResponse({"errors": form.errors.as_json(), "message": "error de validacion", "status": 422}, status=422)
+  except Exception as e:
+      logger.error(f"Error en updateOrder: {str(e)}")
+      # CRÍTICO: Cerrar conexiones en caso de error
+      try:
+          from django.db import connections
+          for alias in connections:
+              try:
+                  connections[alias].close()
+              except:
+                  pass
+      except:
+          pass
+      return JsonResponse({"message": "Error interno del servidor", "status": 500}, status=500)
   
 def createOrder(request):
-  if request.method == "POST":
-    form = FirstFileForm(request.POST)
-    logger.info(f"Campos {request.POST}")
-    logger.info(f"nombre {request.POST.get('nombre')}")
-    logger.info(f"Formulario válido {form.is_valid()}")
-    logger.info(f"Formulario válido {form.errors}")
-    if form.is_valid():
+  # CRÍTICO: Cerrar conexiones de BD en caso de error para evitar acumulación
+  try:
+    if request.method == "POST":
+      form = FirstFileForm(request.POST)
+      logger.info(f"Campos {request.POST}")
+      logger.info(f"nombre {request.POST.get('nombre')}")
+      logger.info(f"Formulario válido {form.is_valid()}")
+      logger.info(f"Formulario válido {form.errors}")
+      if form.is_valid():
         idRifa = form.cleaned_data['idRifa']
         try:
             rifa = RifaModel.objects.get(Id=idRifa)
@@ -1933,15 +1998,30 @@ def createOrder(request):
                 orden.description = f"Compra de Numeros de rifa Fecha: {datetime.now()} Rifa: {rifa.Nombre} Numeros: {list(x.Numero for x in disp)} Total: {total} aleautos1"
 
                 orden.save()
+                # OPTIMIZACIÓN: Verificar todos los números de una vez antes de procesar
+                numeros_disp = [x.Numero for x in disp]
+                numeros_ya_reservados = set(NumeroRifaReservadosOrdenes.objects.filter(
+                    idRifa=rifa, Numero__in=numeros_disp).values_list('Numero', flat=True))
+                
+                if numeros_ya_reservados:
+                    return JsonResponse({"message": "Error procesando su solicitud, intente nuevamente", "status": 500}, status=500)
+                
+                # OPTIMIZACIÓN: Usar bulk_create para reducir consultas
+                reservados_list = []
                 for x in disp:
-                    if NumeroRifaReservadosOrdenes.objects.filter(idRifa=rifa, Numero=x.Numero).count() > 0:
-                        return JsonResponse({"message": "Error procesando su solicitud, intente nuevamente", "status": 500}, status=500)
-                    NumeroRifaReservadosOrdenes.objects.create(
-                        idRifa=rifa, Numero=x.Numero, date=country_time, idOrden=orden)
-                    NumeroRifaDisponibles.objects.get(
-                        idRifa=rifa, Numero=x.Numero).delete()
-                    if NumeroRifaReservadosOrdenes.objects.filter(idRifa=rifa, Numero=x.Numero, idOrden=orden).count() == 0:
-                        return JsonResponse({"message": "Error procesando su solicitud, intente nuevamente", "status": 500}, status=500)
+                    reservados_list.append(
+                        NumeroRifaReservadosOrdenes(
+                            idRifa=rifa, Numero=x.Numero, date=country_time, idOrden=orden))
+                
+                NumeroRifaReservadosOrdenes.objects.bulk_create(reservados_list)
+                
+                # OPTIMIZACIÓN: Bulk delete para reducir consultas
+                NumeroRifaDisponibles.objects.filter(
+                    idRifa=rifa, Numero__in=numeros_disp).delete()
+                
+                # Verificar que se crearon correctamente
+                if NumeroRifaReservadosOrdenes.objects.filter(idRifa=rifa, Numero__in=numeros_disp, idOrden=orden).count() != len(numeros_disp):
+                    return JsonResponse({"message": "Error procesando su solicitud, intente nuevamente", "status": 500}, status=500)
                     
                         
 
@@ -1951,8 +2031,20 @@ def createOrder(request):
                 return JsonResponse({"message": "Ops! Vuelve a intentarlo", "status": 500}, status=500)
         serialized_object = serializers.serialize('json', [orden,])
         return JsonResponse({"message": "Éxito", "status": 200, "orden":serialized_object}, status=200)
-        return HttpResponse(res, content_type="application/json")
-    return JsonResponse({"errors": form.errors.as_json(), "message": "error de validacion", "status": 422}, status=422)
+      return JsonResponse({"errors": form.errors.as_json(), "message": "error de validacion", "status": 422}, status=422)
+  except Exception as e:
+      logger.error(f"Error en createOrder: {str(e)}")
+      # CRÍTICO: Cerrar conexiones en caso de error
+      try:
+          from django.db import connections
+          for alias in connections:
+              try:
+                  connections[alias].close()
+              except:
+                  pass
+      except:
+          pass
+      return JsonResponse({"message": "Error interno del servidor", "status": 500}, status=500)
 
 def consultOrder(request):
     if request.method == "GET":
@@ -1970,7 +2062,9 @@ def createOrderPagoMovilR4(request):
     """
     Endpoint para crear orden de pago móvil R4 automáticamente con datos del cliente autenticado
     """
-    if request.method == "POST":
+    # CRÍTICO: Cerrar conexiones de BD en caso de error para evitar acumulación
+    try:
+        if request.method == "POST":
         try:
             # Verificar que el usuario tenga un cliente asociado
             if not request.user.is_authenticated or not hasattr(request.user, 'cliente'):
@@ -2038,36 +2132,59 @@ def createOrderPagoMovilR4(request):
                     
                     # Reservar números
                     numeros_reservados = []
+                    # OPTIMIZACIÓN: Verificar disponibilidad de números específicos de una vez
                     if numeros_seleccionados and len(numeros_seleccionados) > 0:
-                        # Reservar números específicos
+                        # Verificar todos los números específicos de una vez
+                        disponibles_especificos = set(NumeroRifaDisponibles.objects.filter(
+                            idRifa=rifa, Numero__in=numeros_seleccionados).values_list('Numero', flat=True))
+                        
+                        # Reservar números específicos disponibles
+                        reservados_list = []
                         for num in numeros_seleccionados:
-                            if NumeroRifaDisponibles.objects.filter(idRifa=rifa, Numero=num).exists():
-                                NumeroRifaReservadosOrdenes.objects.create(
-                                    idRifa=rifa, Numero=num, date=country_time, idOrden=orden)
-                                NumeroRifaDisponibles.objects.filter(idRifa=rifa, Numero=num).delete()
+                            if num in disponibles_especificos:
+                                reservados_list.append(
+                                    NumeroRifaReservadosOrdenes(
+                                        idRifa=rifa, Numero=num, date=country_time, idOrden=orden))
                                 numeros_reservados.append(num)
+                        
+                        if reservados_list:
+                            NumeroRifaReservadosOrdenes.objects.bulk_create(reservados_list)
+                            NumeroRifaDisponibles.objects.filter(
+                                idRifa=rifa, Numero__in=numeros_reservados).delete()
                         
                         # Si faltan números, reservar aleatorios
                         faltantes = cantidad - len(numeros_reservados)
                         if faltantes > 0:
                             disp = NumeroRifaDisponibles.objects.filter(
                                 idRifa=rifa).order_by('?')[:faltantes]
+                            numeros_aleatorios = [x.Numero for x in disp]
+                            reservados_aleatorios = []
                             for x in disp:
-                                NumeroRifaReservadosOrdenes.objects.create(
-                                    idRifa=rifa, Numero=x.Numero, date=country_time, idOrden=orden)
-                                NumeroRifaDisponibles.objects.get(
-                                    idRifa=rifa, Numero=x.Numero).delete()
+                                reservados_aleatorios.append(
+                                    NumeroRifaReservadosOrdenes(
+                                        idRifa=rifa, Numero=x.Numero, date=country_time, idOrden=orden))
                                 numeros_reservados.append(x.Numero)
+                            
+                            if reservados_aleatorios:
+                                NumeroRifaReservadosOrdenes.objects.bulk_create(reservados_aleatorios)
+                                NumeroRifaDisponibles.objects.filter(
+                                    idRifa=rifa, Numero__in=numeros_aleatorios).delete()
                     else:
                         # Reservar números aleatorios
                         disp = NumeroRifaDisponibles.objects.filter(
                             idRifa=rifa).order_by('?')[:cantidad]
+                        numeros_aleatorios = [x.Numero for x in disp]
+                        reservados_list = []
                         for x in disp:
-                            NumeroRifaReservadosOrdenes.objects.create(
-                                idRifa=rifa, Numero=x.Numero, date=country_time, idOrden=orden)
-                            NumeroRifaDisponibles.objects.get(
-                                idRifa=rifa, Numero=x.Numero).delete()
+                            reservados_list.append(
+                                NumeroRifaReservadosOrdenes(
+                                    idRifa=rifa, Numero=x.Numero, date=country_time, idOrden=orden))
                             numeros_reservados.append(x.Numero)
+                        
+                        if reservados_list:
+                            NumeroRifaReservadosOrdenes.objects.bulk_create(reservados_list)
+                            NumeroRifaDisponibles.objects.filter(
+                                idRifa=rifa, Numero__in=numeros_aleatorios).delete()
                     
                     # Actualizar la descripción de la orden con los números reservados
                     orden.description = f"Compra de Numeros de rifa Fecha: {datetime.now()} Rifa: {rifa.Nombre} Numeros: {numeros_reservados} Total: {total} aleautos1"
@@ -2135,6 +2252,16 @@ def createOrderPagoMovilR4(request):
             return JsonResponse({"message": "JSON inválido", "status": 400}, status=400)
         except Exception as e:
             logger.error(f"Error en createOrderPagoMovilR4: {str(e)}")
+            # CRÍTICO: Cerrar conexiones en caso de error
+            try:
+                from django.db import connections
+                for alias in connections:
+                    try:
+                        connections[alias].close()
+                    except:
+                        pass
+            except:
+                pass
             return JsonResponse({"message": "Error en el servidor", "status": 500}, status=500)
     
     return JsonResponse({"message": "Método no permitido", "status": 405}, status=405)

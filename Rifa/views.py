@@ -88,12 +88,15 @@ def index(request):
         # OPTIMIZACIÓN: Usar exists() o count() directamente sin cargar objetos
         numDisp = NumeroRifaDisponibles.objects.filter(idRifa=Rifa).count() if Rifa else 0
         
-        # OPTIMIZACIÓN: Obtener todas las configuraciones en una consulta si es posible
-        whatsapp_config=Settings.objects.filter(code="PHONE_CLIENT").first()
-        percent_config=Settings.objects.filter(code="HIDE_TICKET_COUNT").first()
-        zelle_condition_type_config=Settings.objects.filter(code="ZELLE_CONDITION_TYPE").first()
-        zelle_min_value_config=Settings.objects.filter(code="ZELLE_MIN_VALUE").first()
-        zelle_email_config=Settings.objects.filter(code="ZELLE_EMAIL").first()
+        # OPTIMIZACIÓN: Obtener todas las configuraciones en una sola consulta
+        # En lugar de 5 consultas separadas, hacer una consulta y crear diccionario
+        settings_codes = ["PHONE_CLIENT", "HIDE_TICKET_COUNT", "ZELLE_CONDITION_TYPE", "ZELLE_MIN_VALUE", "ZELLE_EMAIL"]
+        settings_dict = {s.code: s for s in Settings.objects.filter(code__in=settings_codes)}
+        whatsapp_config = settings_dict.get("PHONE_CLIENT")
+        percent_config = settings_dict.get("HIDE_TICKET_COUNT")
+        zelle_condition_type_config = settings_dict.get("ZELLE_CONDITION_TYPE")
+        zelle_min_value_config = settings_dict.get("ZELLE_MIN_VALUE")
+        zelle_email_config = settings_dict.get("ZELLE_EMAIL")
 
         time_remaining = None
         if Rifa != None:
