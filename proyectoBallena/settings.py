@@ -159,11 +159,17 @@ DATABASES = {
         'PASSWORD':os.environ.get('DB_PASSWORD'),
         'HOST':os.environ.get('DB_HOST'),
         'PORT':os.environ.get('DB_PORT'),
-        # CRÍTICO: CONN_MAX_AGE en 0 para cerrar conexiones después de cada request
-        # Esto previene la acumulación de conexiones que causa "too many clients"
-        "CONN_MAX_AGE": int(os.environ.get('DB_CONN_MAX_AGE') or "0"),
+        # CRÍTICO: CONN_MAX_AGE en 60 para balance entre rendimiento y prevención de acumulación
+        # 0 = cerrar después de cada request (puede causar problemas de reconexión)
+        # 60 = cerrar después de 60 segundos de inactividad (más estable)
+        # Si sigues teniendo "too many clients", reducir a 30 o 0
+        "CONN_MAX_AGE": int(os.environ.get('DB_CONN_MAX_AGE') or "60"),
         "OPTIONS": {
             "connect_timeout": 10,
+            "keepalives": 1,
+            "keepalives_idle": 30,
+            "keepalives_interval": 10,
+            "keepalives_count": 5,
         },
     }
 }

@@ -1,7 +1,41 @@
 # Instrucciones para Liberar Conexiones de PostgreSQL
 
-## Problema
-Error: `django.db.utils.OperationalError: connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL: sorry, too many clients already`
+## Problemas Relacionados
+
+### Error 1: "too many clients already"
+`django.db.utils.OperationalError: connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL: sorry, too many clients already`
+
+### Error 2: "could not translate host name localhost"
+`django.db.utils.OperationalError: could not translate host name "localhost" to address: System error`
+
+**Solución para Error 2**: Si ves este error después de aplicar los cambios, el middleware puede estar siendo demasiado agresivo. Considera:
+1. Cambiar `CONN_MAX_AGE` de `0` a `60` en `settings.py`
+2. O verificar que `DB_HOST` esté configurado correctamente (usar `127.0.0.1` en lugar de `localhost` si es necesario)
+
+### Error 3: "Too many open files" ⚠️ CRÍTICO
+`OSError: [Errno 24] Too many open files` o `could not create socket: Too many open files`
+
+**Este es el error más grave** - el sistema ha alcanzado el límite de archivos abiertos.
+
+**Solución inmediata**:
+```bash
+# 1. Aumentar límite temporalmente
+ulimit -n 65536
+
+# 2. Verificar archivos abiertos
+bash scripts/verificar_archivos_abiertos.sh
+
+# 3. Aumentar permanentemente
+sudo bash scripts/aumentar_ulimit.sh
+
+# 4. Si usas systemd
+sudo bash scripts/fix_ulimit_systemd.sh
+
+# 5. Reiniciar Gunicorn
+sudo systemctl restart gunicorn
+```
+
+Ver `SOLUCION_TOO_MANY_OPEN_FILES.md` para detalles completos.
 
 ## Soluciones Inmediatas
 
@@ -75,6 +109,11 @@ sudo supervisorctl restart gunicorn
 - Eliminada llamada a `marcarComprasExpiradas()` en cada request de polling
 - **NUEVO**: Manejo de errores que cierra conexiones en caso de excepción
 - **NUEVO**: Optimización de la vista `index` para reducir consultas
+
+### 4. Reducción de Workers de Gunicorn (`docker/supervisord.conf`)
+- **NUEVO**: Workers reducidos de 3 a 2 para reducir archivos abiertos
+- **NUEVO**: Agregado `--max-requests` para reciclar workers periódicamente
+- **NUEVO**: Configuración de `ULIMIT_NOFILE` en supervisord
 
 ## Prevención Futura
 
