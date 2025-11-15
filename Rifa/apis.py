@@ -2557,9 +2557,188 @@ def marcarComprasExpiradas():
 
 
 @login_required(login_url="/inicia-sesion/")
+def verificar_pago_manual(request, id):
+    """
+    Endpoint para verificación manual del pago cuando el usuario presiona "Ya pagué".
+    Incluye rate limiting y optimizaciones para evitar sobrecarga de conexiones.
+    """
+    # CRÍTICO: Rate limiting simple usando cache para evitar múltiples requests simultáneos
+    # Usar cache si está disponible, sino usar un diccionario en memoria (solo para desarrollo)
+    use_cache = False
+    cache_key = None
+    cache = None
+    
+    try:
+        from django.core.cache import cache
+        cache_key = f"verificar_pago_{id}_{request.user.id}"
+        
+        # Verificar si hay una verificación en progreso (últimos 3 segundos)
+        if cache.get(cache_key):
+            return JsonResponse({
+                "message": "Ya hay una verificación en progreso. Por favor espera unos segundos.",
+                "status": 429,
+                "rate_limited": True
+            }, status=429)
+        
+        # Marcar que hay una verificación en progreso (3 segundos de cooldown)
+        cache.set(cache_key, True, 3)
+        use_cache = True
+    except:
+        # Si no hay cache configurado, usar un diccionario simple (solo para desarrollo)
+        # En producción debería tener cache configurado
+        if not hasattr(verificar_pago_manual, '_rate_limit_dict'):
+            verificar_pago_manual._rate_limit_dict = {}
+        
+        cache_key = f"{id}_{request.user.id}"
+        import time
+        now = time.time()
+        
+        # Limpiar entradas antiguas (más de 3 segundos)
+        verificar_pago_manual._rate_limit_dict = {
+            k: v for k, v in verificar_pago_manual._rate_limit_dict.items() 
+            if now - v < 3
+        }
+        
+        if cache_key in verificar_pago_manual._rate_limit_dict:
+            return JsonResponse({
+                "message": "Ya hay una verificación en progreso. Por favor espera unos segundos.",
+                "status": 429,
+                "rate_limited": True
+            }, status=429)
+        
+        verificar_pago_manual._rate_limit_dict[cache_key] = now
+    
+    try:
+        # Validar que la compra existe con select_related para evitar consultas adicionales
+        try:
+            compra = Compra.objects.select_related('idComprador', 'idComprador__idCliente', 'idComprador__idCliente__user').get(Id=id)
+        except Compra.DoesNotExist:
+            if use_cache:
+                cache.delete(cache_key)
+            else:
+                verificar_pago_manual._rate_limit_dict.pop(cache_key, None)
+            return JsonResponse({
+                "message": "La compra no existe",
+                "status": 404
+            }, status=404)
+        
+        # Validar que la compra pertenece al usuario autenticado
+        if compra.idComprador and compra.idComprador.idCliente:
+            if compra.idComprador.idCliente.user != request.user:
+                if use_cache:
+                    cache.delete(cache_key)
+                else:
+                    verificar_pago_manual._rate_limit_dict.pop(cache_key, None)
+                return JsonResponse({
+                    "message": "No tienes permiso para consultar esta compra",
+                    "status": 403
+                }, status=403)
+        else:
+            if use_cache:
+                cache.delete(cache_key)
+            else:
+                verificar_pago_manual._rate_limit_dict.pop(cache_key, None)
+            return JsonResponse({
+                "message": "Esta compra no está asociada a un cliente",
+                "status": 403
+            }, status=403)
+        
+        # Mapear estados numéricos a nombres legibles
+        estado_map = {
+            int(Compra.EstadoCompra.Pendiente.value): "Pendiente",
+            int(Compra.EstadoCompra.Cancelado.value): "Cancelado",
+            int(Compra.EstadoCompra.Pagado.value): "Pagado",
+            int(Compra.EstadoCompra.Rechazado.value): "Rechazado",
+            int(Compra.EstadoCompra.Caducado.value): "Caducado"
+        }
+        
+        # Importar modelo de transacciones
+        from pagos_banco.models import TransaccionPagoMovil
+        
+        # Convertir estado a entero para comparación segura
+        estado_compra = int(compra.Estado) if compra.Estado else None
+        estado_pagado = int(Compra.EstadoCompra.Pagado.value)
+        estado_pendiente = int(Compra.EstadoCompra.Pendiente.value)
+        estado_rechazado = int(Compra.EstadoCompra.Rechazado.value)
+        
+        # OPTIMIZACIÓN: Obtener transacción en una sola consulta
+        transaccion = TransaccionPagoMovil.objects.filter(idCompra=compra).order_by('-timestamp_consulta', '-timestamp_notificacion').first()
+        estado_transaccion = None
+        if transaccion:
+            estado_transaccion = transaccion.status
+        
+        # Determinar el estado descriptivo
+        estado_descriptivo = "esperando_pago"
+        
+        if estado_compra == estado_pagado:
+            estado_descriptivo = "pago_confirmado"
+        elif estado_compra == estado_rechazado:
+            estado_descriptivo = "pago_rechazado"
+        elif estado_compra == estado_pendiente:
+            if transaccion:
+                if transaccion.status == 'CONFIRMADO':
+                    estado_descriptivo = "esperando_pago"
+                elif transaccion.status == 'CONSULTADO':
+                    estado_descriptivo = "validando_pago"
+                elif transaccion.status == 'RECHAZADO':
+                    estado_descriptivo = "pago_rechazado"
+                else:
+                    estado_descriptivo = "esperando_pago"
+        
+        estado_nombre = estado_map.get(estado_compra, "Desconocido")
+        pago_confirmado = estado_compra == estado_pagado
+        
+        # Si la compra está pagada, obtener los números
+        numeros = []
+        if pago_confirmado:
+            numeros_compra = NumerosCompra.objects.filter(idCompra=compra).values_list('Numero', flat=True)
+            numeros = list(numeros_compra)
+        
+        # Limpiar cache key
+        if use_cache:
+            cache.delete(cache_key)
+        else:
+            verificar_pago_manual._rate_limit_dict.pop(cache_key, None)
+        
+        return JsonResponse({
+            "status": estado_nombre,
+            "compra_estado": compra.Estado,
+            "pago_confirmado": pago_confirmado,
+            "id_compra": compra.Id,
+            "estado_descriptivo": estado_descriptivo,
+            "estado_transaccion": estado_transaccion,
+            "numeros": numeros
+        }, status=200)
+        
+    except Exception as e:
+        if use_cache:
+            cache.delete(cache_key)
+        else:
+            verificar_pago_manual._rate_limit_dict.pop(cache_key, None)
+        logger.error(f"Error en verificar_pago_manual: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        # CRÍTICO: Cerrar conexiones en caso de error
+        try:
+            from django.db import connections
+            for alias in connections:
+                try:
+                    connections[alias].close()
+                except:
+                    pass
+        except:
+            pass
+        return JsonResponse({
+            "message": "Error en el servidor",
+            "status": 500
+        }, status=500)
+
+
+@login_required(login_url="/inicia-sesion/")
 def compra_status(request, id):
     """
     Endpoint para polling del estado de una compra.
+    DEPRECADO: Usar verificar_pago_manual en su lugar.
     Retorna el estado actual de la compra para verificación automática.
     """
     try:

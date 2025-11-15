@@ -459,7 +459,7 @@
       <div class="flex flex-row justify-start gap-8 items-center md:items-start w-full">
         <h3 class="heading-small-medium text-color-primary grow text-center">Realiza el pago por Pago Móvil</h3>
       </div>
-      <p class="body-small-regular text-color-secondary">Realiza el Pago Móvil desde tu banco usando los datos mostrados abajo. Mantén esta página abierta para recibir la confirmación automática.</p>
+      <p class="body-small-regular text-color-secondary">Realiza el Pago Móvil desde tu banco usando los datos mostrados abajo. Una vez realizado el pago, presiona el botón "Ya pagué" para verificar tu compra.</p>
     </div>
     <div class="flex flex-col gap-4 md:gap-6">
       <div class="flex flex-col-reverse gap-2 w-full">
@@ -510,10 +510,13 @@
           <path d="M12 8H12.01" stroke="var(--color-icon-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
-      <span id="mensajeVerificacionR4" class="body-small-regular text-color-brand"></span>
+      <span id="mensajeVerificacionR4" class="body-small-regular text-color-brand">⏳ Realiza el pago y luego presiona "Ya pagué"</span>
     </div>
-    <div class="flex flex-col justify-end grow">
-      <!-- El polling automático se iniciará después de crear la orden -->
+    <div class="flex flex-col justify-end grow gap-4">
+      <button id="botonYaPagueR4" class="button-primary w-full flex flex-row justify-center items-center gap-2">
+        <i class="fa-solid fa-check-circle"></i>
+        <span>Ya pagué</span>
+      </button>
     </div>
   </section>
   <section id="temporizadorContentZelle" class="hidden flex-col p-4 md:p-10 gap-6 md:gap-8 h-full">
@@ -1914,14 +1917,11 @@ function onChange(e) {
   
   // Variable para almacenar la compra R4
   let CompraR4 = null
-  // Variables para polling automático
-  let pollingIntervalId = null
-  let pollingTimeoutId = null
-  const POLLING_INTERVAL = 4000 // 4 segundos
-  const POLLING_TIMEOUT = 300000 // 5 minutos (300 segundos)
-  
   // Flag para prevenir múltiples llamadas simultáneas
   let isCreatingOrder = false
+  let isVerificandoPago = false
+  let lastVerificacionTime = 0
+  const MIN_TIME_BETWEEN_VERIFICACIONES = 3000 // 3 segundos mínimo entre verificaciones
   
   // Función para crear orden de pago móvil R4
   const crearOrdenPagoMovilR4 = async () => {
@@ -1984,9 +1984,9 @@ function onChange(e) {
       $("#paginaFacturacion").fadeOut("slow", function () {
         $("#ekiiPagoModal").fadeIn("fast", function () {
           escogerTipoPago()
-          // Iniciar polling automático después de mostrar la sección
+          // Mostrar estado inicial sin polling
           if (CompraR4 && CompraR4.pk) {
-            iniciarPollingCompra(CompraR4.pk)
+            mostrarEstadoInicialR4()
           }
         }).css('display', 'flex');
       })
@@ -2014,198 +2014,276 @@ function onChange(e) {
     }
   }
   
-  // Función para iniciar polling automático del estado de la compra
-  const iniciarPollingCompra = (idCompra) => {
-    // Detener cualquier polling anterior
-    detenerPolling()
-    
-    // Mostrar estado inicial
+  // Función para mostrar estado inicial sin polling
+  const mostrarEstadoInicialR4 = () => {
     const estadoVerificacion = document.getElementById("estadoVerificacionR4")
     const mensajeVerificacion = document.getElementById("mensajeVerificacionR4")
     
-    // Mostrar estado de verificación desde el inicio
     estadoVerificacion.classList.remove('hidden')
     estadoVerificacion.classList.remove('border-green-500')
     estadoVerificacion.classList.remove('border-yellow-500')
     estadoVerificacion.classList.add('border-[var(--color-border-brand)]')
-    mensajeVerificacion.textContent = '⏳ Esperando pago...'
+    mensajeVerificacion.textContent = '⏳ Realiza el pago y luego presiona "Ya pagué"'
+    mensajeVerificacion.classList.remove('text-green-500')
+    mensajeVerificacion.classList.remove('text-yellow-600')
+    mensajeVerificacion.classList.remove('text-red-500')
+    mensajeVerificacion.classList.add('text-color-brand')
+  }
+  
+  // Función para verificar pago manualmente (con rate limiting)
+  const verificarPagoManual = async (idCompra) => {
+    // Prevenir múltiples llamadas simultáneas
+    if (isVerificandoPago) {
+      console.log('Ya hay una verificación en progreso')
+      return
+    }
+    
+    // Rate limiting: verificar tiempo desde última verificación
+    const ahora = Date.now()
+    const tiempoDesdeUltimaVerificacion = ahora - lastVerificacionTime
+    if (tiempoDesdeUltimaVerificacion < MIN_TIME_BETWEEN_VERIFICACIONES) {
+      const tiempoRestante = Math.ceil((MIN_TIME_BETWEEN_VERIFICACIONES - tiempoDesdeUltimaVerificacion) / 1000)
+      Swal.fire({
+        title: 'Espera un momento',
+        text: `Por favor espera ${tiempoRestante} segundo${tiempoRestante > 1 ? 's' : ''} antes de verificar nuevamente.`,
+        icon: 'info',
+        timer: 2000,
+        showConfirmButton: false
+      })
+      return
+    }
+    
+    isVerificandoPago = true
+    lastVerificacionTime = ahora
+    
+    const estadoVerificacion = document.getElementById("estadoVerificacionR4")
+    const mensajeVerificacion = document.getElementById("mensajeVerificacionR4")
+    const botonYaPague = document.getElementById("botonYaPagueR4")
+    
+    // Deshabilitar botón y mostrar loading
+    if (botonYaPague) {
+      botonYaPague.disabled = true
+      botonYaPague.style.opacity = '0.6'
+      botonYaPague.style.pointerEvents = 'none'
+      const icono = botonYaPague.querySelector('i')
+      if (icono) {
+        icono.className = 'fa-solid fa-spinner fa-spin'
+      }
+    }
+    
+    // Mostrar estado de verificación
+    estadoVerificacion.classList.remove('hidden')
+    estadoVerificacion.classList.remove('border-green-500')
+    estadoVerificacion.classList.remove('border-yellow-500')
+    estadoVerificacion.classList.add('border-[var(--color-border-brand)]')
+    mensajeVerificacion.textContent = '⏳ Verificando pago...'
     mensajeVerificacion.classList.remove('text-green-500')
     mensajeVerificacion.classList.remove('text-yellow-600')
     mensajeVerificacion.classList.remove('text-red-500')
     mensajeVerificacion.classList.add('text-color-brand')
     
-    let tiempoTranscurrido = 0
-    
-    // Función de polling
-    const hacerPolling = async () => {
-      try {
-        const url = `/api/compra/${idCompra}/status/`
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
+    try {
+      const url = `/api/compra/${idCompra}/verificar-pago/`
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        }
+      })
+      
+      const data = await response.json()
+      
+      // Manejar rate limiting del servidor
+      if (response.status === 429 || data.rate_limited) {
+        estadoVerificacion.classList.add('border-yellow-500')
+        mensajeVerificacion.textContent = '⏳ Espera unos segundos antes de verificar nuevamente'
+        mensajeVerificacion.classList.add('text-yellow-600')
+        isVerificandoPago = false
+        if (botonYaPague) {
+          botonYaPague.disabled = false
+          botonYaPague.style.opacity = '1'
+          botonYaPague.style.pointerEvents = 'auto'
+          const icono = botonYaPague.querySelector('i')
+          if (icono) {
+            icono.className = 'fa-solid fa-check-circle'
           }
-        })
+        }
+        return
+      }
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al verificar el pago')
+      }
+      
+      // Actualizar UI según el estado descriptivo
+      const estadoDesc = data.estado_descriptivo || 'esperando_pago'
+      
+      if (estadoDesc === 'pago_confirmado' || data.pago_confirmado) {
+        // Pago confirmado - mostrar números
+        stopLoading()
         
-        const data = await response.json()
+        estadoVerificacion.classList.remove('border-[var(--color-border-brand)]')
+        estadoVerificacion.classList.remove('border-yellow-500')
+        estadoVerificacion.classList.add('border-green-500')
+        mensajeVerificacion.textContent = '✅ Pago Validado'
+        mensajeVerificacion.classList.remove('text-color-brand')
+        mensajeVerificacion.classList.remove('text-yellow-600')
+        mensajeVerificacion.classList.add('text-green-500')
         
-        // Mostrar siempre el estado de verificación
-        estadoVerificacion.classList.remove('hidden')
+        // Ocultar botón
+        if (botonYaPague) {
+          botonYaPague.style.display = 'none'
+        }
         
-        // Actualizar UI según el estado descriptivo
-        const estadoDesc = data.estado_descriptivo || 'esperando_pago'
+        // Obtener números de la compra confirmada
+        const numeros = data.numeros || []
         
-        if (estadoDesc === 'pago_confirmado' || data.pago_confirmado) {
-          // Pago confirmado - detener polling y mostrar números
-          detenerPolling()
-          stopLoading()
+        // Mostrar números en el contenedor
+        const finalNumerosContenedor = document.getElementById('finalNumerosContenedor')
+        if (numeros.length > 0 && finalNumerosContenedor) {
+          const maxVisible = 10
+          const numerosVisibles = numeros.slice(0, maxVisible)
+          const numerosRestantes = numeros.length - maxVisible
           
-          estadoVerificacion.classList.remove('border-[var(--color-border-brand)]')
-          estadoVerificacion.classList.remove('border-yellow-500')
-          estadoVerificacion.classList.add('border-green-500')
-          mensajeVerificacion.textContent = '✅ Pago Validado'
-          mensajeVerificacion.classList.remove('text-color-brand')
-          mensajeVerificacion.classList.remove('text-yellow-600')
-          mensajeVerificacion.classList.add('text-green-500')
+          const numerosHTML = numerosVisibles.map(num => `
+            <div class="flex justify-center items-center border border-[var(--color-fixed-white-primary)] p-2 rounded-lg min-w-[60px]">
+              <span class="text-[var(--color-fixed-white-primary)] label-medium-semibold">${num}</span>
+            </div>
+          `).join('')
           
-          // Obtener números de la compra confirmada
-          const numeros = data.numeros || []
-          
-          // Mostrar números en el contenedor (máximo 10 visibles, luego +n)
-          const finalNumerosContenedor = document.getElementById('finalNumerosContenedor')
-          if (numeros.length > 0 && finalNumerosContenedor) {
-            const maxVisible = 10
-            const numerosVisibles = numeros.slice(0, maxVisible)
-            const numerosRestantes = numeros.length - maxVisible
-            
-            const numerosHTML = numerosVisibles.map(num => `
-              <div class="flex justify-center items-center border border-[var(--color-fixed-white-primary)] p-2 rounded-lg min-w-[60px]">
-                <span class="text-[var(--color-fixed-white-primary)] label-medium-semibold">${num}</span>
+          let numerosRestantesHTML = ''
+          if (numerosRestantes > 0) {
+            numerosRestantesHTML = `
+              <div class="flex justify-center items-center border border-[var(--color-fixed-white-primary)] p-2 rounded-lg min-w-[60px] bg-[rgba(255,255,255,0.1)]">
+                <span class="text-[var(--color-fixed-white-primary)] label-medium-semibold">+${numerosRestantes}</span>
               </div>
-            `).join('')
-            
-            let numerosRestantesHTML = ''
-            if (numerosRestantes > 0) {
-              numerosRestantesHTML = `
-                <div class="flex justify-center items-center border border-[var(--color-fixed-white-primary)] p-2 rounded-lg min-w-[60px] bg-[rgba(255,255,255,0.1)]">
-                  <span class="text-[var(--color-fixed-white-primary)] label-medium-semibold">+${numerosRestantes}</span>
-                </div>
-              `
-            }
-            
-            finalNumerosContenedor.innerHTML = `
-              <div class="flex flex-wrap justify-center gap-3 w-full">
-                ${numerosHTML}
-                ${numerosRestantesHTML}
-              </div>
-              ${numerosRestantes > 0 ? `<p class="body-small-regular text-[var(--color-fixed-white-primary)] text-center mt-3">Ver todos tus ${numeros.length} números en tu perfil</p>` : ''}
             `
           }
           
-          // Mostrar la página final después de 1 segundo (más rápido para mejor UX)
-          setTimeout(() => {
-            $("#temporizadorContentR4").fadeOut("fast", function () {
-              $("#finalContent").fadeIn("fast", function () {
-                makeItConfetti();
-              }).css('display', 'flex');
-            })
-          }, 1000)
-        } else if (estadoDesc === 'validando_pago') {
-          // Banco está validando el pago
-          stopLoading() // Quitar loader general, mostrar estado específico
-          
-          estadoVerificacion.classList.remove('border-[var(--color-border-brand)]')
-          estadoVerificacion.classList.remove('border-green-500')
-          estadoVerificacion.classList.add('border-yellow-500')
-          mensajeVerificacion.textContent = '⏳ Validando Pago...'
-          mensajeVerificacion.classList.remove('text-color-brand')
-          mensajeVerificacion.classList.remove('text-green-500')
-          mensajeVerificacion.classList.add('text-yellow-600')
-        } else if (estadoDesc === 'pago_rechazado' || data.status === "Rechazado") {
-          // Pago rechazado - detener polling y mostrar error
-          detenerPolling()
-          stopLoading()
-          
-          estadoVerificacion.classList.remove('border-[var(--color-border-brand)]')
-          estadoVerificacion.classList.remove('border-yellow-500')
-          estadoVerificacion.classList.add('border-red-500')
-          mensajeVerificacion.textContent = '❌ El banco rechazó la transacción. Verifica los datos e intenta de nuevo.'
-          mensajeVerificacion.classList.remove('text-color-brand')
-          mensajeVerificacion.classList.remove('text-yellow-600')
-          mensajeVerificacion.classList.add('text-red-500')
-        } else {
-          // Esperando pago (estado por defecto)
-          // Mostrar mensaje de espera
-          estadoVerificacion.classList.remove('border-green-500')
-          estadoVerificacion.classList.remove('border-yellow-500')
-          estadoVerificacion.classList.add('border-[var(--color-border-brand)]')
-          mensajeVerificacion.textContent = '⏳ Esperando pago...'
-          mensajeVerificacion.classList.remove('text-green-500')
-          mensajeVerificacion.classList.remove('text-yellow-600')
-          mensajeVerificacion.classList.remove('text-red-500')
-          mensajeVerificacion.classList.add('text-color-brand')
+          finalNumerosContenedor.innerHTML = `
+            <div class="flex flex-wrap justify-center gap-3 w-full">
+              ${numerosHTML}
+              ${numerosRestantesHTML}
+            </div>
+            ${numerosRestantes > 0 ? `<p class="body-small-regular text-[var(--color-fixed-white-primary)] text-center mt-3">Ver todos tus ${numeros.length} números en tu perfil</p>` : ''}
+          `
         }
         
-      } catch (error) {
-        console.error('Error en polling:', error)
-        // No detener el polling por errores de red, continuar intentando
+        // Mostrar la página final después de 1 segundo
+        setTimeout(() => {
+          $("#temporizadorContentR4").fadeOut("fast", function () {
+            $("#finalContent").fadeIn("fast", function () {
+              makeItConfetti();
+            }).css('display', 'flex');
+          })
+        }, 1000)
+      } else if (estadoDesc === 'validando_pago') {
+        // Banco está validando el pago
+        stopLoading()
+        
+        estadoVerificacion.classList.remove('border-[var(--color-border-brand)]')
+        estadoVerificacion.classList.remove('border-green-500')
+        estadoVerificacion.classList.add('border-yellow-500')
+        mensajeVerificacion.textContent = '⏳ Validando Pago...'
+        mensajeVerificacion.classList.remove('text-color-brand')
+        mensajeVerificacion.classList.remove('text-green-500')
+        mensajeVerificacion.classList.add('text-yellow-600')
+        
+        // Rehabilitar botón después de 3 segundos
+        setTimeout(() => {
+          isVerificandoPago = false
+          if (botonYaPague) {
+            botonYaPague.disabled = false
+            botonYaPague.style.opacity = '1'
+            botonYaPague.style.pointerEvents = 'auto'
+            const icono = botonYaPague.querySelector('i')
+            if (icono) {
+              icono.className = 'fa-solid fa-check-circle'
+            }
+          }
+        }, 3000)
+      } else if (estadoDesc === 'pago_rechazado' || data.status === "Rechazado") {
+        // Pago rechazado - mostrar error
+        stopLoading()
+        
+        estadoVerificacion.classList.remove('border-[var(--color-border-brand)]')
+        estadoVerificacion.classList.remove('border-yellow-500')
+        estadoVerificacion.classList.add('border-red-500')
+        mensajeVerificacion.textContent = '❌ El banco rechazó la transacción. Verifica los datos e intenta de nuevo.'
+        mensajeVerificacion.classList.remove('text-color-brand')
+        mensajeVerificacion.classList.remove('text-yellow-600')
+        mensajeVerificacion.classList.add('text-red-500')
+        
+        // Rehabilitar botón
+        isVerificandoPago = false
+        if (botonYaPague) {
+          botonYaPague.disabled = false
+          botonYaPague.style.opacity = '1'
+          botonYaPague.style.pointerEvents = 'auto'
+          const icono = botonYaPague.querySelector('i')
+          if (icono) {
+            icono.className = 'fa-solid fa-check-circle'
+          }
+        }
+      } else {
+        // Esperando pago (estado por defecto)
+        estadoVerificacion.classList.remove('border-green-500')
+        estadoVerificacion.classList.remove('border-yellow-500')
+        estadoVerificacion.classList.add('border-[var(--color-border-brand)]')
+        mensajeVerificacion.textContent = '⏳ Aún no se ha detectado el pago. Verifica que hayas realizado el pago correctamente.'
+        mensajeVerificacion.classList.remove('text-green-500')
+        mensajeVerificacion.classList.remove('text-yellow-600')
+        mensajeVerificacion.classList.remove('text-red-500')
+        mensajeVerificacion.classList.add('text-color-brand')
+        
+        // Rehabilitar botón
+        isVerificandoPago = false
+        if (botonYaPague) {
+          botonYaPague.disabled = false
+          botonYaPague.style.opacity = '1'
+          botonYaPague.style.pointerEvents = 'auto'
+          const icono = botonYaPague.querySelector('i')
+          if (icono) {
+            icono.className = 'fa-solid fa-check-circle'
+          }
+        }
       }
-    }
-    
-    // Iniciar polling inmediatamente
-    hacerPolling()
-    
-    // Configurar intervalo para polling periódico
-    pollingIntervalId = setInterval(hacerPolling, POLLING_INTERVAL)
-    
-    // Configurar timeout de 5 minutos
-    pollingTimeoutId = setTimeout(async () => {
-      detenerPolling()
+      
+    } catch (error) {
+      console.error('Error al verificar pago:', error)
       stopLoading()
       
-      // Rechazar la compra en el backend y liberar números
-      try {
-        const url = `/api/compra/${idCompra}/rechazar-timeout/`
-        await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-          }
-        })
-      } catch (error) {
-        console.error('Error al rechazar compra:', error)
+      estadoVerificacion.classList.add('border-red-500')
+      mensajeVerificacion.textContent = '❌ Error al verificar el pago. Por favor intenta de nuevo.'
+      mensajeVerificacion.classList.add('text-red-500')
+      
+      // Rehabilitar botón
+      isVerificandoPago = false
+      if (botonYaPague) {
+        botonYaPague.disabled = false
+        botonYaPague.style.opacity = '1'
+        botonYaPague.style.pointerEvents = 'auto'
+        const icono = botonYaPague.querySelector('i')
+        if (icono) {
+          icono.className = 'fa-solid fa-check-circle'
+        }
       }
-      
-      estadoVerificacion.classList.remove('hidden')
-      estadoVerificacion.classList.add('border-yellow-500')
-      mensajeVerificacion.textContent = '⏱️ El tiempo ha expirado. Por favor, intenta de nuevo.'
-      mensajeVerificacion.classList.remove('text-color-brand')
-      mensajeVerificacion.classList.add('text-yellow-600')
-      
+    }
+  }
+  
+  // Event listener para el botón "Ya pagué" - usar delegación de eventos para elementos dinámicos
+  $(document).on('click', '#botonYaPagueR4', function() {
+    if (CompraR4 && CompraR4.pk) {
+      verificarPagoManual(CompraR4.pk)
+    } else {
       Swal.fire({
-        title: 'Tiempo agotado',
-        text: 'El tiempo para confirmar el pago ha expirado. Los números han sido liberados. Por favor, intenta realizar la compra nuevamente.',
-        icon: 'warning',
-        confirmButtonText: 'Entendido'
+        title: 'Error',
+        text: 'No se encontró información de la compra. Por favor recarga la página.',
+        icon: 'error'
       })
-    }, POLLING_TIMEOUT)
-  }
-  
-  // Función para detener el polling
-  const detenerPolling = () => {
-    if (pollingIntervalId) {
-      clearInterval(pollingIntervalId)
-      pollingIntervalId = null
     }
-    if (pollingTimeoutId) {
-      clearTimeout(pollingTimeoutId)
-      pollingTimeoutId = null
-    }
-  }
-  
-  // Función verificarPagoR4 eliminada - ahora se usa polling automático
+  })
   const regresarNumerosModal = ()=>{
     $("#paginaFacturacion").fadeOut("slow", function () {
       if(aleatorio){

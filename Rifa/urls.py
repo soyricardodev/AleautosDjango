@@ -126,6 +126,7 @@ urlpatterns = [
   path("api/createOrderPagoMovilR4", apis.createOrderPagoMovilR4, name="createOrderPagoMovilR4"),
   path("api/verificarPagoR4", apis.verificarPagoR4, name="verificarPagoR4"),
   path("api/compra/<int:id>/status/", apis.compra_status, name="compra_status"),
+  path("api/compra/<int:id>/verificar-pago/", apis.verificar_pago_manual, name="verificar_pago_manual"),
   path("api/compra/<int:id>/rechazar-timeout/", apis.rechazarCompraTimeout, name="rechazar_compra_timeout"),
   
 
