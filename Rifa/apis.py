@@ -1174,6 +1174,7 @@ def generate_random_text(length):
 
 
 def testWhatsapp():
+    conn = None
     try:
         conn = http.client.HTTPConnection("sinvadmessage.sytes.net",80)
         # ramdom unique text
@@ -1202,10 +1203,16 @@ def testWhatsapp():
 
         res = conn.getresponse()
         data = res.read()
-
-        return(data.decode("utf-8"))
+        return data.decode("utf-8")
     except Exception as e:
-        return(e)
+        return str(e)
+    finally:
+        # CRÍTICO: Cerrar la conexión HTTP siempre, incluso si hay error
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
 
 
 def rechazarCompra(request):

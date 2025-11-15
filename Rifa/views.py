@@ -2056,41 +2056,50 @@ def enviarWhatsapp( RifaCompras, x):
         for batch_of_RifaCompras in batch(RifaCompras, 100):
             #print batch
             logger.info(batch_of_RifaCompras)
-            conn = http.client.HTTPConnection("http://api.message.sinvad.lat",80)
+            conn = None
+            try:
+                conn = http.client.HTTPConnection("http://api.message.sinvad.lat",80)
 
-            payload = [
-             
-            ]
-            for CompraObj in batch_of_RifaCompras:
-                 logger.info(f'CompraObj {CompraObj}')
-                 texto="Felicidades "+CompraObj.idComprador.Nombre+" tu compra ["+str(CompraObj.Id)+"] ha sido aprobada, puedes consultar tus numeros en el siguiente enlace, asegurate de no compartirlo con nadie "+settings.URL+"/Comprobante/"+str(CompraObj.hash)
-                 numero=CompraObj.idComprador.NumeroTlf
-                 numero = re.sub(r'\s+', '', numero.strip())
-                 numero = re.sub(r'[^0-9]', '', numero)
+                payload = [
                  
-                 payload.append(   {
-                "attachments": [],
-                "subject": "",
-                "to": [numero],
-                "message": texto,
-                "typeMessage": 0
-            })
+                ]
+                for CompraObj in batch_of_RifaCompras:
+                     logger.info(f'CompraObj {CompraObj}')
+                     texto="Felicidades "+CompraObj.idComprador.Nombre+" tu compra ["+str(CompraObj.Id)+"] ha sido aprobada, puedes consultar tus numeros en el siguiente enlace, asegurate de no compartirlo con nadie "+settings.URL+"/Comprobante/"+str(CompraObj.hash)
+                     numero=CompraObj.idComprador.NumeroTlf
+                     numero = re.sub(r'\s+', '', numero.strip())
+                     numero = re.sub(r'[^0-9]', '', numero)
+                     
+                     payload.append(   {
+                    "attachments": [],
+                    "subject": "",
+                    "to": [numero],
+                    "message": texto,
+                    "typeMessage": 0
+                })
 
 
-            headers = {
-                'Content-Type': "application/json",
-                'Authorization': "9D6D0FB7079198C0C958A541D4D9BEBB7C58531F02D33679D1C7B50053C350586682AC095A3150C7CA1B9CC578F914EAF4CF64EB1E02313E2552EF6495B92AE5",
-                'SiteAllowed': "NOURL",
-                'UserName': "JALEXZANDER",
-                "UserApp": "_LOGINVALUSER_",
-            }
+                headers = {
+                    'Content-Type': "application/json",
+                    'Authorization': "9D6D0FB7079198C0C958A541D4D9BEBB7C58531F02D33679D1C7B50053C350586682AC095A3150C7CA1B9CC578F914EAF4CF64EB1E02313E2552EF6495B92AE5",
+                    'SiteAllowed': "NOURL",
+                    'UserName': "JALEXZANDER",
+                    "UserApp": "_LOGINVALUSER_",
+                }
 
-            conn.request("POST", "/api/Message/AddMessagestoQueue", json.dumps(payload), headers)
+                conn.request("POST", "/api/Message/AddMessagestoQueue", json.dumps(payload), headers)
 
-            res = conn.getresponse()
-            data = res.read()
+                res = conn.getresponse()
+                data = res.read()
 
-            logger.info(data.decode("utf-8"))
+                logger.info(data.decode("utf-8"))
+            finally:
+                # CRÍTICO: Cerrar la conexión HTTP siempre, incluso si hay error
+                if conn is not None:
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
     except Exception as e:
         logger.info(e)
         return
