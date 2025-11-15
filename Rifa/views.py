@@ -72,14 +72,23 @@ def handle500(request, ex=None):
 def index(request):
     try:
         template = loader.get_template("Rifa/Index.django")
+        # OPTIMIZACIÓN: Usar select_related y optimizar consultas
         tasa = Tasas.objects.last()
-        Rifas=RifaModel.objects.filter(Estado=True).filter(Eliminada=False)
-        Rifa=Rifas.last()
-        Rifas=Rifas.order_by("-Id")[1:]
+        
+        # OPTIMIZACIÓN: Evaluar QuerySet de manera eficiente
+        Rifas_qs = RifaModel.objects.filter(Estado=True, Eliminada=False).order_by("-Id")
+        Rifa = Rifas_qs.first()  # Primera rifa (más reciente)
+        
+        # OPTIMIZACIÓN: Paginator puede trabajar con QuerySet directamente
+        Rifas = Rifas_qs[1:]  # Excluir la primera
         paginator = Paginator(Rifas, 6)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
+        
+        # OPTIMIZACIÓN: Usar exists() o count() directamente sin cargar objetos
         numDisp = NumeroRifaDisponibles.objects.filter(idRifa=Rifa).count() if Rifa else 0
+        
+        # OPTIMIZACIÓN: Obtener todas las configuraciones en una consulta si es posible
         whatsapp_config=Settings.objects.filter(code="PHONE_CLIENT").first()
         percent_config=Settings.objects.filter(code="HIDE_TICKET_COUNT").first()
         zelle_condition_type_config=Settings.objects.filter(code="ZELLE_CONDITION_TYPE").first()
@@ -111,6 +120,15 @@ def index(request):
         logger.error(f"Error en vista index: {str(e)}")
         import traceback
         logger.error(traceback.format_exc())
+        
+        # CRÍTICO: Cerrar conexiones en caso de error para evitar acumulación
+        try:
+            from django.db import connections
+            for alias in connections:
+                connections[alias].close()
+        except:
+            pass
+        
         # Retornar una respuesta de error o redirigir
         return HttpResponse(f"Error cargando la página: {str(e)}", status=500)
 @login_required(login_url="/Login/")

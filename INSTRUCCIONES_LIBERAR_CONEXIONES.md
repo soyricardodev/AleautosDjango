@@ -60,15 +60,21 @@ sudo supervisorctl restart gunicorn
 ## Cambios Realizados en el Código
 
 ### 1. Configuración de Base de Datos (`settings.py`)
-- `CONN_MAX_AGE` reducido de 500 a 60 segundos
+- `CONN_MAX_AGE` configurado en **0** (cerrar después de cada request)
 - Timeout de conexión configurado a 10 segundos
-- Timeout de statements configurado a 30 segundos
+- **NUEVO**: Middleware `CloseDBConnectionsMiddleware` agregado para forzar cierre de conexiones
 
-### 2. Optimizaciones en el Código
+### 2. Middleware de Cierre de Conexiones (`Rifa/middleware.py`)
+- **NUEVO**: Middleware que cierra todas las conexiones después de cada request
+- Previene acumulación de conexiones incluso si CONN_MAX_AGE falla
+
+### 3. Optimizaciones en el Código
 - QuerySets evaluados una sola vez (convertidos a listas)
 - Uso de `select_related()` para evitar consultas N+1
 - Límites en consultas para evitar cargar demasiados registros
 - Eliminada llamada a `marcarComprasExpiradas()` en cada request de polling
+- **NUEVO**: Manejo de errores que cierra conexiones en caso de excepción
+- **NUEVO**: Optimización de la vista `index` para reducir consultas
 
 ## Prevención Futura
 

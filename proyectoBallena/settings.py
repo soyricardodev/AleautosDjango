@@ -101,7 +101,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-   
+    # CRÍTICO: Middleware para cerrar conexiones después de cada request
+    'Rifa.middleware.CloseDBConnectionsMiddleware',
 ]
    ##  'global_login_required.GlobalLoginRequiredMiddleware',
 ############
@@ -158,9 +159,9 @@ DATABASES = {
         'PASSWORD':os.environ.get('DB_PASSWORD'),
         'HOST':os.environ.get('DB_HOST'),
         'PORT':os.environ.get('DB_PORT'),
-        # CRÍTICO: Reducir CONN_MAX_AGE para evitar acumulación de conexiones
-        # 0 = cerrar después de cada request, 60 = mantener máximo 60 segundos
-        "CONN_MAX_AGE": int(os.environ.get('DB_CONN_MAX_AGE') or "60"),
+        # CRÍTICO: CONN_MAX_AGE en 0 para cerrar conexiones después de cada request
+        # Esto previene la acumulación de conexiones que causa "too many clients"
+        "CONN_MAX_AGE": int(os.environ.get('DB_CONN_MAX_AGE') or "0"),
         "OPTIONS": {
             "connect_timeout": 10,
         },
