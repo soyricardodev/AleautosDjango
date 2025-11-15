@@ -1382,15 +1382,16 @@ def ComprarRifa(request):
             country_time_zone = pytz.timezone('America/Caracas')
             country_time = datetime.now(country_time_zone)
             if form.is_valid():
-                idOrden = form.cleaned_data['idOrden']
-
                 try:
-                    print(country_time-timedelta(minutes=10))
+                    idOrden = form.cleaned_data['idOrden']
 
-                    ordenes= OrdenesReservas.objects.filter(date__gte=country_time-timedelta(minutes=10))
-                    orden = ordenes.get(Id=idOrden)
-                except:
-                    return JsonResponse({"message": "Error, la orden no existe", "status": 400}, status=422)
+                    try:
+                        print(country_time-timedelta(minutes=10))
+
+                        ordenes= OrdenesReservas.objects.filter(date__gte=country_time-timedelta(minutes=10))
+                        orden = ordenes.get(Id=idOrden)
+                    except:
+                        return JsonResponse({"message": "Error, la orden no existe", "status": 400}, status=422)
                 
                 
                 # if orden is more than 10 min error
