@@ -1,6 +1,60 @@
 # 🚨 SOLUCIÓN URGENTE - EJECUTAR EN ESTE ORDEN
 
-## ⚠️ ERROR ACTUAL: TIMEOUT EXPIRED
+## 🔴 ERROR CRÍTICO ACTUAL: CAN'T START NEW THREAD
+
+```
+RuntimeError: can't start new thread
+```
+
+**El sistema no puede crear más threads.** Esto ocurre porque ASGI (UvicornWorker) crea demasiados threads.
+
+### ⚡ SOLUCIÓN INMEDIATA (EJECUTAR PRIMERO):
+
+```bash
+# 1. Aumentar límite de threads (temporal)
+echo 32768 | sudo tee /proc/sys/kernel/threads-max
+
+# 2. Reducir workers de Gunicorn (URGENTE)
+sudo systemctl edit gunicorn
+```
+
+**Pega esto en el editor:**
+```ini
+[Service]
+ExecStart=
+ExecStart=/opt/AleautosDjango/.venv/bin/gunicorn \
+  --access-logfile - \
+  -k uvicorn.workers.UvicornWorker \
+  --workers 1 \
+  --threads 8 \
+  --limit-concurrency 100 \
+  --timeout 120 \
+  --bind unix:/run/gunicorn.sock \
+  proyectoBallena.asgi:application
+LimitNPROC=4096
+LimitNOFILE=65536
+TasksMax=4096
+```
+
+**Luego:**
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart gunicorn
+```
+
+**O usar el script automático:**
+```bash
+bash scripts/fix_thread_limit.sh
+bash scripts/reducir_workers_gunicorn.sh
+```
+
+**💡 RECOMENDACIÓN: Si no necesitas async, cambia a WSGI** (ver `LEEME_PRIMERO_THREADS.md`)
+
+Ver `SOLUCION_CANT_START_NEW_THREAD.md` o `LEEME_PRIMERO_THREADS.md` para más detalles.
+
+---
+
+## ⚠️ ERROR ANTERIOR: TIMEOUT EXPIRED
 
 ```
 connection to server at "127.0.0.1", port 5432 failed: timeout expired
