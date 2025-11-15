@@ -1,10 +1,54 @@
 # 🚨 SOLUCIÓN URGENTE - EJECUTAR EN ESTE ORDEN
 
+## ⚠️ ERROR ACTUAL: TIMEOUT EXPIRED
+
+```
+connection to server at "127.0.0.1", port 5432 failed: timeout expired
+```
+
+**PostgreSQL no está respondiendo** dentro del tiempo límite.
+
+### ⚡ SOLUCIÓN INMEDIATA PARA TIMEOUT:
+
+```bash
+# 1. Verificar estado de PostgreSQL
+bash scripts/verificar_postgres_docker.sh
+
+# 2. Si está caído, iniciarlo
+docker-compose up -d db
+
+# 3. Si está activo pero no responde, reiniciarlo
+docker-compose restart db
+
+# 4. Reiniciar Gunicorn (para aplicar nuevo timeout de 30 segundos)
+sudo systemctl restart gunicorn
+```
+
+**✅ Ya actualicé el timeout de 10 a 30 segundos en `settings.py`**
+
+Ver `LEEME_PRIMERO_TIMEOUT.md` o `SOLUCION_TIMEOUT_POSTGRES.md` para más detalles.
+
+---
+
 ## ⚠️ PROBLEMA CRÍTICO: OTRO PROCESO CON FUGA MASIVA
 
 **PID 2167175 tiene 599,786 archivos abiertos** - ¡OTRA FUGA MASIVA!
 
 Además, PostgreSQL en Docker tiene límite de 100 conexiones y está lleno.
+
+---
+
+## 🔄 OPCIÓN RÁPIDA: REINICIAR EL VPS
+
+**Si tienes múltiples procesos problemáticos y quieres una solución inmediata:**
+
+```bash
+sudo reboot
+```
+
+**Después del reinicio**, ejecuta los pasos 5-8 de abajo para aplicar las correcciones permanentes.
+
+Ver `GUIA_REINICIO_VPS.md` para detalles completos.
 
 ---
 

@@ -165,7 +165,9 @@ DATABASES = {
         # Si sigues teniendo "too many clients", reducir a 30 o 0
         "CONN_MAX_AGE": int(os.environ.get('DB_CONN_MAX_AGE') or "60"),
         "OPTIONS": {
-            "connect_timeout": 10,
+            # CRÍTICO: Timeout aumentado a 30 segundos para evitar "timeout expired"
+            # Si PostgreSQL está sobrecargado, puede tardar más en responder
+            "connect_timeout": 30,  # Aumentado de 10 a 30 segundos
             "keepalives": 1,
             "keepalives_idle": 30,
             "keepalives_interval": 10,
