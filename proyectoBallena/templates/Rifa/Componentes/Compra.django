@@ -523,7 +523,7 @@
       <span id="mensajeVerificacionR4" class="body-small-regular text-color-brand">⏳ Realiza el pago y luego presiona "Ya pagué"</span>
     </div>
     <div class="flex flex-col justify-end grow gap-4">
-      <button id="botonYaPagueR4" class="button-primary w-full flex flex-row justify-center items-center gap-2">
+      <button id="botonYaPagueR4" type="button" class="button-primary w-full flex flex-row justify-center items-center gap-2">
         <i class="fa-solid fa-check-circle"></i>
         <span>Ya pagué</span>
       </button>
@@ -2006,6 +2006,10 @@ function onChange(e) {
       if(tipoPago == 3){
         // Para pago móvil R4, mostrar la sección R4
         $("#temporizadorContentR4").fadeIn("fast", function () {
+          // OPTIMIZACIÓN: Configurar el botón cuando se muestra la sección R4
+          setTimeout(() => {
+            configurarBotonYaPague()
+          }, 100)
         }).css('display', 'flex');
       }
       if(tipoPago == 4){
@@ -2142,6 +2146,12 @@ function onChange(e) {
     mensajeVerificacion.classList.remove('text-yellow-600')
     mensajeVerificacion.classList.remove('text-red-500')
     mensajeVerificacion.classList.add('text-color-brand')
+    
+    // OPTIMIZACIÓN: Configurar el botón cuando se muestra el estado inicial
+    // Usar setTimeout para asegurar que el DOM esté actualizado
+    setTimeout(() => {
+      configurarBotonYaPague()
+    }, 100)
   }
   
   // Función para verificar pago manualmente (con rate limiting)
@@ -2386,16 +2396,49 @@ function onChange(e) {
     }
   }
   
-  // Event listener para el botón "Ya pagué" - usar delegación de eventos para elementos dinámicos
-  $(document).on('click', '#botonYaPagueR4', function() {
-    if (CompraR4 && CompraR4.pk) {
-      verificarPagoManual(CompraR4.pk)
-    } else {
-      Swal.fire({
-        title: 'Error',
-        text: 'No se encontró información de la compra. Por favor recarga la página.',
-        icon: 'error'
+  // OPTIMIZACIÓN: Función para configurar el event listener del botón "Ya pagué"
+  const configurarBotonYaPague = () => {
+    const botonYaPague = document.getElementById('botonYaPagueR4')
+    if (botonYaPague) {
+      // Remover event listeners anteriores para evitar duplicados
+      const nuevoBoton = botonYaPague.cloneNode(true)
+      botonYaPague.parentNode.replaceChild(nuevoBoton, botonYaPague)
+      
+      // Agregar event listener directamente al botón
+      nuevoBoton.addEventListener('click', function(event) {
+        event.preventDefault()
+        event.stopPropagation()
+        
+        if (CompraR4 && CompraR4.pk) {
+          verificarPagoManual(CompraR4.pk)
+        } else {
+          Swal.fire({
+            title: 'Error',
+            text: 'No se encontró información de la compra. Por favor recarga la página.',
+            icon: 'error'
+          })
+        }
       })
+    }
+  }
+  
+  // OPTIMIZACIÓN: Event listener con delegación de eventos como respaldo
+  // Esto funciona incluso si el botón se crea dinámicamente
+  document.addEventListener('click', function(event) {
+    const boton = event.target.closest('#botonYaPagueR4')
+    if (boton) {
+      event.preventDefault()
+      event.stopPropagation()
+      
+      if (CompraR4 && CompraR4.pk) {
+        verificarPagoManual(CompraR4.pk)
+      } else {
+        Swal.fire({
+          title: 'Error',
+          text: 'No se encontró información de la compra. Por favor recarga la página.',
+          icon: 'error'
+        })
+      }
     }
   })
   const regresarNumerosModal = ()=>{
