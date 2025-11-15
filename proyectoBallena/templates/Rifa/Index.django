@@ -26,7 +26,7 @@
             </div>
           </div>
           <div class="relative flex flex-col w-full lg:w-[500px] lg:min-w-[500px] lg:top-0">
-            {% include "Rifa/Componentes/Compra.django" with RifaC=Rifa numDisp=numDisp tasa=tasa detalle=Rifa.NombreEnlace percent_config=percent_config whatsapp_config=whatsapp_config verifica=Rifa.NombreEnlace %}
+            {% include "Rifa/Componentes/Compra.django" with RifaC=Rifa numDisp=numDisp tasa=tasa detalle=Rifa.NombreEnlace percent_config=percent_config whatsapp_config=whatsapp_config verifica=Rifa.NombreEnlace zelle_condition_type=zelle_condition_type zelle_min_value=zelle_min_value zelle_email=zelle_email %}
           </div>
         </div>
       </section>

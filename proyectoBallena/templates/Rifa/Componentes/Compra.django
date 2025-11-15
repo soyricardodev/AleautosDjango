@@ -567,7 +567,7 @@
     <div class="flex flex-col">
       <div class="flex flex-row w-full gap-4 py-3">
         <span class="label-medium-medium text-color-secondary w-[100px]">Correo electrónico</span>
-        <span class="grow label-medium-regular text-color-primary">luisangelamauhad5@gmail.com</span>
+        <span class="grow label-medium-regular text-color-primary" id="zelleEmailDisplay">{% if zelle_email and zelle_email.valor %}{{zelle_email.valor}}{% else %}luisangelamauhad5@gmail.com{% endif %}</span>
         <div id="copyCorreoZelleContainer" class="cursor-pointer">
           <i id="copyCorreoZelle" class="fa-regular fa-copy text-color-brand"></i>
         </div>
@@ -1071,6 +1071,10 @@
   let RangoInicial = '{{RifaC.RangoInicial}}'
   let MaxLen = RangoFinal.length
   let ticketCount = 0;
+  // Configuración de Zelle
+  let zelleConditionType = {% if zelle_condition_type and zelle_condition_type.valor %}'{{zelle_condition_type.valor}}'{% else %}null{% endif %};
+  let zelleMinValue = {% if zelle_min_value and zelle_min_value.valor %}{{zelle_min_value.valor}}{% else %}null{% endif %};
+  let zelleEmail = {% if zelle_email and zelle_email.valor %}'{{zelle_email.valor}}'{% else %}'luisangelamauhad5@gmail.com'{% endif %};
   let numberArray = []
   let paginationHTML = ``
   let legendHTML = ``
@@ -1171,6 +1175,7 @@ function onChange(e) {
     selectedNumbers = selectedNumbers.filter((num) => num !== number)
     ticketCount = selectedNumbers.length
     renderNumbers()
+    checkZelleVisibility()
   }
   const showToast = (msg) =>{
         document?.getElementById('toast-bottom-right')?.classList?.remove('hidden')
@@ -1248,6 +1253,7 @@ function onChange(e) {
     }
     let RemoverNumero = document.getElementById("RemoverNumero").classList.remove("hidden")
     checkMinCompra()
+    checkZelleVisibility()
   }
   function setTicket(num = RifaMin){
     ticket = -1
@@ -1258,6 +1264,7 @@ function onChange(e) {
     }
     let RemoverNumero = document.getElementById("RemoverNumero").classList.remove("hidden")
     checkMinCompra()
+    checkZelleVisibility()
   }
   //validate only numbers
   function onlyNumberKey(evt, limit = 6) {
@@ -1646,7 +1653,38 @@ function onChange(e) {
     document.getElementById("ticketsSeleccionados").innerText = ticketCount
     document.getElementById("totalPagar").innerText = ticketCount * RifaPrecio
     {% comment %} document.getElementById("MontoEki").innerText = ` (${ticketCount * RifaPrecio} $)` {% endcomment %}
+    checkZelleVisibility()
 
+  }
+  
+  // Función para verificar y actualizar la visibilidad del botón Zelle
+  const checkZelleVisibility = () => {
+    if (!botonPagoZelle) return;
+    
+    // Si no hay configuración, mantener oculto (comportamiento por defecto)
+    if (!zelleConditionType || !zelleMinValue) {
+      botonPagoZelle.classList.add('hidden');
+      return;
+    }
+    
+    let shouldShow = false;
+    const minValue = parseFloat(zelleMinValue);
+    
+    if (zelleConditionType === 'tickets') {
+      // Verificar por cantidad de tickets
+      shouldShow = ticketCount >= minValue;
+    } else if (zelleConditionType === 'price') {
+      // Verificar por precio mínimo en USD
+      const totalPrice = ticketCount * RifaPrecioAlt;
+      shouldShow = totalPrice >= minValue;
+    }
+    
+    // Mostrar u ocultar el botón según la condición
+    if (shouldShow) {
+      botonPagoZelle.classList.remove('hidden');
+    } else {
+      botonPagoZelle.classList.add('hidden');
+    }
   }
   
   const showVerificador = async function () {
@@ -1665,6 +1703,7 @@ function onChange(e) {
     document.getElementById("paginaEligeBoletos").classList.add('hidden')
     await getTicketNumbers()
     resetModal()
+    checkZelleVisibility()
     
     const dialog = document.getElementById("Compra")
     dialog.showModal()
@@ -1677,6 +1716,7 @@ function onChange(e) {
     document.getElementById("paginaEligeBoletos").classList.add('flex')
     await getTicketNumbers()
     resetModal()
+    checkZelleVisibility()
     
     const dialog = document.getElementById("Compra")
     dialog.showModal()
@@ -2224,6 +2264,7 @@ function onChange(e) {
         document.getElementById("montoPagarZelle").value = `$ ${(ticketCount * RifaPrecioAlt)}`
         document.getElementById("montoPagarBinance").value = `$ ${(ticketCount * RifaPrecioAlt)}`
         document.getElementById("montoPagarZinli").value = `$ ${(ticketCount * RifaPrecioAlt)}`
+        checkZelleVisibility()
       }).css('display', 'flex');
     });
   }
@@ -2627,6 +2668,7 @@ function onChange(e) {
         inputBuscadorNumeros.value = ""
         inputBuscadorNumeros.focus()
         renderNumbers()
+        checkZelleVisibility()
       }
     })
 
@@ -2682,7 +2724,8 @@ function onChange(e) {
       });
     })
     copyCorreoZelleContainer.addEventListener("click", (e)=>{
-      window.navigator.clipboard.writeText('luisangelamauhad5@gmail.com').then(res => {
+      const zelleEmail = document.getElementById('zelleEmailDisplay')?.innerText || 'luisangelamauhad5@gmail.com';
+      window.navigator.clipboard.writeText(zelleEmail).then(res => {
         console.log('exito copiando telefono')
         document.getElementById('copyCorreoZelle').classList.remove('fa-regular', 'fa-copy')
         document.getElementById('copyCorreoZelle').classList.add('fa-solid', 'fa-check')

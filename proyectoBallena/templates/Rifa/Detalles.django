@@ -153,7 +153,7 @@
     </section>
   </div>
   <div id="CompraMenu" class="lg:block mx-0 lg:mx-auto w-full lg:max-w-[450px]">
-    {% include "Rifa/Componentes/Compra.django" with RifaC=RifaD numDisp=numDisp tasa=tasa percent_config=percent_config whatsapp_config=whatsapp_config %}
+    {% include "Rifa/Componentes/Compra.django" with RifaC=RifaD numDisp=numDisp tasa=tasa percent_config=percent_config whatsapp_config=whatsapp_config zelle_condition_type=zelle_condition_type zelle_min_value=zelle_min_value zelle_email=zelle_email %}
   </div>
   <div>
     <section class="block px-5 lg:px-0 py-6 mt-6 gap-2 lg:hidden space-y-[15px] justify-center border-y-[1px] border-color-primary">
