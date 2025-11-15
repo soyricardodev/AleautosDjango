@@ -32,118 +32,164 @@
         document?.getElementById('logoNegativo')?.classList.remove('hidden');
       }
     }
+    initTheme();
   </script>
   <script src="{% static 'fontawesomefree/js/all.min.js' %}" defer></script>
 </head>
 
 <body>
   <div class="antialiased flex flex-col min-h-screen bg-[var(--color-surface-dim)]">
-    <main class="grid lg:items-center grow">
-      <section class="grid lg:pt-0 lg:items-center lg:justify-center">
-        <div class="rounded-lg shadow-sm px-5 lg:p-8 lg:w-[500px] lg:bg-[var(--color-container-neutral-bright)]">
-          <div class="grid gap-6 mt-[100px] lg:mt-0">
-            <img id="logoNormal" src=" {% static 'img/logo-login-alt.png' %}" alt="Logo"
-              class="hidden mx-auto w-[138px] h-8" />
-            <img id="logoNegativo" src=" {% static 'img/logo-login.png' %}" alt="Logo" class="mx-auto w-[138px] h-8" />
-            <h1 class="heading-large-extrabold text-center">Crear cuenta</h1>
-            <form class="grid gap-4" method="post">
-              {% csrf_token %}
-
-              {% if error %}
-              <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                {{ error }}
-              </div>
-              {% endif %}
-
-              {% if form.non_field_errors %}
-              <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                {{ form.non_field_errors }}
-              </div>
-              {% endif %}
-
-              <div class="flex flex-col gap-2">
-                <label for="id_nombre" class="label-medium-medium text-color-secondary">{{ form.nombre.label }}</label>
-                {{ form.nombre }}
-                {% if form.nombre.errors %}
-                <span class="text-red-600 text-sm">{{ form.nombre.errors }}</span>
-                {% endif %}
-              </div>
-
-              <div class="flex flex-col gap-2">
-                <label for="id_cedula" class="label-medium-medium text-color-secondary">{{ form.cedula.label }}</label>
-                {{ form.cedula }}
-                {% if form.cedula.errors %}
-                <span class="text-red-600 text-sm">{{ form.cedula.errors }}</span>
-                {% endif %}
-              </div>
-
-              <div class="flex flex-col gap-2">
-                <label for="id_correo" class="label-medium-medium text-color-secondary">{{ form.correo.label }}</label>
-                {{ form.correo }}
-                {% if form.correo.errors %}
-                <span class="text-red-600 text-sm">{{ form.correo.errors }}</span>
-                {% endif %}
-              </div>
-
-              <div class="flex flex-col gap-2">
-                <label for="id_telefono" class="label-medium-medium text-color-secondary">{{ form.telefono.label
-                  }}</label>
-                {{ form.telefono }}
-                {% if form.telefono.errors %}
-                <span class="text-red-600 text-sm">{{ form.telefono.errors }}</span>
-                {% endif %}
-              </div>
-
-              <div class="flex flex-col gap-2">
-                <label for="id_direccion" class="label-medium-medium text-color-secondary">{{ form.direccion.label
-                  }}</label>
-                {{ form.direccion }}
-                {% if form.direccion.errors %}
-                <span class="text-red-600 text-sm">{{ form.direccion.errors }}</span>
-                {% endif %}
-              </div>
-
-              <div class="flex flex-col gap-2">
-                <label for="id_password1" class="label-medium-medium text-color-secondary">{{ form.password1.label
-                  }}</label>
-                {{ form.password1 }}
-                {% if form.password1.errors %}
-                <span class="text-red-600 text-sm">{{ form.password1.errors }}</span>
-                {% endif %}
-              </div>
-
-              <div class="flex flex-col gap-2">
-                <label for="id_password2" class="label-medium-medium text-color-secondary">{{ form.password2.label
-                  }}</label>
-                {{ form.password2 }}
-                {% if form.password2.errors %}
-                <span class="text-red-600 text-sm">{{ form.password2.errors }}</span>
-                {% endif %}
-              </div>
-
-              <button type="submit" class="button-active button-large">
-                <span class="mx-auto label-medium-semibold">Registrarse</span>
-              </button>
-
-              <div class="text-center">
-                <p class="label-medium-regular text-color-secondary">
-                  ¿Ya tienes cuenta?
-                  <a href="{% url 'inicio_sesion_cliente' %}"
-                    class="text-[var(--color-button-primary)] hover:underline">
-                    Inicia sesión
-                  </a>
-                </p>
-              </div>
-            </form>
+    <main class="flex items-center justify-center grow px-4 py-8 lg:py-16">
+      <div class="w-full max-w-[500px]" style="max-width: 500px;">
+        <div class="bg-[var(--color-container-neutral-bright)] rounded-lg shadow-lg p-6 lg:p-10">
+          <!-- Logo -->
+          <div class="flex justify-center mb-8">
+            <img id="logoNormal" src="{% static 'img/logo-login-alt.png' %}" alt="Logo"
+              class="hidden w-[138px] h-8" />
+            <img id="logoNegativo" src="{% static 'img/logo-login.png' %}" alt="Logo" class="w-[138px] h-8" />
           </div>
+
+          <!-- Título -->
+          <h1 class="heading-large-extrabold text-color-primary text-center mb-2">Crear cuenta</h1>
+          <p class="body-small-regular text-color-secondary text-center mb-8">
+            Completa tus datos para comenzar a participar
+          </p>
+
+          <!-- Errores -->
+          {% if error %}
+          <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p class="body-small-regular text-red-600 dark:text-red-400">{{ error }}</p>
+          </div>
+          {% endif %}
+
+          {% if form.non_field_errors %}
+          <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            {% for error in form.non_field_errors %}
+            <p class="body-small-regular text-red-600 dark:text-red-400">{{ error }}</p>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <!-- Formulario -->
+          <form id="registroForm" class="grid gap-5" method="post">
+            {% csrf_token %}
+
+            <!-- Nombre completo -->
+            <div class="flex flex-col gap-2">
+              <label for="id_nombre" class="label-medium-medium text-color-secondary">Nombre completo</label>
+              {{ form.nombre }}
+              {% if form.nombre.errors %}
+              <span class="body-small-regular text-red-600 dark:text-red-400">{{ form.nombre.errors.0 }}</span>
+              {% endif %}
+            </div>
+
+            <!-- Cédula -->
+            <div class="flex flex-col gap-2">
+              <label for="id_cedula" class="label-medium-medium text-color-secondary">Cédula</label>
+              {{ form.cedula }}
+              {% if form.cedula.errors %}
+              <span class="body-small-regular text-red-600 dark:text-red-400">{{ form.cedula.errors.0 }}</span>
+              {% endif %}
+              <p class="body-small-regular text-color-secondary mt-1">Solo números. Ejemplo: 1234567890</p>
+            </div>
+
+            <!-- Teléfono -->
+            <div class="flex flex-col gap-2">
+              <label for="id_telefono" class="label-medium-medium text-color-secondary">Teléfono</label>
+              {{ form.telefono }}
+              {% if form.telefono.errors %}
+              <span class="body-small-regular text-red-600 dark:text-red-400">{{ form.telefono.errors.0 }}</span>
+              {% endif %}
+              <p class="body-small-regular text-color-secondary mt-1">Solo números. Ejemplo: 1234567890</p>
+            </div>
+
+            <!-- Correo -->
+            <div class="flex flex-col gap-2">
+              <label for="id_correo" class="label-medium-medium text-color-secondary">Correo electrónico</label>
+              {{ form.correo }}
+              {% if form.correo.errors %}
+              <span class="body-small-regular text-red-600 dark:text-red-400">{{ form.correo.errors.0 }}</span>
+              {% endif %}
+            </div>
+
+            <!-- Contraseña -->
+            <div class="flex flex-col gap-2">
+              <label for="id_password" class="label-medium-medium text-color-secondary">Contraseña</label>
+              <div class="relative">
+                {{ form.password }}
+                <button type="button" id="togglePassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-color-secondary hover:text-color-primary transition-colors" style="top: 50%; right: 10px;">
+                  <i class="fa-solid fa-eye" id="eyeIcon"></i>
+                </button>
+              </div>
+              {% if form.password.errors %}
+              <span class="body-small-regular text-red-600 dark:text-red-400">{{ form.password.errors.0 }}</span>
+              {% endif %}
+              <p class="body-small-regular text-color-secondary mt-1">Mínimo 8 caracteres</p>
+            </div>
+
+            <!-- Botón de envío -->
+            <button type="submit" id="submitButton" class="button-happy-primary button-large mt-2">
+              <span id="submitText">Registrarse</span>
+              <span id="submitLoader" class="hidden">
+                <i class="fa-solid fa-spinner fa-spin mr-2"></i>
+                Creando cuenta...
+              </span>
+            </button>
+
+            <!-- Link a login -->
+            <div class="text-center mt-4">
+              <p class="body-small-regular text-color-secondary">
+                ¿Ya tienes cuenta?
+                <a href="{% url 'inicio_sesion_cliente' %}" class="text-color-brand hover:underline font-medium">
+                  Inicia sesión
+                </a>
+              </p>
+            </div>
+          </form>
         </div>
-      </section>
+      </div>
     </main>
   </div>
+
+  <script>
+    initTheme();
+
+    // Toggle password visibility
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('id_password');
+    const eyeIcon = document.getElementById('eyeIcon');
+
+    if (togglePassword && passwordInput) {
+      togglePassword.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        eyeIcon.classList.toggle('fa-eye');
+        eyeIcon.classList.toggle('fa-eye-slash');
+      });
+    }
+
+    // Prevenir múltiples envíos
+    const registroForm = document.getElementById('registroForm');
+    const submitButton = document.getElementById('submitButton');
+    const submitText = document.getElementById('submitText');
+    const submitLoader = document.getElementById('submitLoader');
+    let isSubmitting = false;
+
+    if (registroForm) {
+      registroForm.addEventListener('submit', function(e) {
+        if (isSubmitting) {
+          e.preventDefault();
+          return false;
+        }
+
+        isSubmitting = true;
+        submitButton.disabled = true;
+        submitButton.classList.add('opacity-75', 'cursor-not-allowed');
+        submitText.classList.add('hidden');
+        submitLoader.classList.remove('hidden');
+      });
+    }
+  </script>
 </body>
 
 </html>
-
-<script>
-  initTheme()
-</script>
