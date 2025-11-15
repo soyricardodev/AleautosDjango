@@ -44,6 +44,40 @@
             </div>
           </div>
         {% endif %}
+        <!-- Configuración de Zelle -->
+        <div class="flex flex-col gap-4 grow">
+          <div class="flex flex-row justify-start items-center w-full">
+            <span class="body-large-medium text-color-secondary">Configuración de Zelle</span>
+          </div>
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-2">
+              <label class="label-medium-medium text-color-secondary">Tipo de condición</label>
+              <div class="flex flex-row gap-4">
+                <label class="inline-flex items-center cursor-pointer">
+                  <input type="radio" name="ZELLE_CONDITION_TYPE" value="tickets" class="sr-only peer" {% if zelle_condition_type and zelle_condition_type.valor == 'tickets' %}checked{% endif %}>
+                  <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-black after:content-[''] after:absolute after:top-[2px] after:start-[2px] peer-checked:after:bg-[var(--color-container-neutral-bright)] after:bg-[var(--color-icon-primary)] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[var(--color-icon-brand)]"></div>
+                  <span class="ml-3 body-medium-regular text-color-primary">Por cantidad de tickets</span>
+                </label>
+                <label class="inline-flex items-center cursor-pointer">
+                  <input type="radio" name="ZELLE_CONDITION_TYPE" value="price" class="sr-only peer" {% if zelle_condition_type and zelle_condition_type.valor == 'price' %}checked{% endif %}>
+                  <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-black after:content-[''] after:absolute after:top-[2px] after:start-[2px] peer-checked:after:bg-[var(--color-container-neutral-bright)] after:bg-[var(--color-icon-primary)] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[var(--color-icon-brand)]"></div>
+                  <span class="ml-3 body-medium-regular text-color-primary">Por precio mínimo (USD)</span>
+                </label>
+              </div>
+            </div>
+            <div class="flex flex-col-reverse gap-2 w-full">
+              <input type="number" id="input_zelle_min_value" name="ZELLE_MIN_VALUE" value="{{zelle_min_value.valor|default_if_none:''}}" class="input w-full" placeholder="Ej: 100 (tickets) o 50 (USD)" min="0" step="0.01">
+              <label for="input_zelle_min_value" class="label-medium-medium text-color-secondary">Valor mínimo</label>
+            </div>
+            <div class="flex flex-col-reverse gap-2 w-full">
+              <input type="email" id="input_zelle_email" name="ZELLE_EMAIL" value="{{zelle_email.valor|default_if_none:''}}" class="input w-full" placeholder="correo@ejemplo.com">
+              <label for="input_zelle_email" class="label-medium-medium text-color-secondary">Correo electrónico de Zelle</label>
+            </div>
+            <p class="body-small-regular text-color-secondary">
+              Zelle solo se mostrará si se cumple la condición configurada. Deja vacío para mostrar siempre.
+            </p>
+          </div>
+        </div>
       </div>
     </form>
   </div>

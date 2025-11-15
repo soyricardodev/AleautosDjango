@@ -82,6 +82,9 @@ def index(request):
         numDisp = NumeroRifaDisponibles.objects.filter(idRifa=Rifa).count() if Rifa else 0
         whatsapp_config=Settings.objects.filter(code="PHONE_CLIENT").first()
         percent_config=Settings.objects.filter(code="HIDE_TICKET_COUNT").first()
+        zelle_condition_type_config=Settings.objects.filter(code="ZELLE_CONDITION_TYPE").first()
+        zelle_min_value_config=Settings.objects.filter(code="ZELLE_MIN_VALUE").first()
+        zelle_email_config=Settings.objects.filter(code="ZELLE_EMAIL").first()
 
         time_remaining = None
         if Rifa != None:
@@ -99,6 +102,9 @@ def index(request):
             'time_remaining':time_remaining,
             'whatsapp_config':whatsapp_config,
             'percent_config':percent_config,
+            'zelle_condition_type':zelle_condition_type_config,
+            'zelle_min_value':zelle_min_value_config,
+            'zelle_email':zelle_email_config,
         }
         return HttpResponse(template.render(context, request))
     except Exception as e:
@@ -509,11 +515,17 @@ def compradorDialog(request):
 def dialogSettings(request):
     whatsapp_config=Settings.objects.filter(code="PHONE_CLIENT").first()
     percent_config=Settings.objects.filter(code="HIDE_TICKET_COUNT").first()
+    zelle_condition_type_config=Settings.objects.filter(code="ZELLE_CONDITION_TYPE").first()
+    zelle_min_value_config=Settings.objects.filter(code="ZELLE_MIN_VALUE").first()
+    zelle_email_config=Settings.objects.filter(code="ZELLE_EMAIL").first()
     
     template = loader.get_template("Rifa/Componentes/settings.django")
     context = {
         "whatsapp":whatsapp_config,
         "percent":percent_config,
+        "zelle_condition_type":zelle_condition_type_config,
+        "zelle_min_value":zelle_min_value_config,
+        "zelle_email":zelle_email_config,
     }
     return HttpResponse(template.render(context, request))
 
@@ -1796,6 +1808,9 @@ def DetallesRifa(request,name):
         
     whatsapp_config=Settings.objects.filter(code="PHONE_CLIENT").first()
     percent_config=Settings.objects.filter(code="HIDE_TICKET_COUNT").first()
+    zelle_condition_type_config=Settings.objects.filter(code="ZELLE_CONDITION_TYPE").first()
+    zelle_min_value_config=Settings.objects.filter(code="ZELLE_MIN_VALUE").first()
+    zelle_email_config=Settings.objects.filter(code="ZELLE_EMAIL").first()
 
     context = {
         "id":id,
@@ -1806,8 +1821,10 @@ def DetallesRifa(request,name):
         "tasa":tasa,
         'numDisp':numDisp,
         'whatsapp_config':whatsapp_config,
-        'percent_config':percent_config
-
+        'percent_config':percent_config,
+        'zelle_condition_type':zelle_condition_type_config,
+        'zelle_min_value':zelle_min_value_config,
+        'zelle_email':zelle_email_config,
     }
     return HttpResponse(template.render(context, request))
  except Exception as e:
@@ -1850,6 +1867,9 @@ def PreviewRifa(request,name):
     
     whatsapp_config=Settings.objects.filter(code="PHONE_CLIENT").first()
     percent_config=Settings.objects.filter(code="HIDE_TICKET_COUNT").first()
+    zelle_condition_type_config=Settings.objects.filter(code="ZELLE_CONDITION_TYPE").first()
+    zelle_min_value_config=Settings.objects.filter(code="ZELLE_MIN_VALUE").first()
+    zelle_email_config=Settings.objects.filter(code="ZELLE_EMAIL").first()
 
     context = {
         "id":id,
@@ -1861,7 +1881,9 @@ def PreviewRifa(request,name):
         'numDisp':numDisp,
         'whatsapp_config':whatsapp_config,
         'percent_config':percent_config,
-
+        'zelle_condition_type':zelle_condition_type_config,
+        'zelle_min_value':zelle_min_value_config,
+        'zelle_email':zelle_email_config,
     }
     return HttpResponse(template.render(context, request))
  except Exception as e:
