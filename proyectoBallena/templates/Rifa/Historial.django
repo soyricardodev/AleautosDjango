@@ -584,11 +584,13 @@
 		const dialog = document.getElementById("Comprador")
 		dialog.close()
 	}
-	async function saveComprador(e,id) {
+	async function saveComprador(e, id, clienteId) {
 		e.preventDefault()
 		setLoading()
 		const dialog = document.getElementById("Comprador")
-		document.getElementById("Compra").close();
+		if (document.getElementById("Compra")) {
+			document.getElementById("Compra").close();
+		}
 		dialog.close()
 
 		let form = document.getElementById("compradorForm")
@@ -597,8 +599,12 @@
 		formData.forEach((value, key) => {
 			data[key] = !value?.trim() ? null : value;
 		});
-		formData.append('id', id)
-		data.id = id
+		if (id) {
+			data.id = id
+		}
+		if (clienteId) {
+			data.cliente_id = clienteId
+		}
 		console.log(data)
 		let url = "{% url 'comprador' %}"
 		await fetch(url, {

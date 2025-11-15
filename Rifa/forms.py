@@ -91,11 +91,12 @@ class VerificaForm(forms.Form):
     correo=forms.EmailField(required=True)
 
 class CompradorForm(forms.Form):
-    id = forms.IntegerField(required=True)
+    id = forms.IntegerField(required=False)
     nombre = forms.CharField(required=True)
     correo=forms.EmailField(required=True)
     cedula=forms.CharField(required=True)
     telefono=forms.CharField(required=True)
+    password = forms.CharField(required=False, widget=forms.PasswordInput())
 
 
 class RegistroClienteForm(forms.Form):

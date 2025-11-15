@@ -1,8 +1,8 @@
 {% load Filter %}
 {% load static %}
 
-<div class="flex flex-1 lg:max-h-[700px] flex-col items-start text-left w-full h-[100dvh] max-h-[100dvh]">
-  <div class="flex flex-1 lg:max-h-[700px] flex-col items-start text-left gap-7 pt-6 w-full h-[100dvh] max-h-[100dvh]">
+<div class="flex flex-1 lg:max-h-[700px] flex-col items-start text-left w-full h-[100dvh] max-h-[100dvh] bg-[var(--color-container-neutral-bright)]">
+  <div class="flex flex-1 lg:max-h-[700px] flex-col items-start text-left gap-7 pt-6 w-full h-[100dvh] max-h-[100dvh] bg-[var(--color-container-neutral-bright)]">
     <div class="flex flex-row justify-start gap-8 items-start w-full border-b border-color-primary px-4 lg:px-6 pb-6">
       <div class="flex flex-col gap-2 items-start grow">
         <h3 class="title-large-medium text-color-primary grow text-left">Comprador</h3>
@@ -88,16 +88,56 @@
             <label class="label-medium-medium">Correo electrónico</label>
           </div>
         </div>
+        {% if tiene_cliente %}
+        <div class="flex flex-col gap-2 w-full">
+          {% if form.password.errors %}
+            <span class="pl-4 label-small-regular text-color-error">{{ form.password.errors }}</span>
+          {% endif %}
+          <div class="flex flex-col-reverse gap-2 w-full relative">
+            <input type="password"
+              id="password"
+              name="password"
+              class="{% if form.password.errors %}
+                 input-error
+              {% else %}
+                 input
+              {% endif %} w-full pr-10"
+              placeholder="Dejar vacío para mantener la contraseña actual" />
+            <div class="flex flex-row items-center justify-between">
+              <label class="label-medium-medium" style="color: var(--color-text-primary);">Nueva contraseña (opcional)</label>
+              <button type="button" onclick="togglePasswordVisibility('password')" class="text-color-secondary hover:text-color-primary">
+                <i id="password-eye-icon" class="fa fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          <p class="label-small-regular text-color-secondary pl-4">Dejar vacío para mantener la contraseña actual</p>
+        </div>
+        {% endif %}
       </div>
     </form>
   </div>
   <div class="flex flex-col lg:flex-row-reverse gap-4 justify-between items-center justify-self-end p-6 w-full border-t border-color-primary">
     <div class="flex flex-row gap-4 w-full lg:w-auto">
       <button class="button button-tonal button-small grow" type="button" onclick="closeDialogComprador()"><span>Cancelar</span></button>
-      <button onclick="saveComprador(event,{{CompradorId}})" class="button button-active button-small grow" type="button"><span>Guardar</span></button>
+      <button onclick="saveComprador(event,{% if CompradorId %}{{CompradorId}}{% else %}null{% endif %}{% if ClienteId %}, {{ClienteId}}{% elif cliente_id %}, {{cliente_id}}{% else %}, null{% endif %})" class="button button-active button-small grow" type="button"><span>Guardar</span></button>
     </div>
   </div>
   <div id="toast-bottom-right" class="hidden items-center w-full max-w-xs p-4 space-x-4 bg-[var(--color-container-neutral-heavy-contrast)] divide-x rtl:divide-x-reverse divide-gray-200 rounded-lg shadow-sm right-5 bottom-5" role="alert">
     <span id="toastText" class="body-small-regular text-[var(--color-text-primary-invert)]"></span>
   </div>
 </div>
+<script>
+  function togglePasswordVisibility(fieldId) {
+    const field = document.getElementById(fieldId);
+    const icon = document.getElementById(fieldId + '-eye-icon');
+    if (field.type === 'password') {
+      field.type = 'text';
+      icon.classList.remove('fa-eye');
+      icon.classList.add('fa-eye-slash');
+    } else {
+      field.type = 'password';
+      icon.classList.remove('fa-eye-slash');
+      icon.classList.add('fa-eye');
+    }
+  }
+</script>

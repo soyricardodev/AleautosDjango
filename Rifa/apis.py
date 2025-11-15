@@ -100,14 +100,95 @@ def SaveComprador(request):
         print(form.is_valid())
         print(form.errors)
         if form.is_valid():
-            id = form.cleaned_data['id']
-            comprador = Comprador.objects.get(Id=id)
-            comprador.Nombre = form.cleaned_data['nombre']
-            comprador.Correo = form.cleaned_data['correo']
-            comprador.NumeroTlf = form.cleaned_data['telefono']
-            comprador.Cedula = form.cleaned_data['cedula']
-            comprador.save()
-            return JsonResponse({"result": 'Success', "message": "Comprador guardado correctamente"})
+            comprador_id = form.cleaned_data.get('id')
+            cliente_id = data.get('cliente_id')
+            
+            # Handle case where we're editing from cliente and comprador doesn't exist yet
+            if cliente_id and not comprador_id:
+                try:
+                    cliente = Cliente.objects.get(id=cliente_id)
+                    comprador = Comprador.objects.filter(idCliente=cliente).first()
+                    if not comprador:
+                        # Create new comprador for this cliente
+                        comprador = Comprador()
+                        comprador.idCliente = cliente
+                    comprador.Nombre = form.cleaned_data['nombre']
+                    comprador.Correo = form.cleaned_data['correo']
+                    comprador.NumeroTlf = form.cleaned_data['telefono']
+                    comprador.Cedula = form.cleaned_data['cedula']
+                    comprador.save()
+                    
+                    # Update User and Cliente data
+                    user = cliente.user
+                    # Update user email
+                    if form.cleaned_data.get('correo'):
+                        user.email = form.cleaned_data['correo']
+                    # Update user name (split nombre into first_name and last_name)
+                    nombre_completo = form.cleaned_data.get('nombre', '').strip()
+                    if nombre_completo:
+                        partes_nombre = nombre_completo.split(' ', 1)
+                        user.first_name = partes_nombre[0]
+                        user.last_name = partes_nombre[1] if len(partes_nombre) > 1 else ''
+                    user.save()
+                    
+                    # Update cliente data
+                    if form.cleaned_data.get('cedula'):
+                        cliente.cedula = form.cleaned_data['cedula']
+                    if form.cleaned_data.get('telefono'):
+                        cliente.telefono = form.cleaned_data['telefono']
+                    cliente.save()
+                    
+                    # Update password if provided
+                    password = form.cleaned_data.get('password')
+                    if password and password.strip():
+                        user.set_password(password)
+                        user.save()
+                    
+                    return JsonResponse({"result": 'Success', "message": "Comprador guardado correctamente"})
+                except Cliente.DoesNotExist:
+                    return JsonResponse({"result": 'Error', "message": "Cliente no encontrado"}, status=404)
+            elif comprador_id:
+                # Existing comprador
+                comprador = Comprador.objects.get(Id=comprador_id)
+                comprador.Nombre = form.cleaned_data['nombre']
+                comprador.Correo = form.cleaned_data['correo']
+                comprador.NumeroTlf = form.cleaned_data['telefono']
+                comprador.Cedula = form.cleaned_data['cedula']
+                comprador.save()
+                
+                # Update User and Cliente if comprador has cliente associated
+                if comprador.idCliente:
+                    cliente = comprador.idCliente
+                    user = cliente.user
+                    
+                    # Update user email
+                    if form.cleaned_data.get('correo'):
+                        user.email = form.cleaned_data['correo']
+                    
+                    # Update user name (split nombre into first_name and last_name)
+                    nombre_completo = form.cleaned_data.get('nombre', '').strip()
+                    if nombre_completo:
+                        partes_nombre = nombre_completo.split(' ', 1)
+                        user.first_name = partes_nombre[0]
+                        user.last_name = partes_nombre[1] if len(partes_nombre) > 1 else ''
+                    user.save()
+                    
+                    # Update cliente data
+                    if form.cleaned_data.get('cedula'):
+                        cliente.cedula = form.cleaned_data['cedula']
+                    if form.cleaned_data.get('telefono'):
+                        cliente.telefono = form.cleaned_data['telefono']
+                    cliente.save()
+                    
+                    # Update password if provided
+                    password = form.cleaned_data.get('password')
+                    if password and password.strip():
+                        user.set_password(password)
+                        user.save()
+                
+                return JsonResponse({"result": 'Success', "message": "Comprador guardado correctamente"})
+            else:
+                return JsonResponse({"result": 'Error', "message": "Se requiere ID de comprador o cliente"}, status=400)
         else:
             return JsonResponse({"result": 'Error', "message": "Datos invalidos"}, status=400)
     return JsonResponse({"result": 'Error', "message": "Metodo no soportado"}, status=404)

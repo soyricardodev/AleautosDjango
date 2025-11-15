@@ -441,10 +441,53 @@ def dialogCompra(request):
 def compradorDialog(request):
     #get compra
     data = json.load(request)
-    id=data["comprador"]
-    logger.info(id)
-    comprador=Comprador.objects.get(Id=id)
-    data = {
+    comprador = None
+    tiene_cliente = False
+    cliente_id = None
+    
+    # Check if we received cliente or comprador parameter
+    if "cliente" in data:
+        cliente_id = data["cliente"]
+        try:
+            cliente = Cliente.objects.get(id=cliente_id)
+            # Find associated Comprador
+            comprador = Comprador.objects.filter(idCliente=cliente).first()
+            if comprador:
+                tiene_cliente = True
+                comprador_id = comprador.Id
+            else:
+                # Create temporary comprador data from cliente for display
+                # We'll need to create the comprador when saving
+                tiene_cliente = True
+                comprador_id = None
+                form_data = {
+                    "nombre": cliente.user.get_full_name() or cliente.user.username,
+                    "cedula": cliente.cedula,
+                    "correo": cliente.user.email,
+                    "telefono": cliente.telefono,
+                }
+                template = loader.get_template("Rifa/Componentes/comprador.django")
+                context = {
+                    "CompradorId": None,
+                    "ClienteId": cliente_id,
+                    "form": CompradorForm(initial=form_data),
+                    "tiene_cliente": tiene_cliente,
+                    "cliente_id": cliente_id,
+                }
+                return HttpResponse(template.render(context, request))
+        except Cliente.DoesNotExist:
+            return JsonResponse({"error": "Cliente no encontrado"}, status=404)
+    elif "comprador" in data:
+        comprador_id = data["comprador"]
+        logger.info(comprador_id)
+        comprador = Comprador.objects.get(Id=comprador_id)
+        if comprador.idCliente:
+            tiene_cliente = True
+            cliente_id = comprador.idCliente.id
+    else:
+        return JsonResponse({"error": "Se requiere 'comprador' o 'cliente' en el request"}, status=400)
+    
+    form_data = {
         "nombre":comprador.Nombre,
         "cedula":comprador.Cedula,
         "correo":comprador.Correo,
@@ -453,8 +496,10 @@ def compradorDialog(request):
     
     template = loader.get_template("Rifa/Componentes/comprador.django")
     context = {
-        "CompradorId":comprador.Id,
-        "form":CompradorForm(initial=data),
+        "CompradorId":comprador_id,
+        "form":CompradorForm(initial=form_data),
+        "tiene_cliente": tiene_cliente,
+        "cliente_id": cliente_id,
     }
     return HttpResponse(template.render(context, request))
 
@@ -1076,6 +1121,110 @@ def Historial(request, id=None):
         "numeroBusquedaTotal":numeroBusquedaTotal,
 
 
+    }
+    return HttpResponse(template.render(context, request))
+
+@login_required(login_url="/Login/")
+@permission_required('Rifa.view_compra', raise_exception=True)
+def Usuarios(request):
+    texto = None
+    dateInicio = None
+    dateFinal = None
+    
+    # Check session for existing filters
+    if 'textoBusquedaUsuarios' in request.session or 'dateInicioUsuarios' in request.session or 'dateFinalUsuarios' in request.session:
+        texto = request.session.get('textoBusquedaUsuarios')
+        dateInicio = request.session.get('dateInicioUsuarios')
+        dateFinal = request.session.get('dateFinalUsuarios')
+    
+    # Get all Cliente objects (registered users)
+    ClientesLista = Cliente.objects.all().select_related('user').order_by('-fecha_registro')
+    
+    if request.method == 'GET':
+        # Clear filters if not paginating
+        if request.GET.get('page') is None:
+            request.session['textoBusquedaUsuarios'] = None
+            request.session['dateInicioUsuarios'] = None
+            request.session['dateFinalUsuarios'] = None
+            texto = None
+            dateInicio = None
+            dateFinal = None
+        else:
+            # Apply filters from session
+            if texto and texto.strip():
+                ClientesLista = ClientesLista.filter(
+                    Q(user__first_name__icontains=texto) |
+                    Q(user__last_name__icontains=texto) |
+                    Q(user__username__icontains=texto) |
+                    Q(user__email__icontains=texto) |
+                    Q(cedula__icontains=texto) |
+                    Q(telefono__icontains=texto)
+                )
+            
+            if dateInicio and dateInicio.strip():
+                dateI = parse_datetime(dateInicio)
+                if dateI:
+                    ClientesLista = ClientesLista.filter(fecha_registro__gte=dateI)
+            
+            if dateFinal and dateFinal.strip():
+                dateF = parse_datetime(dateFinal)
+                if dateF:
+                    ClientesLista = ClientesLista.filter(fecha_registro__lte=dateF)
+    
+    if request.method == 'POST':
+        # Clear previous session filters
+        request.session['textoBusquedaUsuarios'] = None
+        request.session['dateInicioUsuarios'] = None
+        request.session['dateFinalUsuarios'] = None
+        
+        texto = request.POST.get('textoBusqueda')
+        dateInicio = request.POST.get('dateInicio')
+        dateFinal = request.POST.get('dateFinal')
+        
+        # Apply search filter
+        if texto and texto.strip():
+            ClientesLista = ClientesLista.filter(
+                Q(user__first_name__icontains=texto) |
+                Q(user__last_name__icontains=texto) |
+                Q(user__username__icontains=texto) |
+                Q(user__email__icontains=texto) |
+                Q(cedula__icontains=texto) |
+                Q(telefono__icontains=texto)
+            )
+            request.session['textoBusquedaUsuarios'] = texto
+        
+        # Apply date filters
+        if dateInicio and dateInicio.strip():
+            dateI = parse_datetime(dateInicio)
+            if dateI:
+                ClientesLista = ClientesLista.filter(fecha_registro__gte=dateI)
+                request.session['dateInicioUsuarios'] = dateInicio
+        
+        if dateFinal and dateFinal.strip():
+            dateF = parse_datetime(dateFinal)
+            if dateF:
+                ClientesLista = ClientesLista.filter(fecha_registro__lte=dateF)
+                request.session['dateFinalUsuarios'] = dateFinal
+    
+    # Pagination
+    paginator = Paginator(ClientesLista, 50)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Default values for template
+    if texto is None:
+        texto = ""
+    if dateInicio is None:
+        dateInicio = ""
+    if dateFinal is None:
+        dateFinal = ""
+    
+    template = loader.get_template("Rifa/Usuarios.django")
+    context = {
+        "Usuarios": page_obj,
+        "textoBusqueda": texto,
+        "dateInicio": dateInicio,
+        "dateFinal": dateFinal,
     }
     return HttpResponse(template.render(context, request))
 @login_required(login_url="/Login/")

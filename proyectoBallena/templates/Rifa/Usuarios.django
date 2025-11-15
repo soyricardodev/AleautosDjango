@@ -1,0 +1,280 @@
+{% extends "_base_admin.html" %}
+{% load static %}
+{% load Filter %}
+
+{% block titles %}
+<div class="flex flex-col gap-2">
+	<h1 class="heading-xsmall-medium text-left">Usuarios Registrados</h1>
+	<p class="body-medium-regular text-color-secondary text-left">
+		<span>Listado de usuarios registrados en el sistema</span>
+	</p>
+</div>
+<div class="flex flex-row gap-1 justify-start items-center">
+	<a href="{% url 'Dashboard' %}">
+		<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+			<path d="M3.5 9.9994L9.46967 4.02973C9.76256 3.73684 10.2374 3.73684 10.5303 4.02973L16.5 9.9994M5 8.4994V15.2494C5 15.6636 5.33579 15.9994 5.75 15.9994H8.5V12.7494C8.5 12.3352 8.83579 11.9994 9.25 11.9994H10.75C11.1642 11.9994 11.5 12.3352 11.5 12.7494V15.9994H14.25C14.6642 15.9994 15 15.6636 15 15.2494V8.4994M7.5 15.9994H13" stroke="var(--color-icon-brand)" stroke-opacity="1" stroke-linecap="round" stroke-linejoin="round"/>
+		</svg>
+	</a>
+	<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+		<path d="M14.4268 7.04688L10.667 17.8545H9.29297L13.0527 7.04688H14.4268Z" fill="var(--color-icon-disabled)" fill-opacity="1"/>
+	</svg>
+	<span class="label-medium-regular text-color-secondary">
+		Usuarios
+	</span>
+</div>
+{% endblock titles %}
+
+{% block actions %}
+{% endblock actions %}
+
+{% block content %}
+<section class="px-0 lg:px-[72px]">
+	<form method="post" id="formUsuarios" class="mb-6">
+		{% csrf_token %}
+		<div class="mx-5 lg:mx-0 flex flex-col lg:flex-row justify-between items-stretch lg:items-start gap-5 mb-6">
+			<div class="relative">
+				<input type="text" id="textoBusqueda" name="textoBusqueda" value="{{textoBusqueda}}" placeholder="Buscar por nombre, cédula, correo o teléfono" class="input input-medium w-full relative">
+				<button id="btBuscar" class="copyInput">
+					<i class="fa fa-magnifying-glass text-[var(--color-icon-primary)]"></i>
+				</button>
+			</div>
+			<div class="flex flex-row gap-5">
+				<button id="dropdownRadioButtonDate" data-dropdown-toggle="dropdownRadio2" class="button button-blanked button-small grow lg:grow-0" type="button">
+					<svg width="21" height="20" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<path d="M18.5834 2.5H1.91675L8.58342 10.3833V15.8333L11.9167 17.5V10.3833L18.5834 2.5Z" stroke="var(--color-icon-primary)" stroke-opacity="1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+					</svg>
+					<span>
+						Filtrar por fecha
+					</span>
+				</button>
+				<div id="dropdownRadio2"
+					class="z-10 hidden w-60 bg-[var(--color-container-neutral-bright)] radius-rounded shadow-md overflow-hidden"
+					data-popper-reference-hidden="" data-popper-escaped="" data-popper-placement="top"
+					style="position: absolute; inset: auto auto 0px 0px; margin: 0px; transform: translate3d(522.5px, 3847.5px, 0px);">
+					<ul class="bg-[#FFFFFF1C] py-2" aria-labelledby="dropdownRadioButton">
+						<li class="px-4 py-2.5">
+							<div class="flex flex-col-reverse gap-2 w-full">
+								<input type="datetime-local" id="filter-dateInicio" name="dateInicio" class="input-small w-full" value="{{dateInicio}}">
+								<label class="label-small-medium" for="filter-dateInicio">Desde</label>
+							</div>
+						<li class="px-4 py-2.5">
+							<div class="flex flex-col-reverse gap-2 w-full">
+								<input type="datetime-local" id="filter-dateFinal" name="dateFinal" class="input-small w-full" value="{{dateFinal}}">
+								<label class="label-small-medium" for="filter-dateFinal">Hasta</label>
+							</div>
+						</li>
+						<li class="px-4 py-2.5 flex flex-row gap-4">
+							<button id="restoreFilters" class="button-tonal lg:button-small button-medium">
+								<span>Restaurar</span>
+							</button>
+							<button id="btBuscarFecha" class="button-active lg:button-small button-medium grow">
+								<span>Buscar</span>
+							</button>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</form>
+
+	<div class="mx-5 lg:mx-0">
+		<div class="overflow-x-auto">
+			<table class="w-full">
+				<thead>
+					<tr class="border-b border-color-primary">
+						<th class="text-left py-4 px-4 label-medium-medium text-color-primary">Nombre completo</th>
+						<th class="text-left py-4 px-4 label-medium-medium text-color-primary">Cédula</th>
+						<th class="text-left py-4 px-4 label-medium-medium text-color-primary">Correo</th>
+						<th class="text-left py-4 px-4 label-medium-medium text-color-primary">Teléfono</th>
+						<th class="text-left py-4 px-4 label-medium-medium text-color-primary">Fecha de registro</th>
+						<th class="text-left py-4 px-4 label-medium-medium text-color-primary">Acciones</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for usuario in Usuarios %}
+					<tr class="border-b border-color-primary hover:bg-[var(--color-surface-neutral-bright)]">
+						<td class="py-4 px-4 body-medium-regular text-color-primary">
+							{{ usuario.user.get_full_name|default:usuario.user.username }}
+						</td>
+						<td class="py-4 px-4 body-medium-regular text-color-primary">
+							{{ usuario.cedula }}
+						</td>
+						<td class="py-4 px-4 body-medium-regular text-color-primary">
+							{{ usuario.user.email }}
+						</td>
+						<td class="py-4 px-4 body-medium-regular text-color-primary">
+							{{ usuario.telefono }}
+						</td>
+						<td class="py-4 px-4 body-medium-regular text-color-primary">
+							{{ usuario.fecha_registro|date:"d/m/Y H:i" }}
+						</td>
+						<td class="py-4 px-4">
+							<button onclick="openDialogCompradorUsuario({{ usuario.id }})" class="button button-outline button-small">
+								<span>Editar</span>
+							</button>
+						</td>
+					</tr>
+					{% empty %}
+					<tr>
+						<td colspan="6" class="py-8 px-4 text-center body-medium-regular text-color-secondary">
+							No se encontraron usuarios registrados
+						</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+
+		{% if Usuarios.has_other_pages %}
+		<div class="flex flex-row justify-center items-center gap-4 mt-6">
+			{% if Usuarios.has_previous %}
+			<a href="?page={{ Usuarios.previous_page_number }}" class="button button-outline button-small">
+				<span>Anterior</span>
+			</a>
+			{% endif %}
+			<span class="body-medium-regular text-color-secondary">
+				Página {{ Usuarios.number }} de {{ Usuarios.paginator.num_pages }}
+			</span>
+			{% if Usuarios.has_next %}
+			<a href="?page={{ Usuarios.next_page_number }}" class="button button-outline button-small">
+				<span>Siguiente</span>
+			</a>
+			{% endif %}
+		</div>
+		{% endif %}
+	</div>
+</section>
+
+<dialog id="Comprador" class="radius-rounded"></dialog>
+
+<script>
+	const openDialogCompradorUsuario = async (clienteId) => {
+		setLoading()
+		data = {
+			'cliente': clienteId,
+		}
+		let url = "{% url 'compradorDialog' %}"
+		await fetch(url, {
+			method: 'POST',
+			body: JSON.stringify(data),
+			headers: {
+				'Content-Type': 'application/json',
+				"X-CSRFToken": getCookie('csrftoken')
+			}
+		}).then(function (result) {
+			stopLoading()
+			return result.text();
+		}).then(function (result) {
+			let dialog = document.getElementById("Comprador")
+			dialog.innerHTML = result;
+			dialog.showModal()
+		})
+		.catch(error => {
+			stopLoading()
+			let dialog = document.getElementById("Comprador")
+			dialog.showModal()
+			console.log(error)
+			Swal.fire(
+				'Error',
+				error.message,
+				'error')
+		});
+	}
+
+	const closeDialogComprador = () => {
+		const dialog = document.getElementById("Comprador")
+		dialog.close()
+	}
+
+	async function saveComprador(e, id, clienteId) {
+		e.preventDefault()
+		setLoading()
+		const dialog = document.getElementById("Comprador")
+		dialog.close()
+
+		let form = document.getElementById("compradorForm")
+		let formData = new FormData(form)
+		let data = {};
+		formData.forEach((value, key) => {
+			data[key] = !value?.trim() ? null : value;
+		});
+		if (id) {
+			data.id = id
+		}
+		if (clienteId) {
+			data.cliente_id = clienteId
+		}
+		console.log(data)
+		let url = "{% url 'comprador' %}"
+		await fetch(url, {
+			method: 'POST',
+			body: JSON.stringify(data),
+			headers: {
+				'Content-Type': 'application/json',
+				"X-CSRFToken": getCookie('csrftoken')
+			}
+		}).then(function (result) {
+			return result.json();
+		}).then(function (result) {
+			showToast(result.message)
+			Swal.fire(
+				'Exito',
+				result.message,
+				'success').then((result) => {
+					if (result.isConfirmed) {
+						location.reload();
+					}
+				})
+			stopLoading()
+		}).catch(error => {
+			stopLoading()
+			dialog.showModal()
+			console.log(error)
+			Swal.fire(
+				'Error',
+				error.message,
+				'error')
+		});
+	}
+
+	// Search functionality
+	document.getElementById('btBuscar').addEventListener('click', function(e) {
+		e.preventDefault()
+		document.getElementById('formUsuarios').submit()
+	})
+
+	document.getElementById('textoBusqueda').addEventListener('keypress', function(e) {
+		if (e.key === 'Enter') {
+			e.preventDefault()
+			document.getElementById('formUsuarios').submit()
+		}
+	})
+
+	// Date filter functionality
+	document.getElementById('btBuscarFecha').addEventListener('click', function(e) {
+		e.preventDefault()
+		document.getElementById('formUsuarios').submit()
+	})
+
+	document.getElementById('restoreFilters').addEventListener('click', function(e) {
+		e.preventDefault()
+		document.getElementById('textoBusqueda').value = ''
+		document.getElementById('filter-dateInicio').value = ''
+		document.getElementById('filter-dateFinal').value = ''
+		document.getElementById('formUsuarios').submit()
+	})
+
+	function showToast(message) {
+		const toast = document.getElementById('toast-bottom-right')
+		const toastText = document.getElementById('toastText')
+		if (toast && toastText) {
+			toastText.textContent = message
+			toast.classList.remove('hidden')
+			setTimeout(() => {
+				toast.classList.add('hidden')
+			}, 3000)
+		}
+	}
+</script>
+{% endblock content %}
+

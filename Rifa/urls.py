@@ -20,6 +20,7 @@ urlpatterns = [
       path('Dashboard/', views.Dashboard, name="Dashboard"),
       path('Historial/', views.Historial, name="Historial"),
       path('Historial/<int:id>', views.Historial, name="Historial"),
+      path('usuarios/', views.Usuarios, name="Usuarios"),
       path('tableDialog/', views.tableDialog, name="tableDialog"),
       path('tableDialog/<int:id>', views.tableDialog, name="tableDialog"),
        path('tableDialogBuscaNumero/', views.tableDialogBuscaNumero, name="tableDialogBuscaNumero"),
